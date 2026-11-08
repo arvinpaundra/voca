@@ -1,14 +1,15 @@
 # 07 — HTTP API
 
-The API is defined once in `contract/` as an `@effect/platform` `HttpApi`:
+The API is defined once in `contract/` (`VocaApi` in `contract/src/api.ts`) as an Effect 4 `HttpApi` from `effect/http-api`:
 - The backend implements it with `HttpApiBuilder`.
 - The frontend consumes it through `HttpApiClient.make(VocaApi)`.
 - `HttpApiSwagger` serves OpenAPI at `/docs` outside production.
 
 Conventions:
-- **Slugs:** every `:deckSlug`, `:wordSlug`, and `:sessionSlug` path parameter and every `*Slug` field is a slug: random uppercase Crockford base32 with no prefix. Lengths: learner 8, deck 10, word 12, session 14. Internal `bigint` IDs never appear. Lowercase input is accepted and uppercased. An ID with the wrong prefix or a malformed ULID → `400 ValidationError`.
+- **Base path:** every route below lives under `/api` on the same origin as the SPA, for example `GET https://voca.arvinpaundra.dev/api/decks`. The prefix is set once in the contract (`HttpApi.prefix("/api")`), so the backend, the Pages Function proxy, and the Vite dev proxy all pass paths through unchanged.
+- **Slugs:** every `:deckSlug`, `:wordSlug`, and `:sessionSlug` path parameter and every `*Slug` field is a slug: random uppercase Crockford base32 with no prefix. Lengths: learner 8, deck 10, word 12, session 14. Internal `bigint` IDs never appear. Lowercase input is accepted and uppercased. A slug of the wrong length or with a character outside the alphabet → `400`.
 - JSON bodies.
-- `Authorization: Bearer <access>` on every route except `/auth/*` and `/healthz`.
+- `Authorization: Bearer <access>` on every route except `/api/auth/*` and `/api/healthz`.
 - Errors are `{ _tag, message }`. The `_tag` values are listed below.
 - Lists use keyset pagination with `?cursor=…&limit=…` (default 50, max 200) and return `{ items, nextCursor | null }`.
 
@@ -84,10 +85,11 @@ Session = {
 |---|---|---|
 | GET | `/words/:wordSlug/stats` | → `{ word, drills: WordStats[] }`, one entry per drill the word has a card in (see [10](10-analytics.md)) |
 | GET | `/decks/:deckSlug/stats` | → `DeckStats` |
+| GET | `/me/activity` | `?month=YYYY-MM` (default: the current study month) → `{ month: "2026-11", days: [{date: "2026-11-04", reviews: 23}] }`: only days with reviews. A future month returns `days: []`; the UI never asks for one (FR-18) |
 | GET | `/notifications` | → `{ decks: [{deckSlug, title, due, overdue, byDrill: [{drill, label, due}]}], hardDue, newAvailable }` |
 
 ## Ops
-`GET /healthz` → `200 ok` when `SELECT 1` succeeds.
+`GET /api/healthz` → `204` when `SELECT 1` succeeds.
 
 ## Errors
 
@@ -97,7 +99,7 @@ Session = {
 | `RefreshTokenInvalid` | 401 | Refresh token unknown, expired, revoked, or reused (the family is revoked) |
 | `Forbidden` | 403 | The resource belongs to another Learner |
 | `NotFound` | 404 | — |
-| `ValidationError` | 400 | Schema decoding failed. Includes the path and message of each issue |
+| *(empty body)* | 400 | Schema decoding of params, query, or body failed. Effect's built-in `HttpApiSchemaError` answers with an empty `400`. The frontend validates with the same contract Schemas before sending and shows field errors itself, so a 400 means a client bug |
 | `DuplicateWord` | 409 | Same `termKey` and `readingKey` already in the deck |
 | `QuestionAlreadyAnswered` | 409 | Double submit of the same position |
 | `SessionNotActive` | 409 | Answering a completed or abandoned session |

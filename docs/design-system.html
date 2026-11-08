@@ -123,6 +123,24 @@ ruby rt { font-family:var(--f-body); font-size:.32em; color:var(--muted); letter
 .bars i { flex:1; background:var(--primary); border-radius:1px; }
 .bars i.x { background:var(--bad); }
 
+/* Activity heatmap (FR-18): one month as a calendar, Sunday first */
+.activity { display:grid; gap:10px; }
+.activity .screen-top h3 { font-size:18px; min-width:9ch; text-align:center; }
+.btn.icon { padding:2px 10px; }
+.btn:disabled { color:var(--muted); border-color:var(--line); background:transparent; cursor:not-allowed; }
+.heat { display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; font-size:11px; }
+.heat .wd { text-align:center; color:var(--muted); }
+.heat i { aspect-ratio:1; border-radius:2px; background:var(--line); font-style:normal; padding:3px 4px; line-height:1; color:var(--muted); }
+.heat i[data-l="1"], .legend i[data-l="1"] { background:color-mix(in srgb, var(--ok) 30%, var(--surface)); color:var(--ink); }
+.heat i[data-l="2"], .legend i[data-l="2"] { background:color-mix(in srgb, var(--ok) 55%, var(--surface)); color:var(--ink); }
+.heat i[data-l="3"], .legend i[data-l="3"] { background:color-mix(in srgb, var(--ok) 80%, var(--surface)); color:var(--surface); }
+.heat i[data-l="4"], .legend i[data-l="4"] { background:var(--ok); color:var(--surface); }
+.heat i.future { background:transparent; border:var(--bw) dashed var(--line); }
+.heat i.pad { visibility:hidden; }
+.legend { display:flex; align-items:center; gap:3px; font-size:11px; color:var(--muted); }
+.legend i { width:11px; height:11px; border-radius:2px; background:var(--line); }
+.legend { display:flex; align-items:center; gap:3px; font-size:11px; color:var(--muted); }
+.legend i { width:11px; height:11px; border-radius:2px; background:var(--line); }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 @media (max-width: 760px) { .hero, .type-grid { grid-template-columns:1fr; } }
 </style>
@@ -225,6 +243,14 @@ ruby rt { font-family:var(--f-body); font-size:.32em; color:var(--muted); letter
 
       <div class="screen" aria-label="Decks">
         <div class="screen-top"><h3 style="font-size:28px">Decks</h3><span class="badge due">31 due</span></div>
+        <div class="activity" aria-label="Study activity">
+          <div class="screen-top">
+            <div class="row" style="gap:6px"><button class="btn icon" id="heat-prev" aria-label="Previous month">‹</button><h3 id="heat-month"></h3><button class="btn icon" id="heat-next" aria-label="Next month">›</button></div>
+            <span class="label" id="heat-total"></span>
+          </div>
+          <div class="heat" id="heat" role="img"></div>
+          <span class="legend" style="justify-content:flex-end">Less <i></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> More</span>
+        </div>
         <div class="deck">
           <div class="row" style="justify-content:space-between"><h3><span lang="ja">日本語</span> N5 Verbs</h3><span class="badge due">24</span></div>
           <span class="label">ja → en · 412 words · 38% mature</span>
@@ -279,6 +305,7 @@ ruby rt { font-family:var(--f-body); font-size:.32em; color:var(--muted); letter
       </div>
 
     </div>
+
   </section>
 </div>
 
@@ -350,7 +377,43 @@ document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", e
   seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === e.target)); play("select");
 }));
 
-renderQuestion(); syncMute();
+/* Activity heatmap demo: seeded fake data per month; the real page calls GET /me/activity?month=YYYY-MM */
+const heat = (() => {
+  const now = new Date(), cur = now.getFullYear() * 12 + now.getMonth();
+  const first = cur - 7;            // demo: account created 7 months ago → can't go earlier
+  let shown = cur;
+  const fmtMonth = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" });
+  const fmtDay = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  const render = () => {
+    const y = Math.floor(shown / 12), m = shown % 12, len = new Date(y, m + 1, 0).getDate();
+    let seed = shown; const rnd = () => (seed = (seed * 16807 + 11) % 2147483647) / 2147483647;
+    const days = Array.from({ length: len }, (_, i) => {
+      const date = new Date(y, m, i + 1), future = date > now, r = rnd();
+      return { date, future, n: future || r < 0.3 ? 0 : Math.round(r * r * 60) };
+    });
+    const active = days.map(d => d.n).filter(Boolean).sort((a, b) => a - b);
+    const q = f => active[Math.floor(f * (active.length - 1))];
+    const [q1, q2, q3] = [q(0.25), q(0.5), q(0.75)];
+    const level = n => !n ? 0 : n <= q1 ? 1 : n <= q2 ? 2 : n <= q3 ? 3 : 4;
+    const el = document.getElementById("heat");
+    el.innerHTML = ["S", "M", "T", "W", "T", "F", "S"].map(d => `<span class="wd">${d}</span>`).join("")
+      + `<i class="pad"></i>`.repeat(days[0].date.getDay())
+      + days.map(d => d.future
+          ? `<i class="future" title="${fmtDay.format(d.date)}">${d.date.getDate()}</i>`
+          : `<i data-l="${level(d.n)}" title="${d.n || "No"} review${d.n === 1 ? "" : "s"} · ${fmtDay.format(d.date)}">${d.date.getDate()}</i>`).join("");
+    const total = active.reduce((a, b) => a + b, 0).toLocaleString("en"), label = fmtMonth.format(days[0].date);
+    document.getElementById("heat-month").textContent = label;
+    document.getElementById("heat-total").textContent = `${total} reviews`;
+    el.setAttribute("aria-label", `Study activity, ${label}: ${total} reviews`);
+    document.getElementById("heat-prev").disabled = shown <= first;
+    document.getElementById("heat-next").disabled = shown >= cur;   // no future months
+  };
+  document.getElementById("heat-prev").addEventListener("click", () => { shown = Math.max(first, shown - 1); render(); });
+  document.getElementById("heat-next").addEventListener("click", () => { shown = Math.min(cur, shown + 1); render(); });
+  return render;
+})();
+
+renderQuestion(); syncMute(); heat();
 </script>
 </body>
 </html>

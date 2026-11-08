@@ -73,9 +73,9 @@ A refresh token in `localStorage` can be read by any script that runs on the pag
 
 1. **A strict CSP** in `fe/public/_headers`:
    ```
-   default-src 'self'; script-src 'self'; connect-src 'self' https://api…; img-src 'self' https://*.googleusercontent.com; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'
+   default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' https://*.googleusercontent.com; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'
    ```
-   It allows no third-party scripts and no inline scripts.
+   It allows no third-party scripts and no inline scripts. The API is same-origin (`/api`), so `connect-src` needs nothing beyond `'self'`.
 2. **React escaping.** `dangerouslySetInnerHTML` is never used, and readings are rendered as `<ruby>` elements, not as HTML strings.
 3. **Rotation and reuse detection**, which limit how long a stolen token is useful.
 4. **A short access-token lifetime** (15 min).

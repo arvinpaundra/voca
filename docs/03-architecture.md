@@ -5,10 +5,10 @@
 ```
 voca/
 ├── package.json            # workspaces: ["be", "fe", "contract"]; scripts only
-├── bunfig.toml
 ├── tsconfig.base.json      # strict, exactOptionalPropertyTypes, noUncheckedIndexedAccess
 ├── contract/               # @voca/contract: shared HttpApi + Schemas (no runtime deps beyond effect)
-│   └── src/{api.ts, identity.ts, library.ts, study.ts, insight.ts, errors.ts}
+│   ├── src/{api, slug, primitives, errors, identity, library, community, study, insight, index}.ts
+│   └── test/               # slug + Schema invariants + endpoint inventory vs 07
 ├── be/                     # @voca/be: Bun + Effect API
 │   ├── src/
 │   │   ├── main.ts                 # Layer composition + BunRuntime.runMain
@@ -17,15 +17,16 @@ voca/
 │   │   ├── library/{domain,application,infrastructure,http}/
 │   │   ├── study/{domain,application,infrastructure,http}/
 │   │   └── insight/{application,infrastructure,http}/   # read models: no domain layer
-│   ├── migrations/         # 0001_init.ts … (@effect/sql Migrator)
+│   ├── migrations/         # 0001_init.ts … (effect/sql Migrator)
 │   ├── test/               # integration tests (real Postgres)
 │   └── Containerfile
 ├── fe/                     # @voca/fe: React + TanStack + Vite → Cloudflare Pages
 │   ├── src/{routes/, features/, lib/api.ts, main.tsx}
 │   ├── public/{_redirects,_headers}
+│   ├── functions/api/[[path]].ts   # Pages Function: proxies /api/* to the cluster
 │   └── vite.config.ts
 ├── deploy/k8s/             # plain YAML: namespace, deployment, service, ingress, secret.example
-├── compose.yaml            # postgres for local dev + tests
+├── compose.yaml            # postgres for local dev (tests use Testcontainers)
 └── docs/
 ```
 
@@ -69,9 +70,9 @@ Ports have exactly one implementation each, defined as a `Context.Tag`. In Effec
 
 | Package | Why |
 |---|---|
-| `effect` | Core runtime, Schema, DateTime (IANA zones via Intl), FastCheck (re-exported) |
-| `@effect/platform`, `@effect/platform-bun` | HttpApi server, multipart parsing, BunRuntime |
-| `@effect/sql`, `@effect/sql-pg` | Typed SQL, connection pool, Migrator, transactions |
+| `effect` 4.1.2 (exact pin) | Core runtime, Schema, DateTime, and in v4 also `effect/http-api`, `effect/http` (multipart), `effect/sql` (Migrator, transactions) |
+| `@effect/platform-bun` 4.1.2 | Bun HTTP server and runtime |
+| `@effect/sql-pg` 4.1.2 | Postgres driver and connection pool |
 | `jose` | JWT sign and verify. It has zero dependencies and is audited; JWT handling is security code, so it is not hand-written |
 
 That is **5 runtime dependencies**. Not included: an ORM, Zod, express or hono, a CSV library (an RFC 4180 parser is about 50 lines with tests), date-fns or luxon (Effect `DateTime` covers this), and an FSRS library (the scheduler is about 150 lines in the core domain).
@@ -83,7 +84,7 @@ That is **5 runtime dependencies**. Not included: an ORM, Zod, express or hono, 
 | `react`, `react-dom` (19) | UI |
 | `@tanstack/react-router` (+ `@tanstack/router-plugin` dev) | Type-safe, file-based routing |
 | `@tanstack/react-query` | Server state cache, refetch-on-focus for notifications |
-| `effect`, `@effect/platform` | `HttpApiClient` generated from `@voca/contract`, plus Schema decoding |
+| `effect` | `HttpApiClient` generated from `@voca/contract`, plus Schema decoding |
 | `vite`, `@vitejs/plugin-react` (dev) | Build |
 
 **Design system: Washi Minimal.** The tokens and components are in [design-system.html](design-system.html). They become `fe/src/styles/tokens.css` (CSS custom properties) plus one CSS module per component. On hover, only a button's background changes, over 150 ms. Filled buttons fade to 60% (`color-mix(in srgb, <bg> 60%, transparent)`), and outlined buttons get a faint tint of their own color (ink 8%, danger 10%). Text and borders stay solid, other components keep their own hover, and nothing has a press animation.
@@ -120,12 +121,12 @@ Environment variables are read through Effect `Config`, so a missing variable fa
 
 ```
 DATABASE_URL, JWT_SECRET (≥32 bytes, base64), GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-WEB_ORIGIN (CORS allow-list, e.g. https://voca.pages.dev), PORT=3000, LOG_LEVEL=Info
+PORT=3000, LOG_LEVEL=Info
 ```
 
 ## Cross-cutting
 
-- **CORS:** allow only `WEB_ORIGIN`. Allowed headers: `Authorization` and `Content-Type`. No credentials, since there are no cookies.
+- **No CORS:** the SPA and the API share one origin. In production a Pages Function proxies `/api/*`; locally, Vite's `server.proxy` sends `/api` to `localhost:3000`. See [12](12-deployment.md).
 - **Logging:** Effect `Logger.json` to stdout, with a request ID annotation. Tokens and CSV contents are never logged.
 - **Rate limiting:** a Traefik `RateLimit` middleware on the ingress (platform feature), applied to `/auth/*` and the import endpoint. There is no rate limiting in the application.
-- **Health:** `GET /healthz` returns `SELECT 1`. It is used for both the readiness and liveness probes.
+- **Health:** `GET /api/healthz` returns `SELECT 1`. It is used for both the readiness and liveness probes.

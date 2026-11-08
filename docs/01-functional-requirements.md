@@ -158,10 +158,20 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 
 - The API and UI never expose internal IDs. Every resource is addressed by a **slug**: a random uppercase string with no prefix, whose length depends on the model.
   - Learner: 8 characters
-  - Deck: 10 characters, for example `/decks/TQ7LM2PV9X`
+  - Deck: 10 characters, for example `/decks/TQ7KM2PV9X`
   - Word: 12 characters
   - Session: 14 characters
 - Internally, all keys are `bigint`. See [06](06-data-model.md).
+
+## FR-18 Study activity heatmap (M)
+
+- The home screen shows one month at a time as a calendar heatmap: one square per day, 7 columns, Sunday first. It opens on the current month.
+- **‹ / ›** switch months. **›** is disabled on the current month, so future months can't be opened. **‹** is disabled on the month the Learner signed up.
+- Days later than today in the current month are drawn as empty outlines, with no count.
+- A square's shade shows how many reviews (first attempts) the Learner did that day, in 5 levels: none, then quartiles of that month's active days, the same way GitHub shades contributions.
+- Days follow the study day (timezone and `dayStartHour`, FR-9), so a review at 01:00 on 1 Dec with `dayStartHour = 4` counts for 30 Nov.
+- Hovering a square shows "23 reviews · Tue, 4 Nov 2026". The header shows the month's total.
+- History is kept when a deck is deleted, so the heatmap never loses days.
 
 ---
 
