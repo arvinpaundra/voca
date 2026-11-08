@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voca Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ───────────────────────── Tokens (Washi Minimal) ───────────────────────── */
+:root {
+  --bg:#F6F3EC; --surface:#FBF9F4; --ink:#1E1C19; --muted:#8B857A; --line:#E2DCD0;
+  --accent:#B8432E; --accent-ink:#FFFFFF; --primary:#1E1C19; --primary-ink:#FBF9F4;
+  --ok:#55704C; --ok-bg:#E9EEE3; --bad:#B8432E; --bad-bg:#F5E6E0; --focus:#B8432E;
+  --radius:3px; --bw:1px; --gap:32px;
+  --f-display:"Shippori Mincho", serif;
+  --f-body:"Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+  --f-term:"Shippori Mincho", serif;
+  --ease:150ms ease;
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+*,*::before,*::after { box-sizing:border-box; }
+html,body { margin:0; }
+body { background:var(--bg); color:var(--ink); font:16px/1.55 var(--f-body); }
+.wrap { max-width:1180px; margin:0 auto; padding:0 16px 96px; }
+h1,h2,h3 { font-family:var(--f-display); letter-spacing:.01em; margin:0; font-weight:500; line-height:1.05; }
+p { margin:0; }
+button,input,select { font:inherit; color:inherit; }
+:focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
+.label { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.muted { color:var(--muted); }
+
+.topbar { border-bottom:var(--bw) solid var(--line); }
+.topbar .wrap { display:flex; justify-content:space-between; align-items:center; padding-top:16px; padding-bottom:16px; }
+.brand { font-family:var(--f-display); font-size:20px; }
+
+section { padding-top:56px; }
+.sec-head { display:flex; align-items:baseline; gap:12px; margin-bottom:20px; border-bottom:var(--bw) solid var(--line); padding-bottom:8px; }
+.sec-head h2 { font-size:28px; }
+.hero { padding-top:48px; display:grid; grid-template-columns:1.3fr 1fr; gap:40px; align-items:end; }
+.hero h1 { font-size:clamp(48px, 9vw, 112px); }
+.hero .tagline { font-size:19px; margin-top:16px; max-width:34ch; }
+.principles { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.principles li { border-top:var(--bw) solid var(--line); padding-top:8px; }
+.principles b { display:block; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
+
+/* Tokens */
+.swatches { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; }
+.swatch { border:var(--bw) solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--surface); }
+.swatch .chip { height:72px; border-bottom:var(--bw) solid var(--line); }
+.swatch div:last-child { padding:8px 10px; font-size:12px; line-height:1.4; }
+.type-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); margin-top:var(--gap); }
+.type-row { border-top:var(--bw) solid var(--line); padding-top:10px; }
+.term { font-family:var(--f-term); font-weight:500; line-height:1.2; }
+ruby rt { font-family:var(--f-body); font-size:.32em; color:var(--muted); letter-spacing:.05em; }
+
+/* Components */
+.comp-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:var(--gap); }
+.panel { background:var(--surface); border:var(--bw) solid var(--line); border-radius:var(--radius); padding:20px; }
+.panel > .label { display:block; margin-bottom:14px; }
+.row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.stack { display:grid; gap:12px; }
+
+/* Buttons: hover changes only the background. Filled → own color at 60%; outlined → faint tint of own color. No press animation. */
+.btn { border:var(--bw) solid var(--line); border-radius:var(--radius); background:var(--surface); padding:10px 18px; cursor:pointer; font-weight:700; font-size:14px; transition:background-color var(--ease); }
+.btn:hover { background-color:color-mix(in srgb, var(--ink) 8%, transparent); }
+.btn.primary { background:var(--primary); color:var(--primary-ink); border-color:var(--primary); }
+.btn.primary:hover { background-color:color-mix(in srgb, var(--primary) 60%, transparent); }
+.btn.accent { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+.btn.accent:hover { background-color:color-mix(in srgb, var(--accent) 60%, transparent); }
+.btn.ghost { background:transparent; border-color:transparent; text-decoration:underline; text-underline-offset:3px; }
+.btn.ghost:hover { background:transparent; }
+.btn.danger { color:var(--bad); border-color:var(--bad); background:transparent; }
+.btn.danger:hover { background-color:color-mix(in srgb, var(--bad) 10%, transparent); }
+
+.field { display:grid; gap:6px; justify-items:start; }
+.input { justify-self:stretch; border:var(--bw) solid var(--line); border-radius:var(--radius); background:var(--bg); padding:10px 12px; width:100%; line-height:1.3; min-height:44px; }
+.seg { display:inline-flex; border:var(--bw) solid var(--line); border-radius:var(--radius); overflow:hidden; }
+.seg button { border:0; background:transparent; padding:8px 14px; cursor:pointer; font-weight:700; min-width:44px; }
+.seg button + button { border-left:var(--bw) solid var(--line); }
+.seg button[aria-pressed="true"] { background:var(--primary); color:var(--primary-ink); }
+
+.drills { display:grid; border:var(--bw) solid var(--line); border-radius:var(--radius); }
+.drills button { display:flex; justify-content:space-between; align-items:center; gap:12px; border:0; background:transparent; padding:10px 12px; cursor:pointer; text-align:left; }
+.drills button + button { border-top:var(--bw) solid var(--line); }
+.drills button::before { content:""; width:14px; height:14px; border:var(--bw) solid currentColor; border-radius:2px; flex:none; }
+.drills button[aria-pressed="true"]::before { background:currentColor; box-shadow:inset 0 0 0 2px var(--surface); }
+.drills button > :first-child { margin-left:-4px; }
+.drills button .label { margin-left:auto; }
+.q-drill { text-align:center; margin-top:8px; }
+
+.badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:3px 8px; border:var(--bw) solid var(--line); border-radius:var(--radius); }
+.badge.due { background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.badge.leech { color:var(--bad); border-color:var(--bad); }
+.badge.mature { color:var(--ok); border-color:var(--ok); }
+.progress { height:3px; background:var(--line); border-radius:var(--radius); overflow:hidden; }
+.progress > i { display:block; height:100%; background:var(--primary); }
+
+/* Screens */
+.screens { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:var(--gap); align-items:start; }
+.screen { background:var(--surface); border:var(--bw) solid var(--line); border-radius:calc(var(--radius) * 3); padding:20px; min-height:560px; display:flex; flex-direction:column; gap:16px; }
+.screen-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.q-term { text-align:center; padding:48px 0 20px; font-size:76px; }
+.options { display:grid; gap:10px; }
+.opt { display:flex; justify-content:space-between; align-items:center; text-align:left; border:var(--bw) solid var(--line); border-radius:var(--radius); background:transparent; padding:14px 16px; cursor:pointer; font-size:16px; }
+.opt kbd { font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:var(--radius); padding:0 6px; font-family:inherit; }
+.opt:hover:not([disabled]) { border-color:var(--ink); }
+.opt.correct { background:var(--ok-bg); border-color:var(--ok); color:var(--ok); font-weight:700; }
+.opt.wrong { background:var(--bad-bg); border-color:var(--bad); color:var(--bad); font-weight:700; }
+.opt[disabled] { cursor:default; }
+.feedback { min-height:48px; font-size:14px; padding:12px 14px; border-radius:var(--radius); border:var(--bw) solid transparent; }
+.feedback.ok { color:var(--ok); border-color:var(--ok); background:var(--ok-bg); }
+.feedback.bad { color:var(--bad); border-color:var(--bad); background:var(--bad-bg); }
+.deck { border:var(--bw) solid var(--line); border-radius:var(--radius); padding:14px; display:grid; gap:8px; background:var(--bg); }
+.deck h3 { font-size:20px; }
+.notif a { display:flex; justify-content:space-between; gap:8px; padding:12px 0; border-bottom:var(--bw) solid var(--line); color:inherit; text-decoration:none; }
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.stat { border:var(--bw) solid var(--line); border-radius:var(--radius); padding:10px; }
+.stat b { display:block; font-family:var(--f-display); font-size:28px; font-weight:500; line-height:1.1; }
+.bars { display:flex; gap:4px; align-items:end; height:56px; }
+.bars i { flex:1; background:var(--primary); border-radius:1px; }
+.bars i.x { background:var(--bad); }
+
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+@media (max-width: 760px) { .hero, .type-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<header class="topbar"><div class="wrap"><span class="brand">Voca</span><span class="label">Design system · v1</span></div></header>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <p class="label">Design system</p>
+      <h1>Washi Minimal</h1>
+      <p class="tagline">Quiet paper, sumi ink, a single vermilion seal. Space is the main material; the word is the only thing that matters.</p>
+    </div>
+    <ul class="principles">
+      <li><b>Ma (間) — space</b>Generous spacing; one idea per screen.</li>
+      <li><b>Ink + seal</b>Near-black for action, vermilion only for brand and errors.</li>
+      <li><b>Mincho for terms</b>Brush-derived serif honours CJK letterforms.</li>
+      <li><b>Quiet feedback</b>Buttons change only their background on hover. Nothing moves on click.</li>
+    </ul>
+  </header>
+
+  <section>
+    <div class="sec-head"><h2>Tokens</h2><span class="label">color · type</span></div>
+    <div class="swatches" id="swatches"></div>
+    <div class="type-grid">
+      <div class="type-row"><p class="label">Display · Shippori Mincho</p><h2 style="font-size:56px">Learn daily</h2></div>
+      <div class="type-row"><p class="label">Term (CJK, ruby)</p>
+        <p class="term" style="font-size:56px"><ruby lang="ja">勉強<rt>べんきょう</rt></ruby> <span lang="zh-Hans">学习</span></p></div>
+      <div class="type-row"><p class="label">Body · Zen Kaku Gothic New</p><p>Stability grows every time you recall a word just before you'd forget it. Due words appear at the start of your study day.</p></div>
+      <div class="type-row"><p class="label">Label / data</p><p class="label" style="color:var(--ink)">Due 24 · Overdue 3 · Retention 91.2%</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Components</h2><span class="label">controls · states</span></div>
+    <div class="comp-grid">
+      <div class="panel">
+        <span class="label">Buttons</span>
+        <div class="row">
+          <button class="btn primary">Start session</button>
+          <button class="btn accent">Fork deck</button>
+          <button class="btn">Import CSV</button>
+          <button class="btn ghost">Skip</button>
+          <button class="btn danger">Delete</button>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="label">Session setup</span>
+        <div class="stack">
+          <div class="field" style="justify-items:stretch"><span class="label">Drills · pick one or more</span>
+            <div class="drills" role="group" aria-label="Drills (pick one or more)">
+              <button aria-pressed="true">Word → Meaning<span class="label">24 due · 20 new</span></button>
+              <button aria-pressed="true">Meaning → Word<span class="label">3 due · 20 new</span></button>
+              <button aria-pressed="false">Word → Hiragana<span class="label">0 due · 20 new</span></button>
+              <button aria-pressed="true">Hiragana → Word<span class="label">0 due · 20 new</span></button>
+            </div></div>
+          <div class="field"><span class="label">Words per session</span>
+            <div class="seg"><button aria-pressed="false">7</button><button aria-pressed="true">10</button><button aria-pressed="false">15</button><button aria-pressed="false">20</button></div></div>
+          <div class="field"><span class="label">Mode</span>
+            <div class="seg"><button aria-pressed="true">Easy</button><button aria-pressed="false">Hard</button></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="label">Inputs</span>
+        <div class="stack">
+          <label class="field"><span class="label">Deck title</span><input class="input" value="JLPT N5 — Verbs"></label>
+          <label class="field"><span class="label">Term language</span>
+            <select class="input"><option>ja — Japanese</option><option>zh-Hans — Chinese (Simplified)</option><option>ko — Korean</option></select></label>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="label">Badges · progress</span>
+        <div class="stack">
+          <div class="row"><span class="badge due">24 due</span><span class="badge mature">✓ mature</span><span class="badge leech">⚑ leech</span><span class="badge">new 12</span></div>
+          <div><div class="row" style="justify-content:space-between"><span class="label">Cleared</span><span class="label">6 / 10</span></div>
+            <div class="progress" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><i style="width:60%"></i></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Screens</h2><span class="label">try the question — sound on</span></div>
+    <div class="screens">
+
+      <div class="screen" aria-label="Study session">
+        <div class="screen-top"><span class="label">JLPT N5 · Mixed · Hard</span><span class="label">7 / 10</span></div>
+        <div class="progress"><i style="width:60%"></i></div>
+        <p class="label q-drill">Word → Meaning</p>
+        <div class="q-term term" lang="ja" style="padding-top:20px"><ruby>箸<rt>はし</rt></ruby></div>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="row" style="justify-content:space-between;margin-top:auto">
+          <button class="btn ghost" id="mute">Sound: on</button>
+          <button class="btn primary" id="next">Next</button>
+        </div>
+      </div>
+
+      <div class="screen" aria-label="Decks">
+        <div class="screen-top"><h3 style="font-size:28px">Decks</h3><span class="badge due">31 due</span></div>
+        <div class="deck">
+          <div class="row" style="justify-content:space-between"><h3><span lang="ja">日本語</span> N5 Verbs</h3><span class="badge due">24</span></div>
+          <span class="label">ja → en · 412 words · 38% mature</span>
+          <div class="progress"><i style="width:38%"></i></div>
+        </div>
+        <div class="deck">
+          <div class="row" style="justify-content:space-between"><h3><span lang="zh-Hans">汉语</span> HSK 2</h3><span class="badge due">7</span></div>
+          <span class="label">zh-Hans → en · 150 words · forked</span>
+          <div class="progress"><i style="width:64%"></i></div>
+        </div>
+        <div class="deck">
+          <div class="row" style="justify-content:space-between"><h3>Español básico</h3><span class="badge">0</span></div>
+          <span class="label">es → en · 88 words · public</span>
+          <div class="progress"><i style="width:91%"></i></div>
+        </div>
+        <div>
+          <p class="label" style="margin-bottom:4px">Notifications</p>
+          <div class="notif">
+            <a href="#"><span>N5 Verbs</span><span class="label">24 due · 3 overdue</span></a>
+            <a href="#"><span>Hard words</span><span class="label">5 due</span></a>
+            <a href="#"><span>New today</span><span class="label">20 available</span></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" aria-label="Word stats">
+        <div class="screen-top"><span class="label">Word</span><span class="badge leech">⚑ hard</span></div>
+        <div>
+          <p class="term" style="font-size:48px" lang="ja"><ruby>食べる<rt>たべる</rt></ruby></p>
+          <p class="muted">to eat · ichidan verb</p>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><span class="label">Recall now</span><b>87%</b></div>
+          <div class="stat"><span class="label">Stability</span><b>12.4d</b></div>
+          <div class="stat"><span class="label">Difficulty</span><b>5.1</b></div>
+          <div class="stat"><span class="label">Accuracy</span><b>78%</b></div>
+        </div>
+        <div>
+          <p class="label">Last 12 reviews</p>
+          <div class="bars" aria-hidden="true">
+            <i style="height:30%"></i><i class="x" style="height:12%"></i><i style="height:40%"></i><i style="height:52%"></i><i style="height:60%"></i><i class="x" style="height:12%"></i><i style="height:45%"></i><i style="height:58%"></i><i style="height:70%"></i><i style="height:78%"></i><i style="height:88%"></i><i style="height:100%"></i>
+          </div>
+        </div>
+        <div>
+          <p class="label" style="margin-bottom:4px">Confused with</p>
+          <div class="notif">
+            <a href="#"><span lang="ja">飲む · to drink</span><span class="label">×3</span></a>
+            <a href="#"><span lang="ja">食う · to eat (rough)</span><span class="label">×1</span></a>
+          </div>
+        </div>
+        <p class="label" style="margin-top:auto">Next due Tue 04:00 WIB</p>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+const TOKENS = [["--bg","Background"],["--surface","Surface"],["--ink","Ink"],["--muted","Muted"],["--line","Line"],["--primary","Primary"],["--accent","Accent"],["--ok","Correct"],["--bad","Wrong"]];
+const OPTIONS = [["to eat", false], ["chopsticks", true], ["bridge", false], ["edge", false]]; // hard mode: 橋 / 端 read はし too
+const store = { get: k => { try { return localStorage.getItem(k) } catch { return null } }, set: (k, v) => { try { localStorage.setItem(k, v) } catch {} } };
+
+const cs = getComputedStyle(document.documentElement);
+document.getElementById("swatches").innerHTML = TOKENS.map(([v, n]) => {
+  const val = cs.getPropertyValue(v).trim();
+  return `<div class="swatch"><div class="chip" style="background:${val}"></div><div><b>${n}</b><br>${v}<br>${val.toUpperCase()}</div></div>`;
+}).join("");
+
+/* Sound: Web Audio, synthesized sine tones */
+let ctx, muted = store.get("voca.sfx") === "off";
+const tone = (f, t, d, vol = 0.25) => {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + d + 0.02);
+};
+const play = kind => {
+  if (muted || !window.AudioContext) return;
+  ctx ??= new AudioContext(); ctx.resume();
+  const t = ctx.currentTime;
+  if (kind === "select") tone(880, t, 0.03, 0.12);
+  if (kind === "correct") { tone(1047, t, 0.09); tone(1568, t + 0.09, 0.12); }
+  if (kind === "wrong") { tone(220, t, 0.12); tone(147, t + 0.11, 0.18); }
+};
+
+/* Question demo */
+const renderQuestion = () => {
+  const box = document.getElementById("options"), fb = document.getElementById("feedback");
+  fb.className = "feedback"; fb.textContent = "";
+  box.innerHTML = OPTIONS.map(([m], i) => `<button class="opt" data-i="${i}"><span>${m}</span><kbd>${i + 1}</kbd></button>`).join("");
+  box.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => answer(+b.dataset.i)));
+};
+const answer = i => {
+  const btns = [...document.querySelectorAll(".opt")], fb = document.getElementById("feedback");
+  if (btns[0].disabled) return;
+  play("select");
+  const ok = OPTIONS[i][1], ci = OPTIONS.findIndex(o => o[1]);
+  btns.forEach(b => b.disabled = true);
+  btns[ci].classList.add("correct"); btns[ci].querySelector("kbd").textContent = "✓";
+  if (!ok) { btns[i].classList.add("wrong"); btns[i].querySelector("kbd").textContent = "✗"; }
+  setTimeout(() => play(ok ? "correct" : "wrong"), 40);
+  fb.className = "feedback " + (ok ? "ok" : "bad");
+  fb.textContent = ok ? "✓ Correct — next review in 4 days" : "✗ 箸 (はし) = chopsticks. Not 橋 (bridge). It will come back in 3 questions.";
+};
+document.getElementById("next").addEventListener("click", renderQuestion);
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, select")) return;
+  if (/^[1-4]$/.test(e.key)) answer(+e.key - 1);
+  if (e.key === "Enter") renderQuestion();
+});
+const muteBtn = document.getElementById("mute");
+const syncMute = () => muteBtn.textContent = "Sound: " + (muted ? "off" : "on");
+muteBtn.addEventListener("click", () => { muted = !muted; store.set("voca.sfx", muted ? "off" : "on"); syncMute(); });
+
+document.querySelectorAll(".drills").forEach(g => g.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const on = b.getAttribute("aria-pressed") === "true";
+  if (on && g.querySelectorAll('[aria-pressed="true"]').length === 1) return; // at least one drill
+  b.setAttribute("aria-pressed", !on); play("select");
+}));
+document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", e => {
+  if (e.target.tagName !== "BUTTON") return;
+  seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === e.target)); play("select");
+}));
+
+renderQuestion(); syncMute();
+</script>
+</body>
+</html>
