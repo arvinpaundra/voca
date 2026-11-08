@@ -14,6 +14,7 @@ It works with any language, including ones with their own scripts. Japanese word
 - **Sessions** of 7, 10, 15 or 20 words. A wrong answer comes back until you get it right.
 - **Hard mode:** the wrong options are words that look or sound like the right one.
 - **Hard words:** a separate place for the words you struggle with.
+- **Activity heatmap:** a calendar of how much you studied each day, month by month.
 - **Per-word stats:** recall probability, accuracy, streak, answer time, and which words you confuse it with.
 - **Notifications** for decks and words that are due.
 - **Community decks:** share a deck publicly, or copy someone else's.
@@ -31,7 +32,7 @@ It works with any language, including ones with their own scripts. Japanese word
 | Database | PostgreSQL |
 | Frontend | React 19, TanStack Router and Query, Vite |
 | Auth | Google OAuth (code + PKCE), JWT access tokens, rotating refresh tokens. No cookies |
-| Hosting | Cloudflare Pages (frontend), Kubernetes cluster `kube-oci` (backend and Postgres) |
+| Hosting | `voca.arvinpaundra.dev`: Cloudflare Pages for the frontend, `/api` proxied to the Kubernetes cluster `kube-oci` (backend and PostgreSQL 18.3) |
 
 ## Repository layout
 
@@ -56,4 +57,4 @@ bun run typecheck
 
 ## Documentation
 
-The design docs are in this folder, starting with the [functional requirements](01-functional-requirements.md). The UI is defined in the [design system](design-system.html).
+The design docs are in [`docs/`](docs/), starting with the [functional requirements](docs/01-functional-requirements.md). The UI is defined in the [design system](docs/design-system.html).

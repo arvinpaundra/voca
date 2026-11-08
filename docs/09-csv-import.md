@@ -20,7 +20,7 @@ term,meaning,pinyin
 - **Header:** required. Column names are case-insensitive and may come in any order. `term` and `meaning` are required; `reading`, `example`, and `notes` are optional. `hiragana`, `pinyin`, and `jyutping` are accepted as aliases for `reading`. Unknown columns cause a rejection, so typos are caught.
 - **Dialect:** RFC 4180. Values can be quoted, a doubled quote (`""`) escapes a quote, and quoted values can span lines. Lines may end in CRLF or LF. The delimiter is always a comma.
 - **Limits:**
-  - 5 MB, enforced by `@effect/platform` multipart `maxFileSize`, which returns 413 before parsing starts
+  - 5 MB, enforced by the multipart `maxFileSize` limit on the contract's `ImportCsv` payload, which returns 413 before parsing starts
   - 20,000 rows
   - the field lengths from the Word Schemas (enforced in code, see [06](06-data-model.md))
 - **Language:** taken from the Deck (`termLang`, `meaningLang`). There is no per-row language.
@@ -45,7 +45,7 @@ multipart file ─▶ bytes ─▶ TextDecoder("utf-8", {fatal:true})   ── i
 
 ## Is beanstalkd needed?
 
-**Recommendation: no, at least not for the MVP.**
+**Decision: no, not in the MVP** (confirmed, ADR 7). It will be considered again at scale.
 
 | | Synchronous (recommended) | beanstalkd worker |
 |---|---|---|
@@ -58,5 +58,3 @@ multipart file ─▶ bytes ─▶ TextDecoder("utf-8", {fatal:true})   ── i
 A 5 MB cap is small enough that a queue adds infrastructure, a status endpoint, a polling UI, and an unmaintained client library without solving any real problem.
 
 **When to revisit:** add asynchronous processing if imports grow large (for example 50 MB files, or slow enrichment such as fetching TTS audio). Even then, start with a Postgres-backed queue (a `jobs` table read with `FOR UPDATE SKIP LOCKED`, processed by an Effect fiber in the API). That adds no new infrastructure. Move to beanstalkd only if the job volume outgrows Postgres.
-
-If you still want beanstalkd in the MVP, tell me and I'll write the producer, worker, and job-status design.

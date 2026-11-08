@@ -2,16 +2,19 @@
 
 Tooling:
 - **`bun test`** is the runner.
-- **`effect/FastCheck`** provides property tests; it ships with `effect`, so there is no extra dependency.
-- A **real Postgres** instance is started with `podman compose`.
+- **`effect/Arbitrary`** provides property tests (Effect 4 has its own generator and runner, `Arbitrary.schema` + `Arbitrary.checkEffect`; FastCheck is gone), so there is no extra dependency.
+- A **real Postgres** is started by **Testcontainers** (`testcontainers` + `@testcontainers/postgresql` 12.x, `be` dev dependencies), using the same image as production: `postgres:18.3-alpine`. Container runtime: **Podman by default, Docker as the fallback** (below).
 
 There are no mocks for the database. In-memory layers are used only for Google, so tests never call the network.
 
 ## Layout
 
 ```
+be/bunfig.toml        # [test] preload = ["./test/preload.ts"]
 be/test/
-  setup.ts            # creates database voca_test_<pid>, runs Migrator, drops it at exit
+  runtime.ts          # picks Podman, else Docker, for Testcontainers
+  preload.ts          # once per run: start the Postgres container, export its URL, stop it at exit
+  setup.ts            # per file: creates database voca_test_<n>, runs Migrator, drops it at exit
   layers.ts           # TestLayer = Db(real) + GoogleStub + TestClock + seeded Random
   fixtures/fsrs-golden.json
   scheduling.test.ts  study-session.test.ts  timezone.test.ts
@@ -19,8 +22,23 @@ be/test/
 be/src/**/domain/*.test.ts   # pure unit + property tests next to the code
 ```
 
+### Container runtime: Podman first, Docker fallback
+
+Testcontainers talks to any Docker-compatible API through `DOCKER_HOST`. `test/runtime.ts` runs before Testcontainers is imported and sets it:
+
+1. **`DOCKER_HOST` already set** → used as is (explicit override, e.g. in CI).
+2. **Podman available** → `DOCKER_HOST` = the Podman socket, from `podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}'` on macOS, or `$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. Also sets `TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true`, which Ryuk (the cleanup container) needs under Podman.
+3. **Otherwise** → nothing is set and Testcontainers finds Docker by itself.
+
+If neither runtime answers, the run fails at preload with one message naming both, instead of every suite timing out.
+
+- **macOS:** `podman machine start` must have run first.
+- **Ryuk** removes the container even if `bun test` is killed, so no stray Postgres is left running.
+- **Bun:** Testcontainers is a Node library (via `dockerode`). Bun supports the HTTP-over-Unix-socket calls it makes; confirm with the first `be` test, and if it breaks, the fallback is starting the container from `preload.ts` with `Bun.spawn(["podman", "run", …])`.
+
 Isolation:
-- Each test file gets a fresh database.
+- One Postgres container per `bun test` run, shared by all files.
+- Each test file gets a fresh database inside it.
 - Each test runs inside a transaction that is always rolled back. This uses `sql.withTransaction` together with an `Effect.fail(Rollback)` sentinel.
 - Tests are fast and can run in parallel across files.
 
@@ -28,7 +46,7 @@ Isolation:
 
 ### 1. Scheduling: FSRS correctness
 - **Golden vectors:** 200 rating sequences generated once with `ts-fsrs` (FSRS-6 defaults, `enable_short_term: false`, fuzz off) and stored in `fsrs-golden.json`. The domain `schedule` must match `stability`, `difficulty`, and interval within `1e-4`.
-- **Properties** (FastCheck, 1,000 runs each):
+- **Properties** (`Arbitrary`, 1,000 runs each):
   - `difficulty ∈ [1, 10]` and `stability > 0`, always
   - success never decreases stability, and a lapse never increases it
   - `R(S, S) = 0.9 ± 1e-9`, and `R` is monotonically decreasing in `t`
@@ -44,7 +62,7 @@ Isolation:
   - Wrong ×3 then correct → 4 rows for the word, but exactly **1** `reviews` row, and the card's `due`, `stability`, and `difficulty` equal the result of the first (wrong) attempt.
   - The session becomes `completed` only after every word is cleared.
   - Inserting a second pending question for the same word directly in the database violates `one_pending_per_word`.
-- **Property test** (FastCheck): for a random answer script, the session ends with exactly `size` cleared words, retries ≥ wrong answers, and reviews = `size`.
+- **Property test** (`Arbitrary`): for a random answer script, the session ends with exactly `size` cleared words, retries ≥ wrong answers, and reviews = `size`.
 - Answering the same position twice → `409`. Concurrent answers to the same position are run with `Effect.all({concurrency: 2})`: exactly one succeeds.
 - A wrong first attempt makes the card due on or after the next study-day start.
 - Starting a second session abandons the first one, and the unanswered words of the first stay due.
@@ -88,6 +106,15 @@ Seed a known review history by inserting `reviews` rows directly with hand-compu
 - forecast buckets in the Learner's timezone
 - notifications: due and overdue counts, and the new-word limit
 
+### 4a. Activity heatmap (FR-18)
+- Reviews seeded across several months → `/me/activity?month=2026-10` returns one entry per active day in October with the right count, and nothing from September or November.
+- No `month` → the current study month. With `Asia/Tokyo` and `dayStartHour = 4`, at 03:30 local on 1 Dec the current month is still November.
+- A review at 03:30 local on 1 Dec counts for 30 Nov and appears in November's response.
+- A future month → `200` with `days: []`. `month=2026-13` or `2026-1` → `400`.
+- Retries are not counted: wrong ×3 then correct is 1 review on that day.
+- A review on the New York DST change days lands on the right date.
+- Deleting a deck does not remove its days.
+
 ### 4b. Slugs
 - **Unit:**
   - `slug(n)` always returns `n` characters, all from the Crockford alphabet, all uppercase.
@@ -102,7 +129,7 @@ Seed a known review history by inserting `reviews` rows directly with hand-compu
 
 ### 4c. Invariants in code & soft delete
 The database has no `CHECK`s, so these tests are the only guard:
-- **Every domain Schema:** FastCheck generates both valid and invalid values. Invalid ones are rejected at decode time with the correct field path. Examples: session size 8, retention 0.97, a 121-character title, a `review` card with null stability.
+- **Every domain Schema:** valid and invalid values (tables, plus `Arbitrary.schema` for valid ones). Invalid ones are rejected at decode time with the correct field path. Examples: session size 8, retention 0.97, a 121-character title, a `review` card with null stability.
 - **Row decoding:** a hand-corrupted row (for example `state = 'review'` with `due = NULL`, inserted directly) causes a decode failure when read. It is never served.
 - **Delete a deck:**
   - In one transaction, the deck, its words, and its cards get `deleted_at`, and a matching active session is abandoned.
@@ -129,10 +156,11 @@ The database has no `CHECK`s, so these tests are the only guard:
 ## Commands
 
 ```
-podman compose up -d postgres
-bun test                      # root: runs be + contract tests
+podman machine start          # macOS, once per boot; Linux needs nothing
+bun test                      # root: runs be + contract tests; Testcontainers starts Postgres itself
 bun test be/test/timezone     # one suite
-bun run typecheck             # tsc -b across workspaces
+DOCKER_HOST=unix:///var/run/docker.sock bun test   # force Docker
+bun run typecheck             # tsc across workspaces
 ```
 
 The frontend has no automated tests in the MVP. Its logic lives in the shared contract and on the server. Add Playwright for the study flow if regressions appear.

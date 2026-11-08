@@ -59,6 +59,28 @@ Accuracy, streak, history, and latency come from `reviews`, which holds first at
 | Calibration (30 days) | Average predicted `retrievability` vs. actual correct share for the same reviews. If the gap exceeds 5 points, MCQ inflation is happening and lowering retention helps |
 | Reviews per day (30 days) | For a sparkline |
 
+## Study activity heatmap (FR-18)
+
+One month per request: one grouped query over the `(learner_id, reviewed_at)` index. Each review is shifted into its study day, so days match the scheduler's:
+
+```sql
+SELECT ((reviewed_at AT TIME ZONE $tz) - make_interval(hours => $dayStartHour))::date AS day,
+       count(*) AS reviews
+FROM reviews
+WHERE learner_id = $learner
+  AND reviewed_at >= $from          -- studyDayBounds(first day of month).start
+  AND reviewed_at <  $to            -- studyDayBounds(last day of month).end
+GROUP BY day
+ORDER BY day;
+```
+
+- **What counts:** rows in `reviews`, which holds first attempts only. Retries are not activity, so 10 words studied is 10 no matter how many retries it took.
+- **Month navigation:** the current month is the month of today's study day in the Learner's timezone. The frontend disables **›** on it and **‹** on the month of `learner.createdAt` (from `/me`), so no extra request is needed to know the bounds. `?month` in the future returns an empty list instead of an error.
+- **Sparse response:** only days with reviews are sent. The frontend lays out the calendar, fills the gaps with 0, and draws days after today as outlines.
+- **Shading** is done on the frontend: level 0 for no reviews, then levels 1–4 split at the 25th, 50th and 75th percentiles of that month's non-zero days.
+- **Timezone changes** re-bucket history with the current timezone. Accepted: it moves at most a few hours' worth of reviews across a day boundary.
+- **Cost:** at most 31 days of rows. A heavy learner (200 reviews a day) has about 6k rows a month, a few milliseconds. Nothing is materialized.
+
 ## Notifications (FR-7)
 
 The panel is computed on request with one query. There is no stored notification table.

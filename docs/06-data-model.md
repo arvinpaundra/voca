@@ -1,11 +1,11 @@
 # 06 — Data Model (PostgreSQL)
 
-Requirements: **Postgres 13 or later**, no extensions. Migrations are numbered TypeScript files run by the `@effect/sql` `Migrator` at boot. The Migrator takes a lock, so it is safe if two pods ever start at the same time.
+Requirements: **PostgreSQL 18.3** (the cluster instance; the schema itself needs only 13 or later), no extensions. Migrations are numbered TypeScript files run by the `effect/sql` `Migrator` at boot. The Migrator takes a lock, so it is safe if two pods ever start at the same time.
 
 ## Rules
 
 1. **Invariants live in code, not the database.** There are no `CHECK` constraints. Every domain rule (session sizes, retention range, Card state consistency, text lengths, enum values) is an Effect `Schema` or a domain function in `be/src/*/domain/`. The rules are enforced in two places:
-   - **On the way in:** request bodies are decoded with `contract/` Schemas, and use cases build values only through domain constructors. For example, `SessionSize` is `Schema.Literal(7, 10, 15, 20)`.
+   - **On the way in:** request bodies are decoded with `contract/` Schemas, and use cases build values only through domain constructors. For example, `SessionSize` is `Schema.Literals([7, 10, 15, 20])`.
    - **On the way out of the database:** every row is decoded with `SqlSchema` into the same domain Schemas. A row that breaks a rule (say, someone edited it by hand) fails loudly with a decode error. It is never silently trusted.
 
 2. **Only concurrency guards stay in the database.** That means `UNIQUE` indexes, `NOT NULL`, and foreign keys. Application code cannot guarantee uniqueness under concurrent requests without locks, and a unique index is the cheapest lock. Each unique index below says which race it prevents. Foreign keys use the default `NO ACTION` (no cascades). With soft delete, parent rows are never physically deleted, so these keys never block a normal operation; they only catch bugs.
@@ -21,7 +21,7 @@ Every entity the API exposes also has a **slug**. The slug is used everywhere ou
 | Entity | Slug length | Random bits | Example | URL |
 |---|---|---|---|---|
 | Learner | 8 | 40 | `K7Q2M9XD` | — (only in `sub`) |
-| Deck | 10 | 50 | `TQ7LM2PV9X` | `/decks/TQ7LM2PV9X` |
+| Deck | 10 | 50 | `TQ7KM2PV9X` | `/decks/TQ7KM2PV9X` |
 | Word (and its Cards) | 12 | 60 | `4HNCR8WYK2JD` | `/words/4HNCR8WYK2JD` |
 | Session | 14 | 70 | `G7PX2MQ9VB4KR8` | `/sessions/G7PX2MQ9VB4KR8` |
 
@@ -37,7 +37,7 @@ Every entity the API exposes also has a **slug**. The slug is used everywhere ou
   - The random source is an Effect service, so tests can seed it.
   - Bulk inserts (import, fork) generate slugs in the app and pass them through `unnest`.
 - **Collision:** a `23505` violation on a `*_slug` index makes infrastructure regenerate the slugs and retry the statement once. For bulk inserts it retries the whole transaction. Two collisions in a row are reported as a defect.
-- **Boundary:** `Slug(10)` is a Schema that uppercases its input, so a pasted lowercase slug still works, and then checks `^[0-9A-HJKMNP-TV-Z]{10}$`. It decodes to a branded `DeckSlug`. A wrong length or a bad character → `400 ValidationError`.
+- **Boundary:** `DeckSlug` (`contract/src/slug.ts`) is a Schema that uppercases its input, so a pasted lowercase slug still works, and then checks `^[0-9A-HJKMNP-TV-Z]{10}$`. It decodes to a branded `DeckSlug`. A wrong length or a bad character → `400`.
 - **Resolving:** the slug is looked up in the same query as the ownership check and the `deleted_at IS NULL` filter. Internal IDs never leave infrastructure.
 - **No information leaks:** slugs are fully random, so unlike a ULID or a sequential ID, they reveal neither the creation time nor how many rows exist.
 
@@ -200,7 +200,7 @@ CREATE TABLE reviews (
 -- race: double submit of attempt 1 scheduling the card twice
 CREATE UNIQUE INDEX ON reviews (session_id, word_id);
 CREATE INDEX ON reviews (word_id, drill, reviewed_at);
-CREATE INDEX ON reviews (learner_id, reviewed_at);
+CREATE INDEX ON reviews (learner_id, reviewed_at);     -- activity heatmap, deck stats
 ```
 
 Defaults such as `now()` and `false` are not set in the database. The app supplies every value through its constructor, so the domain is the single source of defaults. A unique violation (`23505`) is mapped in infrastructure to a domain error, for example `DuplicateWord` or `QuestionAlreadyAnswered`.
