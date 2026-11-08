@@ -2,7 +2,7 @@
   "name": "voca",
   "private": true,
   "type": "module",
-  "workspaces": ["contract"],
+  "workspaces": ["contract", "fe"],
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "test": "bun test",

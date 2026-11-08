@@ -1,0 +1,13 @@
+.term {
+  font-family: var(--f-term);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.lg {
+  font-size: 76px;
+}
+
+.md {
+  font-size: 48px;
+}

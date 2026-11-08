@@ -1,0 +1,24 @@
+/* Washi Minimal tokens (ADR 19, design-system.html) */
+:root {
+  --bg: #eee7da;
+  --surface: #f6f1e8;
+  --ink: #1e1c19;
+  --muted: #6a6256;
+  --line: #d9d2c2;
+  --accent: #b8432e;
+  --accent-ink: #ffffff;
+  --primary: #1e1c19;
+  --primary-ink: #fbf9f4;
+  --ok: #55704c;
+  --ok-bg: #e9eee3;
+  --bad: #b8432e;
+  --bad-bg: #f5e6e0;
+  --focus: #b8432e;
+  --radius: 3px;
+  --bw: 1px;
+  --gap: 32px;
+  --f-display: "Shippori Mincho", serif;
+  --f-body: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+  --f-term: "Shippori Mincho", serif;
+  --ease: 150ms ease;
+}

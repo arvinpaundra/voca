@@ -1,0 +1,16 @@
+.wordmark {
+  font-family: var(--f-display);
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.seal {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 2px;
+  display: inline-block;
+}
