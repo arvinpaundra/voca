@@ -43,7 +43,7 @@ ENTRYPOINT ["/voca-api"]
 
 `--compile` produces a single self-contained binary with no `node_modules` at runtime, so the image is about 60 MB.
 
-The node `mio-vnc` is **arm64** (verified: 4 vCPU, 24 GiB RAM, about 20% memory in use). Build the image with `docker buildx --platform linux/arm64`, which works natively on Apple Silicon.
+The node `mio-vnc` is **arm64** (verified: 4 vCPU, 24 GiB RAM, about 20% memory in use). Build the image with `podman build --platform linux/arm64`, which works natively on Apple Silicon.
 
 ### Manifests (`deploy/k8s/`, plain YAML)
 | File | Content |

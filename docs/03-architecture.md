@@ -19,13 +19,13 @@ voca/
 │   │   └── insight/{application,infrastructure,http}/   # read models: no domain layer
 │   ├── migrations/         # 0001_init.ts … (@effect/sql Migrator)
 │   ├── test/               # integration tests (real Postgres)
-│   └── Dockerfile
+│   └── Containerfile
 ├── fe/                     # @voca/fe: React + TanStack + Vite → Cloudflare Pages
 │   ├── src/{routes/, features/, lib/api.ts, main.tsx}
 │   ├── public/{_redirects,_headers}
 │   └── vite.config.ts
 ├── deploy/k8s/             # plain YAML: namespace, deployment, service, ingress, secret.example
-├── docker-compose.yml      # postgres for local dev + tests
+├── compose.yaml            # postgres for local dev + tests
 └── docs/
 ```
 

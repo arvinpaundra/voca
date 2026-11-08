@@ -3,7 +3,7 @@
 Tooling:
 - **`bun test`** is the runner.
 - **`effect/FastCheck`** provides property tests; it ships with `effect`, so there is no extra dependency.
-- A **real Postgres** instance is started with `docker compose`.
+- A **real Postgres** instance is started with `podman compose`.
 
 There are no mocks for the database. In-memory layers are used only for Google, so tests never call the network.
 
@@ -129,7 +129,7 @@ The database has no `CHECK`s, so these tests are the only guard:
 ## Commands
 
 ```
-docker compose up -d postgres
+podman compose up -d postgres
 bun test                      # root: runs be + contract tests
 bun test be/test/timezone     # one suite
 bun run typecheck             # tsc -b across workspaces
