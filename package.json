@@ -1,0 +1,14 @@
+{
+  "name": "voca",
+  "private": true,
+  "type": "module",
+  "workspaces": ["contract"],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc -p contract"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.10",
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@voca/contract",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "effect": "4.1.2"
+  }
+}
