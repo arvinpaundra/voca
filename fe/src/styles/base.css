@@ -47,7 +47,7 @@ select {
   outline-offset: 3px;
 }
 
-/* Utility classes (global, from design-system.html) */
+/* Utility classes */
 .label {
   font-size: 12px;
   letter-spacing: 0.08em;

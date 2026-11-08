@@ -7,11 +7,21 @@ type ButtonProps = {
   variant?: Variant;
   href?: string;
   type?: "button" | "submit";
+  onClick?: () => void;
+  disabled?: boolean;
   className?: string | undefined;
   children: ReactNode;
 };
 
-export function Button({ variant, href, type = "button", className, children }: ButtonProps) {
+export function Button({
+  variant,
+  href,
+  type = "button",
+  onClick,
+  disabled,
+  className,
+  children,
+}: ButtonProps) {
   const classes = [styles.btn, variant && styles[variant], className].filter(Boolean).join(" ");
   if (href) {
     return (
@@ -21,7 +31,7 @@ export function Button({ variant, href, type = "button", className, children }: 
     );
   }
   return (
-    <button className={classes} type={type}>
+    <button className={classes} type={type} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );

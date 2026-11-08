@@ -1,0 +1,26 @@
+.page {
+  padding-top: 96px;
+  padding-bottom: 96px;
+}
+
+.inner {
+  max-width: 400px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+  justify-items: start;
+}
+
+.title {
+  font-size: 40px;
+}
+
+.note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.note code {
+  font-family: inherit;
+  font-size: 12px;
+}
