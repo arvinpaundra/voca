@@ -4,6 +4,7 @@
   "type": "module",
   "workspaces": ["contract"],
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "test": "bun test",
     "typecheck": "tsc -p contract"
   },

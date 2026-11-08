@@ -1,0 +1,19 @@
+#!/bin/sh
+# Prepares a fresh worktree: links shared ignored files and installs dependencies.
+# Enabled by `bun install` (root "prepare" script sets core.hooksPath=.githooks).
+
+# `git worktree add` passes an all-zero previous ref; skip ordinary branch switches.
+[ "$1" = "0000000000000000000000000000000000000000" ] || exit 0
+
+main="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)"
+[ "$main" = "$(pwd -P)" ] && exit 0 # the main checkout itself
+
+# Shared, ignored files: symlinked so an edit in the main checkout reaches every worktree.
+# Per-worktree overrides (PORT, DATABASE_URL) go in an unlinked .env.local.
+for f in .env; do
+  [ -e "$main/$f" ] && [ ! -e "$f" ] && ln -s "$main/$f" "$f" && echo "worktree: linked $f"
+done
+
+# node_modules is never shared: workspace links must point at this worktree's own packages.
+# Bun's global cache makes this install near-instant.
+bun install --frozen-lockfile

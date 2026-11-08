@@ -115,6 +115,21 @@ Rules that keep the service cheap:
 - Analytics are computed from indexed tables when requested.
 - Nothing is cached in-process. Postgres is the cache.
 
+## Parallel work with git worktrees
+
+Several branches can run at once, each in its own `git worktree`. Ignored files are not checked out into a worktree, so a versioned hook prepares it:
+
+- **`.githooks/post-checkout`** runs on `git worktree add` (git passes an all-zero previous ref; ordinary branch switches are skipped). It is enabled by the root `prepare` script (`git config core.hooksPath .githooks`), which `bun install` runs, and the setting is shared by every worktree.
+- **`.env` is symlinked** to the main checkout's copy, so one edit reaches every worktree.
+- **`.env.local` is not linked.** Put per-worktree values there (`PORT`, `DATABASE_URL`) so two dev servers don't collide. It overrides `.env`.
+- **`node_modules` is never shared.** Workspace links (`@voca/contract` → `contract/`) must point at the worktree's own packages, and branches may differ in dependencies. The hook runs `bun install --frozen-lockfile` instead; Bun's global cache makes it take well under a second.
+- **Tests need nothing extra:** each `bun test` run starts its own Postgres through Testcontainers ([11](11-testing.md)).
+
+```sh
+git worktree add ../voca-feature -b feat/feature   # links .env, installs dependencies
+git worktree remove ../voca-feature
+```
+
 ## Configuration
 
 Environment variables are read through Effect `Config`, so a missing variable fails at boot with a clear message:
