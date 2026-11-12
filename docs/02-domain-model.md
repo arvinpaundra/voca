@@ -73,7 +73,7 @@ There is no event bus. Contexts communicate through application-layer calls insi
 Deletes are **soft deletes** (`deletedAt`). Removing a Deck or Word cascades to its children through an explicit use-case step, never through the database.
 
 ### Learner (Identity)
-- `googleSub` is unique. `timezone` is a valid IANA zone. `dayStartHour` is in 0..23. `desiredRetention` is in 0.80..0.95. `newPerDay` is in 0..200. `defaultSessionSize` ∈ {7, 10, 15, 20}.
+- `googleSub` is unique. `timezone` is a valid IANA zone. `dayStartHour` is in 0..23. `desiredRetention` is in 0.80..0.95. `newPerDay` is in 0..200. `defaultSessionSize` ∈ {7, 10, 15, 20}. Defaults for a new Learner: `dayStartHour 4`, `desiredRetention 0.90`, `newPerDay 20`, `defaultSessionSize 10`, `defaultMode easy` (ADR 28).
 
 ### Deck (Library), the root of Words
 - It has exactly one owner, and only the owner can change it.

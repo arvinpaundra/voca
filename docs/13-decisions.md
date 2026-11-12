@@ -30,6 +30,8 @@
 | 24 | Request validation failures return Effect's built-in empty `400` | A custom `ValidationError` body | The frontend decodes with the same contract Schemas first, so the server's 400 only signals a client bug. CSV row errors stay a typed `ImportRejected` |
 | 25 | Marking an unstudied (word, drill) as hard returns `404` | Creating a blank Card | Cards stay lazy: one exists only after a first answer. The UI hides the button |
 | 26 | Integration tests start Postgres with **Testcontainers**: Podman by default, Docker as the fallback | `podman compose` started by hand; an in-memory database | `bun test` needs no setup step, uses the production image (`postgres:18.3-alpine`), and cleans up after itself. Works on either runtime through `DOCKER_HOST` |
+| 27 | Domain code may import Schemas from `@voca/contract` (primitives such as `Timezone`, `SessionSize`, `LearnerSettings`); rows are decoded with those same Schemas | Duplicating every primitive in `be/*/domain` | One definition per rule. `contract` depends only on `effect`, so the domain stays free of IO |
+| 28 | A new Learner starts with `dayStartHour 4`, `desiredRetention 0.90`, `newPerDay 20`, `defaultSessionSize 10`, `defaultMode easy`; `timezone` comes from the sign-in request. Every later sign-in refreshes `email`, `name`, `avatarUrl` from Google and leaves settings alone | Asking on first sign-in | No onboarding form. 10 is the middle choice; easy mode is the gentler start |
 
 ## Open questions for you
 
