@@ -1,2 +1,4 @@
 [test]
 preload = ["./test/preload.ts"]
+# The first test in a file builds its database (create + migrate): ~3 s on a warm Podman VM, more when busy.
+timeout = 30000
