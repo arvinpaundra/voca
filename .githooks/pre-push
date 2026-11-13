@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks a push that fails the fast gate (lint, typecheck, contract/fe tests).
+# CI runs the full gate: Testcontainers tests and the fe build.
+exec bun run verify --fast

@@ -5,11 +5,15 @@
   "workspaces": ["be", "contract", "fe"],
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
-    "test": "bun test",
-    "typecheck": "tsc -p contract && tsc -p be"
+    "verify": "bun scripts/verify.ts",
+    "lint": "ast-grep scan",
+    "test": "bun run --filter '*' test",
+    "typecheck": "tsc -p contract && tsc -p be && tsc -p fe"
   },
   "devDependencies": {
+    "@ast-grep/cli": "0.51.2",
     "@types/bun": "1.3.10",
     "typescript": "7.0.2"
-  }
+  },
+  "trustedDependencies": ["@ast-grep/cli"]
 }

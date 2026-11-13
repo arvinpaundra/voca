@@ -1,0 +1,7 @@
+#!/bin/sh
+# Rejects non-Conventional headers and attribution lines. Rules: AGENTS.md "Commits and PRs".
+sh scripts/lint-commit.sh "$(head -n1 "$1")" || exit 1
+if grep -qiE '^co-authored-by:|generated with' "$1"; then
+  echo "commit message must not contain attribution (Co-authored-by / Generated with)" >&2
+  exit 1
+fi
