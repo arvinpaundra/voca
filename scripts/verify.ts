@@ -1,15 +1,15 @@
 // The one gate for agents, the pre-push hook, and CI. Stops at the first failing step.
 //
 //   bun run verify                      scope = workspaces touched since origin/master
-//   bun run verify --issue 12 --sha 3fa9c1d2   + path guard: only the issue's `allow` globs may change, `locked` files never
-//   bun run verify --issue 12 --print-sha      prints the sha of the issue's limits block (the dispatcher puts it in the task message)
+//   bun run verify --issue 12 --hash 3fa9c1d2  + path guard: only the issue's `allow` globs may change, `locked` files never
+//   bun run verify --issue 12 --print-hash     prints the hash of the issue's limits block (the dispatcher puts it in the task message)
 //   bun run verify --scope all          or a list: --scope be,fe
 //   bun run verify --fast               skip Testcontainers tests and the fe build (pre-push)
 import { Glob } from "bun"
 import { parseArgs } from "node:util"
 
 const { values: opt } = parseArgs({
-  options: { issue: { type: "string" }, sha: { type: "string" }, "print-sha": { type: "boolean", default: false }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
+  options: { issue: { type: "string" }, hash: { type: "string" }, "print-hash": { type: "boolean", default: false }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
 })
 const WORKSPACES = ["contract", "be", "fe"] as const
 type Ws = (typeof WORKSPACES)[number]
@@ -35,25 +35,26 @@ const step = (name: string, cmd: string[], cwd = ".") => {
 }
 
 // Task = a GitHub issue whose body has one ```yaml block with scope, allow, locked (see .github/ISSUE_TEMPLATE/task.md).
-// The dispatcher passes the block's sha; an edited block (a worker widening its own limits) fails the check.
-type Task = { scope?: string; allow?: string[]; locked?: string[] }
+// The dispatcher passes the block's hash; an edited block (a worker widening its own limits) fails the check.
+type Task = { scope?: string; base?: string; allow?: string[]; locked?: string[] }
 const loadTask = async (n: string): Promise<Task> => {
   const r = run(["gh", "issue", "view", n, "--json", "body", "-q", ".body"])
   if (!r.ok) fail("task issue", `cannot read issue #${n} (needs network and \`gh auth login\`):\n${r.out}`)
   const block = /```ya?ml\n([\s\S]*?)```/.exec(r.out)?.[1]
   if (!block) fail("task issue", `issue #${n} has no \`\`\`yaml limits block`)
-  const sha = new Bun.CryptoHasher("sha256").update(block!.trim()).digest("hex").slice(0, 8)
-  if (opt["print-sha"]) {
-    console.log(sha)
+  const hash = new Bun.CryptoHasher("sha256").update(block!.trim()).digest("hex").slice(0, 8)
+  if (opt["print-hash"]) {
+    console.log(hash)
     process.exit(0)
   }
-  if (sha !== opt.sha) fail("task issue", `limits block of #${n} changed (sha ${sha}, dispatched ${opt.sha ?? "none"}). Do not edit the issue; report it.`)
+  if (hash !== opt.hash) fail("task issue", `limits block of #${n} changed (hash ${hash}, dispatched ${opt.hash ?? "none"}). Do not edit the issue; report it.`)
   return Bun.YAML.parse(block!) as Task
 }
 const task: Task | undefined = opt.issue ? await loadTask(opt.issue) : undefined
 
 // Files changed since the branch left master: committed, staged, unstaged, untracked.
-const base = run(["git", "merge-base", "HEAD", "origin/master"])
+// `base`: the dispatch commit that already holds the locked tests, so they don't count as the worker's changes.
+const base = task?.base ? { ok: true, out: task.base } : run(["git", "merge-base", "HEAD", "origin/master"])
 const changed = base.ok
   ? [...new Set([
       ...run(["git", "diff", "--name-only", base.out]).out.split("\n"),
