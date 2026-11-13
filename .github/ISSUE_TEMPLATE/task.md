@@ -9,6 +9,7 @@ labels: task
 # Read by `bun run verify --issue <N> --sha <sha>`. Get the sha with `bun run verify --issue <N> --print-sha`.
 # Editing this block after dispatch makes verify fail.
 scope: be                       # be | fe | be,fe
+base: <sha>                     # dispatch commit that already contains the locked tests; changes are measured from it
 allow:                          # globs the worker may change; everything else fails the path guard
   - be/src/identity/**
 locked:                         # tests written red by the decision thread; any change fails

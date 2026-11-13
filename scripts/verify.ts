@@ -36,7 +36,7 @@ const step = (name: string, cmd: string[], cwd = ".") => {
 
 // Task = a GitHub issue whose body has one ```yaml block with scope, allow, locked (see .github/ISSUE_TEMPLATE/task.md).
 // The dispatcher passes the block's sha; an edited block (a worker widening its own limits) fails the check.
-type Task = { scope?: string; allow?: string[]; locked?: string[] }
+type Task = { scope?: string; base?: string; allow?: string[]; locked?: string[] }
 const loadTask = async (n: string): Promise<Task> => {
   const r = run(["gh", "issue", "view", n, "--json", "body", "-q", ".body"])
   if (!r.ok) fail("task issue", `cannot read issue #${n} (needs network and \`gh auth login\`):\n${r.out}`)
@@ -53,7 +53,8 @@ const loadTask = async (n: string): Promise<Task> => {
 const task: Task | undefined = opt.issue ? await loadTask(opt.issue) : undefined
 
 // Files changed since the branch left master: committed, staged, unstaged, untracked.
-const base = run(["git", "merge-base", "HEAD", "origin/master"])
+// `base`: the dispatch commit that already holds the locked tests, so they don't count as the worker's changes.
+const base = task?.base ? { ok: true, out: task.base } : run(["git", "merge-base", "HEAD", "origin/master"])
 const changed = base.ok
   ? [...new Set([
       ...run(["git", "diff", "--name-only", base.out]).out.split("\n"),

@@ -16,9 +16,10 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 
 ```
 1. decision    → ADR / contract change committed to master
-2. spec        → locked tests written red, committed to master; task issue created (limits block + DO);
+2. spec        → locked tests written red on a local dispatch branch (never master, so master stays green);
+                 its HEAD is the limits block's `base`; task issue created (limits block + DO);
                  `bun run verify --issue N --print-sha` gives the sha
-3. dispatch    → implementer gets "do issue #N, sha S" (AGENTS.md is loaded automatically)
+3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets "do issue #N, sha S" (AGENTS.md is loaded automatically)
 4. self-check  → implementer loops on `bun run verify --issue N --sha S` until green, opens a PR
 5. re-check    → decision thread re-runs the same command in the worktree; compares the diff against DO
 6. fail        → failing output goes back to the same implementer; max 2 rounds,
