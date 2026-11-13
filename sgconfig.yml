@@ -1,0 +1,2 @@
+# ast-grep (`bun run lint`). typescript-eslint can't run here: TS 7 ships no JS compiler API.
+ruleDirs: [lint]

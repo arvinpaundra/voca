@@ -1,0 +1,67 @@
+# docs/03 "Layers inside a bounded context": http → application → domain; infrastructure implements application ports.
+id: domain-imports
+language: TypeScript
+files: ["be/src/*/domain/**/*.ts"]
+severity: error
+message: "domain may import only `effect` (Schema/Either/Option/Data), `@voca/contract`, and its own domain files (docs/03, ADR 27). No IO, no other layer."
+rule:
+  kind: import_statement
+  has:
+    field: source
+    regex: "/(application|infrastructure|http|shared)/|@effect/|jose|effect/(sql|http)|\"bun|\"node:"
+---
+id: application-imports
+language: TypeScript
+files: ["be/src/*/application/**/*.ts"]
+severity: error
+message: "application may import domain, its own ports, `effect`, `@voca/contract` (docs/03). Concrete SQL/HTTP/JWT belongs in infrastructure."
+rule:
+  kind: import_statement
+  has:
+    field: source
+    regex: "/(infrastructure|http)/|@effect/|jose|effect/(sql|http)"
+---
+id: infrastructure-imports
+language: TypeScript
+files: ["be/src/*/infrastructure/**/*.ts"]
+severity: error
+message: "infrastructure must not import http (docs/03)."
+rule:
+  kind: import_statement
+  has: { field: source, regex: "/http/" }
+---
+id: http-imports
+language: TypeScript
+files: ["be/src/*/http/**/*.ts"]
+severity: error
+message: "http handlers call use cases; no SQL, no repositories (docs/03). Wire infrastructure layers in be/src/main.ts."
+rule:
+  kind: import_statement
+  has: { field: source, regex: "/infrastructure/|effect/sql|@effect/sql" }
+---
+id: contract-imports
+language: TypeScript
+files: ["contract/src/**/*.ts"]
+severity: error
+message: "contract depends only on `effect` (docs/03)."
+rule:
+  kind: import_statement
+  has: { field: source, not: { regex: "^.(effect|\\.)" } }
+---
+id: fe-no-be
+language: TypeScript
+files: ["fe/**/*.ts"]
+severity: error
+message: "fe talks to the backend only through `@voca/contract` + HttpApiClient, never by importing be/."
+rule:
+  kind: import_statement
+  has: { field: source, regex: "be/src|@voca/be" }
+---
+id: fe-no-be-tsx
+language: Tsx
+files: ["fe/**/*.tsx"]
+severity: error
+message: "fe talks to the backend only through `@voca/contract` + HttpApiClient, never by importing be/."
+rule:
+  kind: import_statement
+  has: { field: source, regex: "be/src|@voca/be" }
