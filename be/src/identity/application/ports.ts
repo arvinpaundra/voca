@@ -1,11 +1,12 @@
 import type { Effect, Option } from "effect"
 import { Context, Data } from "effect"
-import type { LearnerSlug } from "@voca/contract"
+import type { LearnerSettings, LearnerSlug } from "@voca/contract"
 import type { LearnerRecord } from "../domain/learner.ts"
 
 /** Ports have exactly one implementation each, in `infrastructure/`; tests swap in other layers. Infra failures are defects. */
 export class LearnerRepo extends Context.Service<LearnerRepo, {
   findBySlug(slug: LearnerSlug): Effect.Effect<Option.Option<LearnerRecord>>
+  saveSettings(id: bigint, settings: LearnerSettings): Effect.Effect<void>
 }>()("voca/identity/LearnerRepo") {}
 
 export class InvalidToken extends Data.TaggedError("InvalidToken")<{}> {}

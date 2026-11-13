@@ -35,7 +35,12 @@ export const LearnerRepoLive = Layer.effect(
     })
 
     return LearnerRepo.of({
-      findBySlug: (slug) => findBySlug(slug).pipe(Effect.map(Option.map(toRecord)), Effect.orDie)
+      findBySlug: (slug) => findBySlug(slug).pipe(Effect.map(Option.map(toRecord)), Effect.orDie),
+      saveSettings: (id, settings) => sql`
+        UPDATE learners SET timezone = ${settings.timezone}, day_start_hour = ${settings.dayStartHour},
+          desired_retention = ${settings.desiredRetention}, new_per_day = ${settings.newPerDay},
+          default_session_size = ${settings.defaultSessionSize}, default_mode = ${settings.defaultMode}
+        WHERE id = ${id}`.pipe(Effect.asVoid, Effect.orDie)
     })
   })
 )

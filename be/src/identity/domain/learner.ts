@@ -1,5 +1,6 @@
 import { Data, Schema } from "effect"
 import type { Learner } from "@voca/contract"
+import type { UpdateSettings } from "@voca/contract"
 import { LearnerSettings, LearnerSlug } from "@voca/contract"
 
 /**
@@ -25,6 +26,12 @@ export const toLearner = (record: LearnerRecord): typeof Learner.Type => ({
   avatarUrl: record.avatarUrl,
   createdAt: record.createdAt,
   settings: record.settings
+})
+
+/** Each key present in the patch replaces the old value; absent keys stay as they were. */
+export const applySettingsPatch = (settings: LearnerSettings, patch: typeof UpdateSettings.Type): LearnerSettings => ({
+  ...settings,
+  ...patch
 })
 
 export class LearnerNotFound extends Data.TaggedError("LearnerNotFound")<{}> {}
