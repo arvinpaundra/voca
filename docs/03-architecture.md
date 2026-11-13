@@ -42,7 +42,7 @@ http  ──▶  application  ──▶  domain
 
 | Layer | Contains | May import | Must not |
 |---|---|---|---|
-| **domain** | Branded types, Schemas, pure functions, `Data.TaggedError` domain errors | `effect` only (`Schema`, `Either`, `Option`, `Data`) | IO, `Effect` services, Clock, SQL |
+| **domain** | Branded types, Schemas, pure functions, `Data.TaggedError` domain errors | `effect` (`Schema`, `Either`, `Option`, `Data`) and Schemas from `@voca/contract` (ADR 27) | IO, `Effect` services, Clock, SQL |
 | **application** | Use cases as `Effect.gen` programs; ports as `Context.Tag` | domain, its own ports | concrete SQL, HTTP |
 | **infrastructure** | Repository implementations (`SqlClient`), Google client, JWT signer as `Layer`s | application ports, domain | business rules |
 | **http** | `HttpApiBuilder.group` handlers: decode → use case → encode | application, contract | business rules, SQL |
