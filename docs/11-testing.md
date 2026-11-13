@@ -3,7 +3,7 @@
 Tooling:
 - **`bun test`** is the runner.
 - **`effect/Arbitrary`** provides property tests (Effect 4 has its own generator and runner, `Arbitrary.schema` + `Arbitrary.checkEffect`; FastCheck is gone), so there is no extra dependency.
-- A **real Postgres** is started by **Testcontainers** (`testcontainers` + `@testcontainers/postgresql` 12.x, `be` dev dependencies), using the same image as production: `postgres:18.3-alpine`. Container runtime: **Podman by default, Docker as the fallback** (below).
+- A **real Postgres** is started by **Testcontainers** (`testcontainers` 12.x, a `be` dev dependency), using the same image as production: `postgres:18.3-alpine`. Container runtime: **Podman by default, Docker as the fallback** (below).
 
 There are no mocks for the database. In-memory layers are used only for Google, so tests never call the network.
 
@@ -12,10 +12,11 @@ There are no mocks for the database. In-memory layers are used only for Google, 
 ```
 be/bunfig.toml        # [test] preload = ["./test/preload.ts"]
 be/test/
-  runtime.ts          # picks Podman, else Docker, for Testcontainers
-  preload.ts          # once per run: start the Postgres container, export its URL, stop it at exit
-  setup.ts            # per file: creates database voca_test_<n>, runs Migrator, drops it at exit
-  layers.ts           # TestLayer = Db(real) + GoogleStub + TestClock + seeded Random
+  runtime.ts          # picks Podman, else Docker, for Testcontainers; turns Ryuk off
+  preload.ts          # once per run: start the Postgres container, export TEST_PG_ADMIN_URL, stop it after the run
+  setup.ts            # makeTestDb(): per file, creates database voca_test_<n>, runs the migrations, drops it on release; resetDb
+  layers.ts           # TestLayer = Db(real) (+ GoogleStub + TestClock + seeded Random as those contexts arrive)
+  db.test.ts          # smoke test of the above
   fixtures/fsrs-golden.json
   scheduling.test.ts  study-session.test.ts  timezone.test.ts
   analytics.test.ts   import.test.ts          auth.test.ts   community.test.ts
@@ -27,20 +28,23 @@ be/src/**/domain/*.test.ts   # pure unit + property tests next to the code
 Testcontainers talks to any Docker-compatible API through `DOCKER_HOST`. `test/runtime.ts` runs before Testcontainers is imported and sets it:
 
 1. **`DOCKER_HOST` already set** → used as is (explicit override, e.g. in CI).
-2. **Podman available** → `DOCKER_HOST` = the Podman socket, from `podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}'` on macOS, or `$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. Also sets `TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true`, which Ryuk (the cleanup container) needs under Podman.
+2. **Podman available** → `DOCKER_HOST` = the Podman socket, from `podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}'` on macOS, or `$XDG_RUNTIME_DIR/podman/podman.sock` on Linux.
 3. **Otherwise** → nothing is set and Testcontainers finds Docker by itself.
 
 If neither runtime answers, the run fails at preload with one message naming both, instead of every suite timing out.
 
 - **macOS:** `podman machine start` must have run first.
-- **Ryuk** removes the container even if `bun test` is killed, so no stray Postgres is left running.
-- **Bun:** Testcontainers is a Node library (via `dockerode`). Bun supports the HTTP-over-Unix-socket calls it makes; confirm with the first `be` test, and if it breaks, the fallback is starting the container from `preload.ts` with `Bun.spawn(["podman", "run", …])`.
+- **Two Bun workarounds** (the same ones the `bean` repo uses; Bun 1.3.10):
+  - **Ryuk is off** (`TESTCONTAINERS_RYUK_DISABLED=true`). Its startup check waits on a container log stream that never completes under Bun. The container is stopped in an `afterAll`. A killed run leaves its container behind, so each one carries a `voca-test=<pid>` label and `preload.ts` removes those whose owner process is gone.
+  - **A custom wait strategy** replaces the log-based default, which hangs for the same reason. It polls `SELECT 1` over TCP. `pg_isready` and an open port are not enough: Postgres's image runs a temporary server during `initdb`, and Podman's port forwarding accepts connections before the final server listens.
+- **Speed:** the container takes about 5–7 s to be ready, once per run. The first test in each file builds its database (create + migrate, about 3 s), so `bunfig.toml` raises the test timeout to 30 s.
+- `preload.ts` uses top-level `await`, which `lint/functional.yml` exempts for that one file.
 
 Isolation:
 - One Postgres container per `bun test` run, shared by all files.
-- Each test file gets a fresh database inside it.
-- Each test runs inside a transaction that is always rolled back. This uses `sql.withTransaction` together with an `Effect.fail(Rollback)` sentinel.
-- Tests are fast and can run in parallel across files.
+- Each test file gets a fresh, migrated database inside it (`makeTestDb()`), dropped when the file's runtime is disposed.
+- Each test starts from empty tables: `beforeEach(() => rt.runPromise(resetDb))` runs `TRUNCATE … RESTART IDENTITY CASCADE`. A transaction rolled back per test was the first plan, but HTTP-level tests call handlers on their own fibers, outside a test-level transaction, so it would not cover them.
+- Files run one after another, each against its own database.
 
 ## Correctness suites (the "integration tests for correctness metrics")
 
@@ -163,4 +167,4 @@ DOCKER_HOST=unix:///var/run/docker.sock bun test   # force Docker
 bun run typecheck             # tsc across workspaces
 ```
 
-The frontend has no automated tests in the MVP. Its logic lives in the shared contract and on the server. Add Playwright for the study flow if regressions appear.
+The frontend tests only its pure logic in `fe/src/lib` (PKCE, the token store). Everything else lives in the shared contract and on the server, so there are no component tests in the MVP. Add Playwright for the study flow if regressions appear.

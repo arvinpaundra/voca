@@ -16,6 +16,7 @@ rule: { kind: try_statement }
 id: no-async-await
 language: TypeScript
 files: ["be/**/*.ts", "contract/**/*.ts"]
+ignores: ["be/test/preload.ts"] # blocks on the container before any test runs (top-level await)
 severity: error
 message: "No async/await/new Promise (docs/03). Use `Effect.gen(function* () { const x = yield* ... })`; wrap promises with `Effect.tryPromise`."
 rule:
