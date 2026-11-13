@@ -36,9 +36,11 @@ Commit messages are enforced by `.githooks/commit-msg` (`scripts/lint-commit.sh`
 
 ## Effect 4.1.2: don't trust your memory
 
-Effect 4 renamed and moved many APIs, so names you remember from Effect 2/3 are often wrong. For example, `Effect.catchAll` doesn't exist; there is `Effect.catchTag`, `Effect.catchTags`, `Effect.catchCause` and others. Before using an API:
-1. Copy the pattern from existing code in the same layer.
-2. Otherwise read the type definitions: `be/node_modules/effect/dist/<Module>.d.ts` (`Effect`, `Layer`, `Schema`, …), `be/node_modules/effect/dist/http-api/`, `be/node_modules/effect/dist/sql/`.
+Effect 4 renamed and moved many APIs, so names you remember from Effect 2/3 are often wrong (`Effect.catchAll` doesn't exist). Before using an API, in this order:
+1. Copy the pattern from the reference slice: `be/src/identity/**` and `be/test/me.test.ts`.
+2. Read [`docs/agents/effect-cheatsheet.md`](docs/agents/effect-cheatsheet.md).
+3. Read Effect's own docs, shipped in the package: `be/node_modules/effect/AGENTS.md` and `be/node_modules/effect/ai-docs/src/` (runnable examples: HTTP API, SQL, testing, layers).
+4. Read the types: `be/node_modules/effect/dist/<Module>.d.ts`.
 
 Never guess a name; `bun run verify` will reject it at typecheck.
 
