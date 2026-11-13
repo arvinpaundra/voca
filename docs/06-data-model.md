@@ -54,7 +54,7 @@ CREATE TABLE learners (
   avatar_url           text,
   timezone             text NOT NULL,          -- IANA            (Timezone schema)
   day_start_hour       smallint NOT NULL,      -- 0..23           (DayStartHour schema)
-  desired_retention    real NOT NULL,          -- 0.80..0.95      (DesiredRetention schema)
+  desired_retention    double precision NOT NULL, -- 0.80..0.95  (DesiredRetention schema; not real: 0.9 would read back as 0.8999999761581421)
   new_per_day          smallint NOT NULL,      -- 0..200          (NewPerDay schema)
   default_session_size smallint NOT NULL,      -- 7|10|15|20      (SessionSize schema)
   default_mode         text NOT NULL,          -- easy|hard       (Mode schema)
