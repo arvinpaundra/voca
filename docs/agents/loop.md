@@ -18,9 +18,9 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 1. decision    → ADR / contract change committed to master
 2. spec        → locked tests written red on a local dispatch branch (never master, so master stays green);
                  its HEAD is the limits block's `base`; task issue created (limits block + DO);
-                 `bun run verify --issue N --print-sha` gives the sha
-3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets "do issue #N, sha S" (AGENTS.md is loaded automatically)
-4. self-check  → implementer loops on `bun run verify --issue N --sha S` until green, opens a PR
+                 `bun run verify --issue N --print-hash` gives the limits hash
+3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets the message below (AGENTS.md is loaded automatically)
+4. self-check  → implementer loops on `bun run verify --issue N --hash H` until green, opens a PR
 5. re-check    → decision thread re-runs the same command in the worktree; compares the diff against DO
 6. fail        → failing output goes back to the same implementer; max 2 rounds,
                  then escalate the model tier on the same worktree
@@ -33,6 +33,27 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 - a task needs a change to `contract/`, `docs/` or a locked test;
 - Opus also fails verify;
 - the reviewer and the tests disagree about what the spec means.
+
+## Dispatch checklist
+
+Before sending, from the dispatch branch:
+
+1. **The branch holds everything the worker needs**: the current `scripts/verify.ts` (with `base` support), the reference code, the locked tests. Anything missing here fails the worker's gate for reasons it cannot fix. (Pilot 2 lost a round to this.)
+2. The issue's `base` is the full sha of the dispatch branch's HEAD, the commit with the locked tests.
+3. `bun run verify --issue N --print-hash` works from that branch, and `bun run verify --issue N --hash H` gets past `✓ path guard` (it fails later, on the red tests, which is expected).
+4. The red tests are satisfiable: they pass against a throwaway implementation that you then discard.
+5. Every fact the task depends on is in the issue (pilot 2: the contract declares no not-found error for the endpoint, so the task said to use `Effect.orDie`).
+
+Dispatch message (the same every time; the issue carries the content):
+
+```
+Do GitHub issue #N in the repo you are in (arvinpaundra/voca). The issue is the approved design: implement it now, no separate design round.
+Your limits hash is H: your VERIFY command is `bun run verify --issue N --hash H`. (It is a hash of the issue's limits block, not a git commit.)
+Read AGENTS.md first, then `gh issue view N`. Follow AGENTS.md exactly, including the commit and PR rules. Do not edit the issue.
+Reply with the issue's REPLY WITH list.
+```
+
+If the worker reports a blocker, fix the cause yourself (it is usually the dispatch), then send it the corrected hash through the same thread; do not count that as a failed round.
 
 ## Task sizing
 

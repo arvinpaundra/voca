@@ -6,10 +6,10 @@ labels: task
 ---
 
 ```yaml
-# Read by `bun run verify --issue <N> --sha <sha>`. Get the sha with `bun run verify --issue <N> --print-sha`.
+# Read by `bun run verify --issue <N> --hash <hash>`. Get the limits hash with `bun run verify --issue <N> --print-hash`.
 # Editing this block after dispatch makes verify fail.
 scope: be                       # be | fe | be,fe
-base: <sha>                     # dispatch commit that already contains the locked tests; changes are measured from it
+base: <commit>                  # git commit (full sha) of the dispatch branch that already contains the locked tests; changes are measured from it
 allow:                          # globs the worker may change; everything else fails the path guard
   - be/src/identity/**
 locked:                         # tests written red by the decision thread; any change fails
@@ -25,5 +25,5 @@ REFERENCE: <existing files to copy the pattern from>
 DO:
 - <node: endpoint X returns Y / use case Z does W>
 DON'T: anything outside `allow`. Never edit contract/, docs/ or locked tests; report if they look wrong.
-VERIFY: bun run verify --issue <N> --sha <sha>
+VERIFY: bun run verify --issue <N> --hash <limits hash from your task message>
 REPLY WITH: files changed + the last 20 lines of VERIFY output + PR URL + anything you couldn't do

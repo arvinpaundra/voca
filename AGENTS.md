@@ -7,7 +7,7 @@ Voca is a spaced-repetition vocabulary app. Bun workspaces: `contract/` (shared 
 1. Work only in your own worktree and branch (named in the task).
 2. Read the issue (`gh issue view <N>`), then the docs sections it lists under SPEC. Read the `locked` tests: they are the spec. Make them pass; never edit them.
 3. Change only files matching the issue's `allow` globs. Never edit the issue itself.
-4. Run the VERIFY command from the issue (`bun run verify --issue <N> --sha <sha>`) and repeat until it ends with `verify: all green`. Fix the first error first.
+4. Run the VERIFY command from the issue (`bun run verify --issue <N> --hash <hash>`; the hash is the limits hash from your task message, not a git commit) and repeat until it ends with `verify: all green`. Fix the first error first.
 5. Commit, push, open a PR to `master` whose body says `Closes #<N>`, and reply with the issue's REPLY WITH list.
 
 If the spec, the contract or a locked test looks wrong or contradictory, **stop and report it**. Don't work around it. `contract/`, `docs/`, `scripts/`, `lint/`, `.github/`, `.githooks/` and this file belong to the decision thread.
@@ -62,7 +62,7 @@ Never guess a name; `bun run verify` will reject it at typecheck.
 
 | Command | What |
 |---|---|
-| `bun run verify [--issue N --sha S] [--fast]` | the gate: path guard, lint, typecheck, tests, fe build |
+| `bun run verify [--issue N --hash H] [--fast]` | the gate: path guard, lint, typecheck, tests, fe build |
 | `bun run lint` | ast-grep rules in `lint/` |
 | `bun run typecheck` | all workspaces |
 | `bun test` (inside `be/`, `fe/` or `contract/`) | that workspace's tests |
