@@ -14,7 +14,7 @@ export default Effect.gen(function* () {
     avatar_url           text,
     timezone             text NOT NULL,
     day_start_hour       smallint NOT NULL,
-    desired_retention    real NOT NULL,
+    desired_retention    double precision NOT NULL,
     new_per_day          smallint NOT NULL,
     default_session_size smallint NOT NULL,
     default_mode         text NOT NULL,
