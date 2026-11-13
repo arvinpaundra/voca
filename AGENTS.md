@@ -12,6 +12,28 @@ Voca is a spaced-repetition vocabulary app. Bun workspaces: `contract/` (shared 
 
 If the spec, the contract or a locked test looks wrong or contradictory, **stop and report it**. Don't work around it. `contract/`, `docs/`, `scripts/`, `lint/`, `.github/`, `.githooks/` and this file belong to the decision thread.
 
+## Trunk-based development
+
+`master` is the trunk: always green and releasable. There is no `develop` or release branch.
+
+- Branches are short-lived (merged within a day or two) and small: one issue, one PR, reviewable in minutes. Split anything bigger into steps that each merge on their own.
+- Rebase on `master` before opening the PR and before merging; never merge `master` into a branch. Squash-merge, then delete the branch.
+- Merge only with CI green. If `master` breaks, revert first and fix forward after.
+- Unfinished work still merges: keep it unreachable (not wired in, or behind a flag) and leave `master` working.
+- Contract changes are additive first: add the new shape, migrate FE and BE, then remove the old one in a later PR, so `be/` and `fe/` never break each other mid-way.
+
+## Commits and PRs
+
+Commit messages are enforced by `.githooks/commit-msg` (`scripts/lint-commit.sh`). PR titles and bodies are not checked, so follow the rules anyway.
+
+- **Header**: `type(scope): subject`. Types: `feat fix docs refactor test chore ci build perf revert`. Scopes: `contract be fe docs tasks lint ci verify` (`be` may add a context, e.g. `be/auth`); optional. Subject: imperative, lowercase start, no trailing period; whole header ≤ 72 chars. Breaking change: `!` after the scope, e.g. `feat(contract)!:`.
+- **Body** (optional, wrap at 72): why, not what. **Footer**: `Closes #n` / `Refs #n`, `BREAKING CHANGE: ...`.
+- **No attribution** in commits or PRs: no `Co-authored-by`, no "Generated with".
+- One logical change per commit; fold fixups into the commit they fix; no WIP commits.
+- Never `--no-verify`, never amend or force-push after pushing, never push to `master`, never commit `.env` or secrets.
+- Branch: `<type>/<name>` from the latest `master`.
+- **PR**: the title is `[Type] Proper title`, where Type is the commit type capitalised (`Feat Fix Docs Refactor Test Chore CI Build Perf Revert`), e.g. `[Feat] Add token refresh to the auth flow`. Capitalised, readable sentence; no trailing period. Fill every section of `.github/pull_request_template.md`: **Problem** (what and why), **Solution** (approach), **Changes** (bullets by layer), **Verification** (the `verify: all green` line), **Breaking / follow-ups**. Link the issue with `Closes #n`. Assign the PR to the user: `gh pr create --assignee @me`.
+
 ## Effect 4.1.2: don't trust your memory
 
 Effect 4 renamed and moved many APIs, so names you remember from Effect 2/3 are often wrong. For example, `Effect.catchAll` doesn't exist; there is `Effect.catchTag`, `Effect.catchTags`, `Effect.catchCause` and others. Before using an API:
