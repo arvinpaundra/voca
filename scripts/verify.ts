@@ -1,14 +1,15 @@
 // The one gate for agents, the pre-push hook, and CI. Stops at the first failing step.
 //
 //   bun run verify                      scope = workspaces touched since origin/master
-//   bun run verify --task tasks/X.md    + path guard: only the task's `allow` globs may change, `locked` files never
+//   bun run verify --issue 12 --sha 3fa9c1d2   + path guard: only the issue's `allow` globs may change, `locked` files never
+//   bun run verify --issue 12 --print-sha      prints the sha of the issue's limits block (the dispatcher puts it in the task message)
 //   bun run verify --scope all          or a list: --scope be,fe
 //   bun run verify --fast               skip Testcontainers tests and the fe build (pre-push)
 import { Glob } from "bun"
 import { parseArgs } from "node:util"
 
 const { values: opt } = parseArgs({
-  options: { task: { type: "string" }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
+  options: { issue: { type: "string" }, sha: { type: "string" }, "print-sha": { type: "boolean", default: false }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
 })
 const WORKSPACES = ["contract", "be", "fe"] as const
 type Ws = (typeof WORKSPACES)[number]
@@ -33,11 +34,23 @@ const step = (name: string, cmd: string[], cwd = ".") => {
   console.log(`✓ ${name}`)
 }
 
-// Task file: YAML frontmatter with scope, allow, locked (see tasks/_template.md).
+// Task = a GitHub issue whose body has one ```yaml block with scope, allow, locked (see .github/ISSUE_TEMPLATE/task.md).
+// The dispatcher passes the block's sha; an edited block (a worker widening its own limits) fails the check.
 type Task = { scope?: string; allow?: string[]; locked?: string[] }
-const task: Task | undefined = opt.task
-  ? (Bun.YAML.parse((await Bun.file(opt.task).text()).split(/^---$/m)[1] ?? "") as Task)
-  : undefined
+const loadTask = async (n: string): Promise<Task> => {
+  const r = run(["gh", "issue", "view", n, "--json", "body", "-q", ".body"])
+  if (!r.ok) fail("task issue", `cannot read issue #${n} (needs network and \`gh auth login\`):\n${r.out}`)
+  const block = /```ya?ml\n([\s\S]*?)```/.exec(r.out)?.[1]
+  if (!block) fail("task issue", `issue #${n} has no \`\`\`yaml limits block`)
+  const sha = new Bun.CryptoHasher("sha256").update(block!.trim()).digest("hex").slice(0, 8)
+  if (opt["print-sha"]) {
+    console.log(sha)
+    process.exit(0)
+  }
+  if (sha !== opt.sha) fail("task issue", `limits block of #${n} changed (sha ${sha}, dispatched ${opt.sha ?? "none"}). Do not edit the issue; report it.`)
+  return Bun.YAML.parse(block!) as Task
+}
+const task: Task | undefined = opt.issue ? await loadTask(opt.issue) : undefined
 
 // Files changed since the branch left master: committed, staged, unstaged, untracked.
 const base = run(["git", "merge-base", "HEAD", "origin/master"])
@@ -68,13 +81,13 @@ const derive = (): Ws[] => {
     const ws = WORKSPACES.find((w) => f.startsWith(`${w}/`))
     if (ws === "contract") return [...WORKSPACES] // both sides compile against it
     if (ws) touched.add(ws)
-    else if (!/^(docs|tasks)\/|\.md$/.test(f)) return [...WORKSPACES] // root config, scripts, lint rules
+    else if (!/^docs\/|\.md$/.test(f)) return [...WORKSPACES] // root config, scripts, lint rules
   }
   return WORKSPACES.filter((w) => touched.has(w))
 }
 const scope: Ws[] = opt.scope === "all" ? [...WORKSPACES] : opt.scope ? (opt.scope.split(",") as Ws[]) : derive()
 if (scope.length === 0) {
-  console.log("✓ nothing to verify (docs/tasks only)")
+  console.log("✓ nothing to verify (docs only)")
   process.exit(0)
 }
 console.log(`scope: ${scope.join(", ")}${opt.fast ? " (fast)" : ""}`)

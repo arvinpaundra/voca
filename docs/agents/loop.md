@@ -6,7 +6,7 @@ How the decision thread turns a decision into merged code using cheap implemente
 
 | Role | Model | Owns |
 |---|---|---|
-| Decision thread | Opus | `docs/`, `contract/`, `tasks/`, locked tests, reference code, `scripts/`, `lint/` |
+| Decision thread | Opus | `docs/`, `contract/`, task issues, locked tests, reference code, `scripts/`, `lint/` |
 | Implementer | Haiku first, then Sonnet, then Opus | the files in its task's `allow` list |
 | Reviewer | Sonnet or Opus, never the implementer's model | read-only |
 
@@ -16,15 +16,16 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 
 ```
 1. decision    → ADR / contract change committed to master
-2. spec        → locked tests written red + tasks/<id>.md (allow, locked, DO) committed to master
-3. dispatch    → implementer gets "do tasks/<id>.md" (AGENTS.md is loaded automatically)
-4. self-check  → implementer loops on `bun run verify --task tasks/<id>.md` until green, opens a PR
+2. spec        → locked tests written red, committed to master; task issue created (limits block + DO);
+                 `bun run verify --issue N --print-sha` gives the sha
+3. dispatch    → implementer gets "do issue #N, sha S" (AGENTS.md is loaded automatically)
+4. self-check  → implementer loops on `bun run verify --issue N --sha S` until green, opens a PR
 5. re-check    → decision thread re-runs the same command in the worktree; compares the diff against DO
 6. fail        → failing output goes back to the same implementer; max 2 rounds,
                  then escalate the model tier on the same worktree
 7. review      → reviewer reads diff + task + cited docs (never the implementer's summary);
                  blocking findings go back to the implementer, max 1 round
-8. merge       → CI green → the user merges
+8. merge       → CI green → the user merges; `Closes #N` closes the issue, so nothing accumulates
 ```
 
 **Stop and ask the user when:**
@@ -35,6 +36,7 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 ## Task sizing
 
 - One use case, endpoint or component per task, about 5 files.
+- The issue's limits block is hash-checked: the worker can't widen `allow`/`locked` without verify failing.
 - Red tests first: a task whose behaviour has no locked test is not ready to dispatch.
 - Name the reference files to copy. Without one, the first task in a new area goes to Sonnet or Opus.
 

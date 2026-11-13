@@ -2,15 +2,15 @@
 
 Voca is a spaced-repetition vocabulary app. Bun workspaces: `contract/` (shared HTTP API + Schemas), `be/` (Bun + Effect API), `fe/` (React + TanStack + Vite). The specs live in `docs/`; decisions in `docs/13-decisions.md`.
 
-## If you were given a task file (`tasks/<id>.md`)
+## If you were given a task (a GitHub issue)
 
 1. Work only in your own worktree and branch (named in the task).
-2. Read the task file, then the `spec` docs sections it lists. Read the `locked` tests: they are the spec. Make them pass; never edit them.
-3. Change only files matching the task's `allow` globs.
-4. Run `bun run verify --task tasks/<id>.md` and repeat until it ends with `verify: all green`. Fix the first error first.
-5. Commit, push, open a PR to `master`, and reply with the task's REPLY WITH list.
+2. Read the issue (`gh issue view <N>`), then the docs sections it lists under SPEC. Read the `locked` tests: they are the spec. Make them pass; never edit them.
+3. Change only files matching the issue's `allow` globs. Never edit the issue itself.
+4. Run the VERIFY command from the issue (`bun run verify --issue <N> --sha <sha>`) and repeat until it ends with `verify: all green`. Fix the first error first.
+5. Commit, push, open a PR to `master` whose body says `Closes #<N>`, and reply with the issue's REPLY WITH list.
 
-If the spec, the contract or a locked test looks wrong or contradictory, **stop and report it**. Don't work around it. `contract/`, `docs/`, `tasks/`, `scripts/`, `lint/`, `.github/`, `.githooks/` and this file belong to the decision thread.
+If the spec, the contract or a locked test looks wrong or contradictory, **stop and report it**. Don't work around it. `contract/`, `docs/`, `scripts/`, `lint/`, `.github/`, `.githooks/` and this file belong to the decision thread.
 
 ## Effect 4.1.2: don't trust your memory
 
@@ -40,7 +40,7 @@ Never guess a name; `bun run verify` will reject it at typecheck.
 
 | Command | What |
 |---|---|
-| `bun run verify [--task tasks/X.md] [--fast]` | the gate: path guard, lint, typecheck, tests, fe build |
+| `bun run verify [--issue N --sha S] [--fast]` | the gate: path guard, lint, typecheck, tests, fe build |
 | `bun run lint` | ast-grep rules in `lint/` |
 | `bun run typecheck` | all workspaces |
 | `bun test` (inside `be/`, `fe/` or `contract/`) | that workspace's tests |
