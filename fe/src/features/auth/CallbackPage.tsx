@@ -1,64 +1,58 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "../../components/Button";
 import { Container } from "../../components/Container";
-import { consumePkce, redirectUri, setAccessToken, REFRESH_TOKEN_KEY } from "../../lib/auth";
+import { session } from "../../lib/appSession";
+import { consumePkce, redirectUri } from "../../lib/auth";
+import { completeSignIn, type SignInFailure } from "../../lib/signIn";
 import styles from "./auth.module.css";
 
-type SignedIn = { accessToken: string; refreshToken: string };
+function failureMessage(reason: SignInFailure): string {
+  return reason === "google-error"
+    ? "You cancelled sign-in at Google."
+    : "Could not complete sign-in. Please try again.";
+}
 
 export function CallbackPage() {
-  const [failed, setFailed] = useState(false);
+  const navigate = useNavigate();
+  const [failure, setFailure] = useState<SignInFailure | null>(null);
+  // StrictMode runs effects twice, and the PKCE verifier is removed on its first read: only the first run may sign in.
+  const started = useRef(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state");
-    const pkce = consumePkce();
+    if (started.current) return;
+    started.current = true;
 
-    if (!code || !pkce || state !== pkce.state) {
-      setFailed(true);
-      return;
-    }
-
-    // shortcut: plain fetch until the Effect HttpApiClient is wired in.
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    fetch("/api/auth/google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code,
-        codeVerifier: pkce.verifier,
-        redirectUri: redirectUri(),
-        timezone,
-      }),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(String(res.status));
-        const body = (await res.json()) as SignedIn;
-        setAccessToken(body.accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, body.refreshToken);
-        // shortcut: no authenticated home yet; `/` is the only other route.
-        window.location.assign("/");
-      })
-      .catch(() => setFailed(true));
-  }, []);
+    completeSignIn({
+      search: window.location.search,
+      pkce: consumePkce,
+      session,
+      redirectUri: redirectUri(),
+      timezone,
+    }).then((outcome) => {
+      if (outcome.kind === "signed-in") {
+        void navigate({ to: "/", replace: true });
+        return;
+      }
+      setFailure(outcome.reason);
+    });
+  }, [navigate]);
 
   return (
     <div className={styles.page}>
       <Container>
         <div className={styles.inner}>
-          {failed ? (
+          {failure === null ? (
+            <p className={styles.body}>Signing you in…</p>
+          ) : (
             <>
               <h1 className={styles.title}>Sign-in failed</h1>
-              <p className={styles.body}>
-                Could not complete sign-in. The backend may not be running yet.
-              </p>
+              <p className={styles.body}>{failureMessage(failure)}</p>
               <Button variant="primary" href="/login">
                 Try again
               </Button>
             </>
-          ) : (
-            <p className={styles.body}>Signing you in…</p>
           )}
         </div>
       </Container>
