@@ -24,5 +24,5 @@ REFERENCE: <existing files to copy the pattern from>
 DO:
 - <node: endpoint X returns Y / use case Z does W>
 DON'T: anything outside `allow`. Never edit contract/, docs/ or locked tests; report if they look wrong.
-VERIFY: bun run verify --issue <N> --hash <limits hash from your task message>
+VERIFY: bun run verify --issue <N> --hash <hash>   # the dispatcher writes the real 8-hex hash here; CI reads it from this line
 REPLY WITH: files changed + the last 20 lines of VERIFY output + PR URL + anything you couldn't do

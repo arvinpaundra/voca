@@ -1,6 +1,6 @@
 #!/bin/sh
 # Usage: lint-commit.sh "<header>" — exits 1 if it isn't a Conventional Commit header.
-# Shared by .githooks/commit-msg and the CI PR-title check. Rules: AGENTS.md "Commits and PRs".
+# Used by .githooks/commit-msg only; PR titles are checked in .github/workflows/ci.yml. Rules: AGENTS.md "Commits and PRs".
 types='feat|fix|docs|refactor|test|chore|ci|build|perf|revert'
 scopes='contract|be|fe|docs|tasks|lint|ci|verify'
 re="^($types)(\(($scopes)(/[a-z0-9-]+)?\))?!?: [a-z0-9\`](.*[^.])?$"

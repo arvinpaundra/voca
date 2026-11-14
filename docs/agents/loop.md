@@ -40,7 +40,7 @@ Before sending, from the dispatch branch:
 
 1. **The branch holds everything the worker needs**: the current `scripts/verify.ts`, the reference code, the locked tests. Anything missing here fails the worker's gate for reasons it cannot fix. (Pilot 2 lost a round to this.)
 2. Each `locked` entry is `path: hash` from `bun run verify --print-locked`, so a rebase never invalidates it.
-3. `bun run verify --issue N --print-hash` works from that branch, and `bun run verify --issue N --hash H` gets past `✓ path guard` (it fails later, on the red tests, which is expected).
+3. Write the real limits hash into the issue's VERIFY line (it sits outside the yaml block, so the hash stays valid); CI reads it from there. `bun run verify --issue N --print-hash` works from that branch, and `bun run verify --issue N --hash H` gets past `✓ path guard` (it fails later, on the red tests, which is expected).
 4. The red tests are satisfiable: they pass against a throwaway implementation that you then discard.
 5. Every fact the task depends on is in the issue (pilot 2: the contract declares no not-found error for the endpoint, so the task said to use `Effect.orDie`).
 

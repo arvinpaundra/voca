@@ -1,15 +1,45 @@
 name: ci
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited] # edited: re-check after a title or body change
   push:
     branches: [master]
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
 jobs:
-  verify:
+  verify: # branch protection requires this exact name
     runs-on: ubuntu-latest # Docker is preinstalled, so Testcontainers works
+    env:
+      GH_TOKEN: ${{ github.token }}
+      # Untrusted text goes through env, never into the shell via ${{ }} (injection).
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_BODY: ${{ github.event.pull_request.body }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # verify needs the merge-base with origin/master
+          # The PR head, not GitHub's merge commit: the path guard measures the PR's own changes.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: PR title is "[Type] Title"
+        if: github.event_name == 'pull_request'
+        run: |
+          printf '%s\n' "$PR_TITLE" | grep -Eq '^\[(Feat|Fix|Docs|Refactor|Test|Chore|CI|Build|Perf|Revert)\] [A-Z].*[^.]$' \
+            || { echo "::error::PR title must be '[Type] Capitalised title' without a trailing period (AGENTS.md \"Commits and PRs\"): $PR_TITLE"; exit 1; }
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.10
       - run: bun install --frozen-lockfile
-      - run: bun run verify --scope all
+      # A task PR (`Closes #N` on an issue labelled `task`) runs the path guard with the hash written in that
+      # issue's VERIFY line. Ceiling: a PR without `Closes #N` skips the guard; the owner's review is the backstop.
+      - name: verify
+        run: |
+          n=$(printf '%s' "${PR_BODY:-}" | grep -oiE 'closes #[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
+          if [ -n "$n" ] && gh issue view "$n" --json labels -q '.labels[].name' | grep -qx task; then
+            hash=$(gh issue view "$n" --json body -q .body | grep -E '^VERIFY:' | grep -oE -- '--hash [0-9a-f]{8}' | grep -oE '[0-9a-f]{8}$' || true)
+            [ -n "$hash" ] || { echo "::error::issue #$n has no 8-hex --hash on its VERIFY line; the dispatcher must write it"; exit 1; }
+            bun run verify --scope all --issue "$n" --hash "$hash"
+          else
+            bun run verify --scope all
+          fi

@@ -24,7 +24,7 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 
 ## Commits and PRs
 
-Commit messages are enforced by `.githooks/commit-msg` (`scripts/lint-commit.sh`). PR titles and bodies are not checked, so follow the rules anyway.
+Commit messages are enforced by `.githooks/commit-msg` (`scripts/lint-commit.sh`); PR titles by CI (`.github/workflows/ci.yml`). PR bodies are not checked, so follow the rules anyway. CI also runs the path guard on any PR whose body says `Closes #N` for a task issue.
 
 - **Header**: `type(scope): subject`. Types: `feat fix docs refactor test chore ci build perf revert`. Scopes: `contract be fe docs tasks lint ci verify` (`be` may add a context, e.g. `be/auth`); optional. Subject: imperative, lowercase start, no trailing period; whole header ≤ 72 chars. Breaking change: `!` after the scope, e.g. `feat(contract)!:`.
 - **Body** (optional, wrap at 72): why, not what. **Footer**: `Closes #n` / `Refs #n`, `BREAKING CHANGE: ...`.
