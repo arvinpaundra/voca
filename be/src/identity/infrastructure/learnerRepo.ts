@@ -34,8 +34,19 @@ export const LearnerRepoLive = Layer.effect(
         FROM learners WHERE slug = ${slug} AND deleted_at IS NULL`
     })
 
+    const findById = SqlSchema.findOneOption({
+      Request: Schema.BigInt,
+      Result: LearnerRow,
+      execute: (id) => sql`
+        SELECT id::text AS id, slug, email, name, avatar_url AS "avatarUrl", created_at AS "createdAt",
+               timezone, day_start_hour AS "dayStartHour", desired_retention AS "desiredRetention",
+               new_per_day AS "newPerDay", default_session_size AS "defaultSessionSize", default_mode AS "defaultMode"
+        FROM learners WHERE id = ${id} AND deleted_at IS NULL`
+    })
+
     return LearnerRepo.of({
       findBySlug: (slug) => findBySlug(slug).pipe(Effect.map(Option.map(toRecord)), Effect.orDie),
+      findById: (id) => findById(id).pipe(Effect.map(Option.map(toRecord)), Effect.orDie),
       saveSettings: (id, settings) => sql`
         UPDATE learners SET timezone = ${settings.timezone}, day_start_hour = ${settings.dayStartHour},
           desired_retention = ${settings.desiredRetention}, new_per_day = ${settings.newPerDay},
