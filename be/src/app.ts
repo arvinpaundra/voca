@@ -10,6 +10,7 @@ import { TokenSignerLive } from "./identity/infrastructure/tokenSigner.ts"
 import { CommunityHandlers } from "./library/http/community.ts"
 import { LibraryHandlers } from "./library/http/library.ts"
 import { InsightHandlers } from "./insight/http/index.ts"
+import { InsightLive } from "./insight/infrastructure/index.ts"
 import { StudyHandlers } from "./study/http/index.ts"
 import { StudyLive } from "./study/infrastructure/index.ts"
 import { SystemHandlers } from "./shared/http/system.ts"
@@ -38,7 +39,8 @@ export const makeApiLayer = (options: { readonly jwtSecret: Redacted.Redacted<st
     TokenSignerLive(options.jwtSecret),
     DeckRepoLive,
     WordRepoLive,
-    StudyLive
+    StudyLive,
+    InsightLive
   )
   return HttpApiBuilder.layer(VocaApi).pipe(
     Layer.provide(groups),
