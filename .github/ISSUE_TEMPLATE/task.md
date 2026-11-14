@@ -9,11 +9,10 @@ labels: task
 # Read by `bun run verify --issue <N> --hash <hash>`. Get the limits hash with `bun run verify --issue <N> --print-hash`.
 # Editing this block after dispatch makes verify fail.
 scope: be                       # be | fe | be,fe
-base: <commit>                  # git commit (full sha) of the dispatch branch that already contains the locked tests; changes are measured from it
 allow:                          # globs the worker may change; everything else fails the path guard
   - be/src/identity/**
-locked:                         # tests written red by the decision thread; any change fails
-  - be/test/auth.test.ts
+locked:                         # tests written red by the decision thread, each pinned to its content hash; any change fails
+  be/test/auth.test.ts: 1a2b3c4d  # from `bun run verify --print-locked be/test/auth.test.ts`
 ```
 
 MODEL: haiku → sonnet → opus (escalate after 2 failed verify rounds)
