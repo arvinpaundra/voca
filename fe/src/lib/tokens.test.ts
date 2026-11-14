@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { REFRESH_KEY, createTokenStore } from "./tokens.ts"
 
-// docs/08-auth.md: access token in memory only, refresh token in localStorage ("voca.refreshToken"),
+// Access token in memory only, refresh token in localStorage ("voca.refreshToken"),
 // proactive refresh when `exp − now < 60 s`. The store takes its storage as an argument so it can be tested.
 const memoryStorage = () => {
   const data = new Map<string, string>()

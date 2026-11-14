@@ -1,16 +1,16 @@
-# docs/03 "Functional & monadic rules": no throw, try/catch, async/await in be/ or contract/.
+# Effectful code only: no throw, try/catch, async/await in be/ or contract/.
 id: no-throw
 language: TypeScript
 files: ["be/**/*.ts", "contract/**/*.ts"]
 severity: error
-message: "No `throw` (docs/03). Return a failure: `Effect.fail(new SomeError(...))` with a `Data.TaggedError`."
+message: "No `throw`. Return a failure: `Effect.fail(new SomeError(...))` with a `Data.TaggedError`."
 rule: { kind: throw_statement }
 ---
 id: no-try
 language: TypeScript
 files: ["be/**/*.ts", "contract/**/*.ts"]
 severity: error
-message: "No try/catch (docs/03). Wrap a foreign promise once with `Effect.tryPromise` in infrastructure; recover with `Effect.catchTag`."
+message: "No try/catch. Wrap a foreign promise once with `Effect.tryPromise` in infrastructure; recover with `Effect.catchTag`."
 rule: { kind: try_statement }
 ---
 id: no-async-await
@@ -18,7 +18,7 @@ language: TypeScript
 files: ["be/**/*.ts", "contract/**/*.ts"]
 ignores: ["be/test/**", "contract/test/**"] # tests drive Promise-based runners and web handlers; the rule guards app code
 severity: error
-message: "No async/await/new Promise (docs/03). Use `Effect.gen(function* () { const x = yield* ... })`; wrap promises with `Effect.tryPromise`."
+message: "No async/await/new Promise. Use `Effect.gen(function* () { const x = yield* ... })`; wrap promises with `Effect.tryPromise`."
 rule:
   any:
     - kind: await_expression

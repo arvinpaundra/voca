@@ -26,6 +26,7 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 
 - Commit header `type(scope): subject` (Conventional Commits); the body says why. No attribution (`Co-authored-by`, "Generated with").
 - One logical change per commit; no WIP commits.
+- Comments say what the code can't: why, an invariant, a trap. Never point to docs (a `docs/` path, a section name, an ADR or FR number): docs move and the reference goes stale.
 - Never `--no-verify`, never amend after pushing, never push to `master`, never commit `.env` or secrets.
 - Workers never force-push. The decision thread may `git push --force-with-lease` a PR branch it has rebased onto `master` (a stacked PR after a squash merge); never plain `--force`.
 - Branch `<type>/<name>` from the latest `master`, except task work, which branches from its dispatch commit (step 1 above).

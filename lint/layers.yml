@@ -1,9 +1,9 @@
-# docs/03 "Layers inside a bounded context": http → application → domain; infrastructure implements application ports.
+# Layers inside a bounded context: http → application → domain; infrastructure implements application ports.
 id: domain-imports
 language: TypeScript
 files: ["be/src/*/domain/**/*.ts"]
 severity: error
-message: "domain may import only `effect` (Schema/Either/Option/Data), `@voca/contract`, and its own domain files (docs/03, ADR 27). No IO, no other layer."
+message: "domain may import only `effect` (Schema/Either/Option/Data), `@voca/contract`, and its own domain files. No IO, no other layer."
 rule:
   kind: import_statement
   has:
@@ -14,7 +14,7 @@ id: application-imports
 language: TypeScript
 files: ["be/src/*/application/**/*.ts"]
 severity: error
-message: "application may import domain, its own ports, `effect`, `@voca/contract` (docs/03). Concrete SQL/HTTP/JWT belongs in infrastructure."
+message: "application may import domain, its own ports, `effect`, `@voca/contract`. Concrete SQL/HTTP/JWT belongs in infrastructure."
 rule:
   kind: import_statement
   has:
@@ -25,7 +25,7 @@ id: infrastructure-imports
 language: TypeScript
 files: ["be/src/*/infrastructure/**/*.ts"]
 severity: error
-message: "infrastructure must not import http (docs/03)."
+message: "infrastructure must not import http."
 rule:
   kind: import_statement
   has: { field: source, regex: "/http/" }
@@ -35,7 +35,7 @@ language: TypeScript
 files: ["be/src/*/http/**/*.ts"]
 ignores: ["be/src/shared/http/**"] # the health probe runs `SELECT 1` itself; no context, no use case to go through
 severity: error
-message: "http handlers call use cases; no SQL, no repositories (docs/03). Wire infrastructure layers in be/src/main.ts."
+message: "http handlers call use cases; no SQL, no repositories. Wire infrastructure layers in be/src/main.ts."
 rule:
   kind: import_statement
   has: { field: source, regex: "/infrastructure/|effect/sql|@effect/sql" }
@@ -44,7 +44,7 @@ id: contract-imports
 language: TypeScript
 files: ["contract/src/**/*.ts"]
 severity: error
-message: "contract depends only on `effect` (docs/03)."
+message: "contract depends only on `effect`."
 rule:
   kind: import_statement
   has: { field: source, not: { regex: "^.(effect|\\.)" } }

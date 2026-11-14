@@ -1,4 +1,5 @@
-// PreToolUse hook on Bash: refuses the never-rules in AGENTS.md "Commits and PRs" before the command runs.
+// PreToolUse hook on Bash: refuses the agents' never-rules (no --no-verify, no force-push, no push to master, no issue
+// edits, no writes through `gh api`) before the command runs.
 // Exit 2 blocks the call and stderr tells the model why. It stops mistakes, not a determined agent
 // (e.g. a command assembled at runtime); CI's path guard and the owner's review stay the backstop.
 export {}
@@ -48,7 +49,7 @@ const refuse = (segment: string): string | undefined => {
 for (const segment of segments) {
   const reason = refuse(segment)
   if (reason) {
-    console.error(`Blocked by .claude/hooks/guard.ts: ${reason}. (AGENTS.md "Commits and PRs")`)
+    console.error(`Blocked by .claude/hooks/guard.ts: ${reason}.`)
     process.exit(2)
   }
 }

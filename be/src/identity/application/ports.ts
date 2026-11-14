@@ -15,7 +15,7 @@ export class LearnerRepo extends Context.Service<LearnerRepo, {
 
 export class InvalidToken extends Data.TaggedError("InvalidToken")<{}> {}
 
-/** Access tokens (docs/08): HS256 JWT, `sub` = the learner's slug, 15 minutes. */
+/** Access tokens: HS256 JWT, `sub` = the learner's slug, 15 minutes. */
 export class TokenSigner extends Context.Service<TokenSigner, {
   sign(slug: LearnerSlug): Effect.Effect<{ readonly token: string; readonly expiresIn: number }>
   verify(token: string): Effect.Effect<LearnerSlug, InvalidToken>
@@ -23,7 +23,7 @@ export class TokenSigner extends Context.Service<TokenSigner, {
 
 export class GoogleSignInFailed extends Data.TaggedError("GoogleSignInFailed")<{ readonly reason: string }> {}
 
-/** Exchanges the authorization code at Google's token endpoint and checks the ID token (docs/08 steps 5-6). */
+/** Exchanges the authorization code at Google's token endpoint and checks the ID token. */
 export class GoogleOAuth extends Context.Service<GoogleOAuth, {
   exchange(input: {
     readonly code: string
@@ -42,7 +42,7 @@ export interface RefreshTokenRecord {
 }
 
 /**
- * Refresh tokens (docs/08): opaque, 32 random bytes as base64url; only their sha256 is stored.
+ * Refresh tokens: opaque, 32 random bytes as base64url; only their sha256 is stored.
  * Rotation and reuse detection are the use cases' job; this port only stores and finds.
  */
 export class RefreshTokens extends Context.Service<RefreshTokens, {

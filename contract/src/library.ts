@@ -28,7 +28,7 @@ export type Deck = typeof Deck.Type
 export const DeckSummary = Schema.Struct({ ...Deck.fields, wordCount: Count, dueCount: Count })
 export type DeckSummary = typeof DeckSummary.Type
 
-/** A drill available in a deck: applies to at least one word (FR-17). `label` follows the term language. */
+/** A drill available in a deck: applies to at least one word. `label` follows the term language. */
 export const DeckDrill = Schema.Struct({ drill: Drill, label: Schema.String, due: Count, new: Count })
 export type DeckDrill = typeof DeckDrill.Type
 
@@ -50,7 +50,7 @@ export const UpdateDeck = Schema.Struct({
 export const Word = Schema.Struct({
   slug: WordSlug,
   term: Term,
-  reading: Schema.NullOr(Reading), // ja: hiragana, zh: pinyin, yue: jyutping (FR-16)
+  reading: Schema.NullOr(Reading), // ja: hiragana, zh: pinyin, yue: jyutping
   meaning: Meaning,
   example: Schema.NullOr(Example),
   notes: Schema.NullOr(Notes),

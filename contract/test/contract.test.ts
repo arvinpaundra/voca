@@ -91,7 +91,7 @@ describe("wire format", () => {
   })
 })
 
-describe("endpoint inventory matches docs/07-api.md", () => {
+describe("endpoint inventory", () => {
   // One line per row of the API tables. Adding or removing an endpoint must update both.
   const expected = [
     "get /api/healthz",

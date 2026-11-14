@@ -4,8 +4,8 @@ import type { UpdateSettings } from "@voca/contract"
 import { LearnerSettings, LearnerSlug } from "@voca/contract"
 
 /**
- * A signed-up Learner as the server holds it. `id` is the internal bigint: it never leaves the server (docs/02).
- * Built from the contract's Schemas (ADR 27), so a row that breaks an invariant fails to decode instead of being served.
+ * A signed-up Learner as the server holds it. `id` is the internal bigint: it never leaves the server.
+ * Built from the contract's Schemas, so a row that breaks an invariant fails to decode instead of being served.
  */
 export const LearnerRecord = Schema.Struct({
   id: Schema.BigInt,

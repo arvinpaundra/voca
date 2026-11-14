@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 
 /**
- * HTTP-facing errors: `{ _tag, message }` with the status from 07-api.
+ * HTTP-facing errors: `{ _tag, message }`, each with its HTTP status.
  * Request bodies that fail Schema decoding get Effect's built-in empty `400`;
  * the frontend validates with these same Schemas before sending, so a 400 means a client bug.
  */

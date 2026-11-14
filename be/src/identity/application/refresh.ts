@@ -9,7 +9,7 @@ export interface RotatedTokens {
   readonly expiresIn: number
 }
 
-/** `POST /auth/refresh`: rotation with reuse detection (docs/08). Not implemented yet: task B3. */
+/** `POST /auth/refresh`: rotation with reuse detection. Not implemented yet: task B3. */
 export const refresh = (
   _refreshToken: string
 ): Effect.Effect<RotatedTokens, RefreshTokenRejected, RefreshTokens | LearnerRepo | TokenSigner | Transaction> =>

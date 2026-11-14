@@ -3,7 +3,7 @@ import { Transaction } from "../../shared/transaction.ts"
 import { RefreshTokens } from "./ports.ts"
 
 /**
- * `POST /auth/logout`: revokes the token's family (docs/08). Never fails: it doesn't say whether the token existed,
+ * `POST /auth/logout`: revokes the token's family. Never fails: it doesn't say whether the token existed,
  * so an unknown or already-revoked token is a no-op that still answers 204.
  */
 export const logout = (refreshToken: string): Effect.Effect<void, never, RefreshTokens | Transaction> =>

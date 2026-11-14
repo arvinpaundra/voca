@@ -58,7 +58,7 @@ const makeClient = () => HttpApiTest.groups(VocaApi, ["auth", "me"])
 /** Moves the test clock to an ISO instant, e.g. `at("2026-11-14T00:00:00Z")`. */
 export const at = (iso: string) => TestClock.setTime(Date.parse(iso))
 
-/** Inserts a Learner with the ADR 28 defaults and returns its internal id. */
+/** Inserts a Learner with the new-Learner defaults and returns its internal id. */
 export const seedLearner = (slug: string, googleSub = `sub-${slug}`) =>
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient

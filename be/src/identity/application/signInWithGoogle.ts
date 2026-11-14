@@ -11,7 +11,7 @@ export interface SignedInResult {
   readonly expiresIn: number
 }
 
-/** `POST /auth/google` (docs/08 steps 4-8, ADR 28). Not implemented yet: task B2. */
+/** `POST /auth/google`: exchange the code, create or update the Learner, issue tokens. Not implemented yet: task B2. */
 export const signInWithGoogle = (
   _input: typeof GoogleSignIn.Type
 ): Effect.Effect<SignedInResult, GoogleSignInFailed, GoogleOAuth | LearnerRepo | TokenSigner | RefreshTokens | Transaction> =>
