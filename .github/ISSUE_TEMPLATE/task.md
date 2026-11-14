@@ -25,4 +25,5 @@ DO:
 - <node: endpoint X returns Y / use case Z does W>
 DON'T: anything outside `allow`. Never edit contract/, docs/ or locked tests; report if they look wrong.
 VERIFY: bun run verify --issue <N> --hash <hash>   # the dispatcher writes the real 8-hex hash here; CI reads it from this line
-REPLY WITH: files changed + the last 20 lines of VERIFY output + PR URL + anything you couldn't do
+DONE: docs/agents/loop.md "Definition of done". Screenshots (UI tasks only): <specs for bun scripts/shots.ts, e.g. /login /login:390, or none>
+REPLY WITH: files changed + DO item → file and test that proves it + the last 20 lines of VERIFY output + PR URL + anything you couldn't do

@@ -21,7 +21,7 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
                  `bun run verify --body draft.md --print-hash` gives the limits hash before the issue exists
 3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets the message below (AGENTS.md is loaded automatically)
 4. self-check  → implementer loops on `bun run verify --issue N --hash H` until green, opens a PR
-5. re-check    → decision thread re-runs the same command in the worktree; compares the diff against DO
+5. re-check    → decision thread re-runs the same command in the worktree; checks the Definition of done below
 6. fail        → failing output goes back to the same implementer; max 2 rounds,
                  then escalate the model tier on the same worktree
 7. review      → reviewer reads diff + task + cited docs (never the implementer's summary);
@@ -54,6 +54,18 @@ Reply with the issue's REPLY WITH list.
 ```
 
 If the worker reports a blocker, fix the cause yourself (it is usually the dispatch), then send it the corrected hash through the same thread; do not count that as a failed round.
+
+## Definition of done
+
+A task is done when all of these hold. The evidence comes from tools, never from the worker's description.
+
+1. `verify` is green in CI on the PR, and the PR is linked to its task issue (so the path guard ran).
+2. Every DO item maps to a file and a test; the worker's reply lists the mapping.
+3. The locked tests are unchanged (the guard checks their content), and behaviour the worker added has its own test.
+4. No stub is left for the task's endpoints or components: `grep -rn "not implemented"` over the allowed paths is empty.
+5. **UI tasks:** the issue's DONE line names the screenshots. At re-check the dispatcher runs `bun scripts/shots.ts <specs>` on the worker's branch and gives the image paths to the owner, who judges the visuals. No model views them. Default: one desktop shot per changed state; add `:390` for layout changes and `:dark` for style changes.
+
+Backend tasks need no screenshots or captured responses: the integration tests assert status, shape and values against real Postgres. Put an example response in the PR only when it helps review, printed by a test run, never typed.
 
 ## Task sizing
 
