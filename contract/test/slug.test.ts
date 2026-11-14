@@ -52,3 +52,4 @@ describe("slug schemas", () => {
     expect(decodes(DeckSlug, "TQ7LM2PV9-")).toBe(false)
   })
 })
+// tamper
