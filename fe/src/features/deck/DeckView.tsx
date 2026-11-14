@@ -3,7 +3,7 @@ import { Result } from "effect";
 import type { Deck, Word, WordWithCards } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { session } from "../../lib/appSession";
-import { wordLabels } from "../../lib/wordLabels";
+import { wordLabels } from "@voca/contract";
 import styles from "./deck.module.css";
 import { WordForm } from "./WordForm";
 import { WordItem } from "./WordItem";

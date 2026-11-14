@@ -2,7 +2,7 @@ import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
 import { DeckTooSmall, DrillNotAvailable, NotFound, QuestionAlreadyAnswered, SessionNotActive } from "./errors.ts"
 import { Count, Drill, Instant, LangTag, Mode, Page, PageQuery, SessionSize } from "./primitives.ts"
-import { WordWithCards } from "./library.ts"
+import { DeckDrill, WordWithCards } from "./library.ts"
 import { DeckSlug, SessionSlug, WordSlug } from "./slug.ts"
 
 // ───── Schemas ─────
@@ -71,10 +71,17 @@ export type AnswerResult = typeof AnswerResult.Type
 
 // ───── Endpoints ─────
 
+const deckParams = { deckSlug: DeckSlug }
 const sessionParams = { sessionSlug: SessionSlug }
 const cardParams = { wordSlug: WordSlug, drill: Drill }
 
 export class StudyGroup extends HttpApiGroup.make("study").add(
+  /** Only drills that apply to at least one word of the deck, each with today's due and new counts. */
+  HttpApiEndpoint.get("deckDrills", "/decks/:deckSlug/drills", {
+    params: deckParams,
+    success: Schema.Array(DeckDrill),
+    error: NotFound
+  }),
   /** Abandons any active session first (one active session per Learner). */
   HttpApiEndpoint.post("start", "/sessions", {
     payload: StartSession,
