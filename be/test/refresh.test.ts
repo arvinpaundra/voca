@@ -5,7 +5,7 @@ import { RefreshTokens } from "../src/identity/application/ports.ts"
 import { at, call, makeIdentityRuntime, seedLearner } from "./identity.ts"
 import { resetDb } from "./setup.ts"
 
-// POST /auth/refresh (docs/08 "Refresh rotation with reuse detection"):
+// POST /auth/refresh, rotation with reuse detection:
 //   unknown / expired / revoked → 401 RefreshTokenInvalid
 //   already used (reuse!)        → revoke the whole family, 401 RefreshTokenInvalid
 //   ok                           → mark it used, issue a new one in the same family (30 days from now), new access token

@@ -7,7 +7,7 @@ import { TokenSignerLive } from "../src/identity/infrastructure/tokenSigner.ts"
 import { googleStub, seedLearner, TEST_SECRET } from "./identity.ts"
 import { TestLayer } from "./layers.ts"
 
-// The served API (docs/07): real HTTP requests through the web handler that main.ts serves with Bun.
+// The served API: real HTTP requests through the web handler that main.ts serves with Bun.
 // The test runtime and the handler share one memo map, so they use the same test database.
 
 const rt = ManagedRuntime.make(Layer.mergeAll(TestLayer, TokenSignerLive(TEST_SECRET)))
