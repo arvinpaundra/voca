@@ -1,7 +1,19 @@
-import { Effect } from "effect"
-import type { Transaction } from "../../shared/transaction.ts"
-import type { RefreshTokens } from "./ports.ts"
+import { Effect, Option } from "effect"
+import { Transaction } from "../../shared/transaction.ts"
+import { RefreshTokens } from "./ports.ts"
 
-/** `POST /auth/logout`: revokes the token's family (docs/08). Not implemented yet: task B4. */
-export const logout = (_refreshToken: string): Effect.Effect<void, never, RefreshTokens | Transaction> =>
-  Effect.die("not implemented")
+/**
+ * `POST /auth/logout`: revokes the token's family (docs/08). Never fails: it doesn't say whether the token existed,
+ * so an unknown or already-revoked token is a no-op that still answers 204.
+ */
+export const logout = (refreshToken: string): Effect.Effect<void, never, RefreshTokens | Transaction> =>
+  Effect.gen(function* () {
+    const tokens = yield* RefreshTokens
+    const transaction = yield* Transaction
+    yield* transaction.run(
+      Effect.gen(function* () {
+        const found = yield* tokens.findForUpdate(refreshToken)
+        if (Option.isSome(found)) yield* tokens.revokeFamily(found.value.familyId)
+      })
+    )
+  })
