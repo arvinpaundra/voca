@@ -29,6 +29,8 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 - Never `--no-verify`, never amend after pushing, never push to `master`, never commit `.env` or secrets.
 - Workers never force-push. The decision thread may `git push --force-with-lease` a PR branch it has rebased onto `master` (a stacked PR after a squash merge); never plain `--force`.
 - Branch `<type>/<name>` from the latest `master`.
+- `.claude/hooks/guard.ts` refuses the never-rules above, plus editing issues and writes through `gh api`, before the command runs. If it blocks you, don't work around it: report it.
+- The dispatcher picks the model and escalates (Haiku, then Sonnet, then Opus after 2 failed verify rounds). Workers never switch models.
 - PR title `[Type] Title`, e.g. `[Feat] Add token refresh to the auth flow` (squash merges make it the commit on `master`). Use `.github/pull_request_template.md` as a guide. A task PR links its issue (`Closes #<issue>` in the body): CI finds it through GitHub's linked issues and runs the path guard. `gh pr create --assignee @me`.
 
 ## Effect 4.1.2: don't trust your memory

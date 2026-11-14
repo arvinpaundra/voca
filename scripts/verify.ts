@@ -2,7 +2,7 @@
 //
 //   bun run verify                      scope = workspaces touched since origin/master
 //   bun run verify --issue 12 --hash 3fa9c1d2  + path guard: only the issue's `allow` globs may change, `locked` files never
-//   bun run verify --issue 12 --print-hash     prints the hash of the issue's limits block (the dispatcher puts it in the task message)
+//   bun run verify --body task.md --print-hash prints the hash of a draft issue body's limits block, before the issue exists
 //   bun run verify --print-locked a.test.ts    prints `path: hash` lines for the issue's `locked` map
 //   bun run verify --scope all          or a list: --scope be,fe
 //   bun run verify --fast               skip Testcontainers tests and the fe build (pre-push)
@@ -10,7 +10,7 @@ import { Glob } from "bun"
 import { parseArgs } from "node:util"
 
 const { values: opt } = parseArgs({
-  options: { "print-locked": { type: "string", multiple: true }, issue: { type: "string" }, hash: { type: "string" }, "print-hash": { type: "boolean", default: false }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
+  options: { "print-locked": { type: "string", multiple: true }, body: { type: "string" }, issue: { type: "string" }, hash: { type: "string" }, "print-hash": { type: "boolean", default: false }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
 })
 const WORKSPACES = ["contract", "be", "fe"] as const
 type Ws = (typeof WORKSPACES)[number]
@@ -50,7 +50,7 @@ const step = (name: string, cmd: string[], cwd = ".") => {
 // holds across rebases and in CI, where no particular commit has to exist.
 type Task = { scope?: string; allow?: string[]; locked?: Record<string, string> }
 const loadTask = async (n: string): Promise<Task> => {
-  const r = run(["gh", "issue", "view", n, "--json", "body", "-q", ".body"])
+  const r = opt.body ? { ok: true, out: await Bun.file(opt.body).text() } : run(["gh", "issue", "view", n, "--json", "body", "-q", ".body"])
   if (!r.ok) fail("task issue", `cannot read issue #${n} (needs network and \`gh auth login\`):\n${r.out}`)
   const block = /```ya?ml\n([\s\S]*?)```/.exec(r.out)?.[1]
   if (!block) fail("task issue", `issue #${n} has no \`\`\`yaml limits block`)
@@ -62,7 +62,7 @@ const loadTask = async (n: string): Promise<Task> => {
   if (hash !== opt.hash) fail("task issue", `limits block of #${n} changed (hash ${hash}, dispatched ${opt.hash ?? "none"}). Do not edit the issue; report it.`)
   return Bun.YAML.parse(block!) as Task
 }
-const task: Task | undefined = opt.issue ? await loadTask(opt.issue) : undefined
+const task: Task | undefined = opt.issue || opt.body ? await loadTask(opt.issue ?? opt.body!) : undefined
 
 // Files changed since the branch left master: committed, staged, unstaged, untracked.
 const base = run(["git", "merge-base", "HEAD", "origin/master"])
