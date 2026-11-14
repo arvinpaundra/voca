@@ -34,6 +34,6 @@ export const resetDb = Effect.gen(function* () {
   const tables = yield* sql<{ readonly tablename: string }>`
     SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename NOT LIKE 'effect_sql_%'`
   if (tables.length === 0) return
-  const names = tables.map((t) => `"${t.tablename}"`).join(", ") // names come from pg_tables, not from input
-  yield* sql.unsafe(`TRUNCATE ${names} RESTART IDENTITY CASCADE`)
+  // Table names are identifiers, not values: `sql(name)` escapes them.
+  yield* sql`TRUNCATE ${sql.csv(tables.map((t) => sql`${sql(t.tablename)}`))} RESTART IDENTITY CASCADE`
 })
