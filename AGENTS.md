@@ -24,16 +24,12 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 
 ## Commits and PRs
 
-Commit messages are enforced by `.githooks/commit-msg` (`scripts/lint-commit.sh`). PR titles and bodies are not checked, so follow the rules anyway.
-
-- **Header**: `type(scope): subject`. Types: `feat fix docs refactor test chore ci build perf revert`. Scopes: `contract be fe docs tasks lint ci verify` (`be` may add a context, e.g. `be/auth`); optional. Subject: imperative, lowercase start, no trailing period; whole header ≤ 72 chars. Breaking change: `!` after the scope, e.g. `feat(contract)!:`.
-- **Body** (optional, wrap at 72): why, not what. **Footer**: `Closes #n` / `Refs #n`, `BREAKING CHANGE: ...`.
-- **No attribution** in commits or PRs: no `Co-authored-by`, no "Generated with".
-- One logical change per commit; fold fixups into the commit they fix; no WIP commits.
+- Commit header `type(scope): subject` (Conventional Commits); the body says why. No attribution (`Co-authored-by`, "Generated with").
+- One logical change per commit; no WIP commits.
 - Never `--no-verify`, never amend after pushing, never push to `master`, never commit `.env` or secrets.
 - Workers never force-push. The decision thread may `git push --force-with-lease` a PR branch it has rebased onto `master` (a stacked PR after a squash merge); never plain `--force`.
-- Branch: `<type>/<name>` from the latest `master`.
-- **PR**: the title is `[Type] Proper title`, where Type is the commit type capitalised (`Feat Fix Docs Refactor Test Chore CI Build Perf Revert`), e.g. `[Feat] Add token refresh to the auth flow`. Capitalised, readable sentence; no trailing period. Fill every section of `.github/pull_request_template.md`: **Problem** (what and why), **Solution** (approach), **Changes** (bullets by layer), **Verification** (the `verify: all green` line), **Breaking / follow-ups**. Link the issue with `Closes #n`. Assign the PR to the user: `gh pr create --assignee @me`.
+- Branch `<type>/<name>` from the latest `master`.
+- PR title `[Type] Title`, e.g. `[Feat] Add token refresh to the auth flow` (squash merges make it the commit on `master`). Use `.github/pull_request_template.md` as a guide. A task PR links its issue (`Closes #<issue>` in the body): CI finds it through GitHub's linked issues and runs the path guard. `gh pr create --assignee @me`.
 
 ## Effect 4.1.2: don't trust your memory
 
