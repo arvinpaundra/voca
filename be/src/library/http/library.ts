@@ -73,8 +73,8 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("WordNotFound", notFound("Word"))
         ),
 
-      publishDeck: () => Effect.die("not implemented"),
-      unpublishDeck: () => Effect.die("not implemented"),
+      publishDeck: () => Effect.die("not implemented: CB"),
+      unpublishDeck: () => Effect.die("not implemented: CB"),
       importCsv: () => Effect.die("not implemented"),
       exportCsv: () => Effect.die("not implemented")
     })
