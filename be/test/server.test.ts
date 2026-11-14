@@ -52,7 +52,7 @@ describe("served API", () => {
 
   test("an endpoint that isn't built yet answers 500, and the server keeps serving", async () => {
     const token = await signedIn("JKMNPQRS")
-    expect((await get("/api/decks/ZZZZZZZZZZ/drills", token)).status).toBe(500)
+    expect((await get("/api/community/decks", token)).status).toBe(500)
     expect((await get("/api/healthz")).status).toBe(204)
   })
 
