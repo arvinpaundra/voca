@@ -10,7 +10,7 @@ export interface RotatedTokens {
 }
 
 /**
- * `POST /auth/refresh`: rotation with reuse detection (docs/08).
+ * `POST /auth/refresh`: rotation with reuse detection.
  * The transaction returns the outcome instead of failing: a failure would roll back the family revocation on reuse.
  * The rejection is raised only after the transaction has committed.
  */
