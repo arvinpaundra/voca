@@ -3,7 +3,7 @@ import { Result } from "effect"
 import { createSession } from "./session.ts"
 import { createTokenStore, REFRESH_KEY } from "./tokens.ts"
 
-// The session (docs/08 "Frontend handling" and the Web Locks note under "Refresh rotation"):
+// The session client:
 //   401 → refresh once → retry once; fewer than 60 s left → refresh before the call;
 //   refreshes go through the `voca-refresh` lock and use the refresh token in storage *at that moment*
 //   (another tab may have rotated it); a failed refresh signs out.

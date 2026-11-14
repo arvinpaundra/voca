@@ -4,8 +4,8 @@ import { SqlClient } from "effect/sql"
 import { at, call, googleStub, makeIdentityRuntime } from "./identity.ts"
 import { resetDb } from "./setup.ts"
 
-// POST /auth/google (docs/08 steps 4-8, ADR 28): Google is stubbed by auth code, so this tests everything after it.
-//   first sign-in   → a new Learner with the ADR 28 defaults and the request's timezone
+// POST /auth/google: Google is stubbed by auth code, so this tests everything after it.
+//   first sign-in   → a new Learner with the new-Learner defaults and the request's timezone
 //   later sign-ins  → the same Learner; email, name and avatar refreshed from Google; settings untouched
 //   every sign-in   → a 15-minute access token and a new refresh-token family
 //   Google refuses  → 401 Unauthorized, nothing written
@@ -34,7 +34,7 @@ const count = (table: "learners" | "refresh_tokens") =>
   )
 
 describe("POST /auth/google", () => {
-  test("the first sign-in creates the Learner with the ADR 28 defaults and the request's timezone", () =>
+  test("the first sign-in creates the Learner with the new-Learner defaults and the request's timezone", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const signedIn = yield* signIn("code-ada")

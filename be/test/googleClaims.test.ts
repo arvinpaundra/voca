@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { Result } from "effect"
 import { checkIdTokenClaims } from "../src/identity/domain/auth.ts"
 
-// docs/08 step 6: the ID token comes straight from Google's token endpoint over TLS, so only its claims are checked.
+// The ID token comes straight from Google's token endpoint over TLS, so only its claims are checked.
 const CLIENT_ID = "123.apps.googleusercontent.com"
 const NOW = 1_800_000_000
 const valid = {
