@@ -25,7 +25,7 @@ const GoogleClaims = Schema.Struct({
 
 /**
  * Checks the claims of an ID token that came straight from Google's token endpoint over TLS, so its signature isn't
- * checked (OIDC Core §3.1.3.7, docs/08 step 6): `iss` is Google, `aud` is our client ID, `exp` is in the future, and
+ * checked (OIDC Core §3.1.3.7): `iss` is Google, `aud` is our client ID, `exp` is in the future, and
  * the email is verified. Returns the profile, or a short reason.
  */
 export const checkIdTokenClaims = (

@@ -11,7 +11,7 @@ export interface SignedInResult {
   readonly expiresIn: number
 }
 
-/** `POST /auth/google` (docs/08 steps 4-8, ADR 28). Google first; the database writes are one transaction after it. */
+/** `POST /auth/google`. Google first; the database writes are one transaction after it. */
 export const signInWithGoogle = (
   input: typeof GoogleSignIn.Type
 ): Effect.Effect<SignedInResult, GoogleSignInFailed, GoogleOAuth | LearnerRepo | TokenSigner | RefreshTokens | Transaction> =>

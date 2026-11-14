@@ -4,7 +4,7 @@ import { LearnerSettings, LearnerSlug, SLUG_LENGTH, slug } from "@voca/contract"
 import { LearnerRecord } from "../domain/learner.ts"
 import { LearnerRepo } from "../application/ports.ts"
 
-/** ADR 28: the settings a new Learner starts with. The timezone comes from the sign-in request. */
+/** The settings a new Learner starts with. The timezone comes from the sign-in request. */
 const NEW_LEARNER = { dayStartHour: 4, desiredRetention: 0.9, newPerDay: 20, defaultSessionSize: 10, defaultMode: "easy" }
 
 const NewGoogleLearner = Schema.Struct({

@@ -8,7 +8,7 @@ const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 const TokenResponse = Schema.Struct({ id_token: Schema.String })
 const JsonText = Schema.fromJsonString(Schema.Unknown)
 
-/** Google's token endpoint + ID-token checks (docs/08 steps 5-6). The ID token is read from the TLS response; no signature check. */
+/** Google's token endpoint + ID-token checks. The ID token is read from the TLS response; no signature check. */
 export const GoogleOAuthLive = Layer.effect(
   GoogleOAuth,
   Effect.gen(function* () {
