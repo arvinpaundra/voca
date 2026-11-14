@@ -1,111 +1,105 @@
 # Agent loop
 
-How the decision thread turns a decision into merged code using cheap implementer models. The worker rules are in [`AGENTS.md`](../../AGENTS.md).
+How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). A fresh session runs all of this with `/feature <name>` (`.claude/skills/feature/SKILL.md`).
 
 ## Roles
 
 | Role | Model | Owns |
 |---|---|---|
-| Decision thread | Opus | `docs/`, `contract/`, task issues, locked tests, reference code, `scripts/`, `lint/` |
-| Implementer | Haiku first, then Sonnet, then Opus | the files in its task's `allow` list |
-| Reviewer | Sonnet or Opus, never the implementer's model | read-only |
+| Decision thread | the session's model, in a **fresh session per feature** | decisions, `docs/`, `contract/`, task issues, locked tests and stubs, `scripts/`, `lint/`, `.claude/` |
+| Worker | Haiku; Sonnet after 2 failed rounds; Opus last | the files in its task's `allow` list |
+| Re-check | **no agent**: CI plus one shell command | |
+| Review | the owner | |
 
-Each task runs in a fresh child (`delegate_task`) in its own worktree, so the worker starts with no stale context.
+Never use Opus for review or re-check. Every workflow agent gets an explicit `model` and `effort`.
 
 ## Loop
 
 ```
-1. decision    → ADR / contract change committed to master
-2. spec        → locked tests written red on a local dispatch branch (never master, so master stays green);
-                 `bun run verify --print-locked <paths>` gives the `locked` lines; task issue created (limits block + DO);
-                 `bun run verify --body draft.md --print-hash` gives the limits hash before the issue exists
-3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets the message below (AGENTS.md is loaded automatically)
-4. self-check  → implementer loops on `bun run verify --issue N --hash H` until green, opens a PR
-5. re-check    → decision thread re-runs the same command in the worktree; checks the Definition of done below
-6. review      → the owner reviews the PR (no agent reviewer at this scale)
-7. self-heal   → every finding goes back to the worker that wrote the code: see "Self-healing"
-8. merge       → CI green → `bun scripts/merge-gate.ts <pr>`: `merge: ok` and the worker's report flags nothing → the decision thread
-                 squash-merges and tells the owner; otherwise the owner merges. `Closes #N` closes the issue
+1. decision   → ADR / contract change committed to master
+2. split      → cohesive tasks: one per bounded context per side (e.g. library backend, library frontend), with disjoint `allow` lists;
+                no task's tests may need another task's code
+3. spec       → locked tests + stubs on one dispatch branch per task. Every stub fails with `not implemented: <TASK>`
+4. pre-check  → `bun scripts/precheck.ts <TASK> <locked test files>`: red, and every failure is the task's own stub
+5. issues     → limits block + context pack; `verify --body draft.md --print-hash`, hash on the VERIFY line, created once
+6. workflow   → the saved `agent-loop` workflow with the task list: one worker per task, explicit model and effort, own worktree
+7. re-check   → `bun scripts/recheck.ts <PR…>`: CI green with the path guard, no stubs left in the task's files
+8. review     → the owner reviews; every finding goes back to the worker that wrote the code ("Self-healing")
+9. merge      → `bun scripts/merge-gate.ts <pr>` says `merge: ok` and the reply flags nothing → the decision thread merges;
+                otherwise the owner merges. `Closes #N` closes the issue. Then remove the worktree and branch
 ```
 
-**Stop and ask the user when:**
-- a task needs a change to `contract/`, `docs/` or a locked test;
-- Opus also fails verify;
-- a worker replies `disputed: …` about a finding.
+**Stop and ask the owner when:** a task needs a change to `contract/`, `docs/` or a locked test; a worker replies `disputed: …`; Opus also fails.
+
+## Spending few tokens
+
+| Lever | Rule |
+|---|---|
+| Fewer cold starts | Cohesive tasks, not one per endpoint. A worker's fixed cost (rules, issue, reference files) is paid once per task. |
+| No wasted runs | Pre-check before dispatch; workers fail fast on their locked tests before writing code. |
+| Small context | The issue's **context pack** lists the exact files to read and pastes the 10–20 spec lines that matter, instead of whole docs. |
+| Cheap models | Haiku workers; `effort: low` for small mechanical tasks, `high` only for tricky logic. |
+| No duplicate verification | CI is the independent re-check; the decision thread reads it with a script, not an agent. |
+| Small replies | Workers reply `{pr, green, disputed, couldNotDo}`. |
+| Narrow heals | A heal gets only the finding and the 2–3 files involved. |
+| Learning once | After each feature, add the Effect idioms workers had to discover to `effect-cheatsheet.md`. |
+| Short decision thread | One fresh session per feature; mechanical steps batched into scripts. |
+
+## Pre-check
+
+Run the locked tests of a task against its stubs before creating its issue:
+
+```
+bun scripts/precheck.ts LB be/test/decks.test.ts be/test/words.test.ts
+```
+
+It passes only when at least one test fails and every failure mentions `not implemented: LB`. A 401, another task's stub, or a wrong expectation fails the pre-check: the tests or the split are wrong. This replaces writing a throwaway implementation.
+
+## Issue body
+
+The limits block (yaml: `scope`, `allow`, `locked` as `path: content hash`) followed by:
+
+```
+WHY / SPEC / CONTRACT
+CONTEXT PACK: the files to read, and the spec lines that matter, pasted
+DO: the nodes to implement
+DON'T: outside `allow`; contract/, docs/, locked tests
+VERIFY: bun run verify --issue <this issue> --hash <hash>
+```
 
 ## Self-healing
 
-The decision thread never edits or pushes to a worker's branch. Every finding goes back to the worker, through the same thread (`t3_thread_send`), with the matching message:
+The decision thread never edits or pushes to a worker's branch. Findings go to the worker that wrote the code; in a workflow, a heal agent gets the finding, the worktree and the 2–3 files involved.
 
-| Finding | Message to the worker |
+| Finding | Message |
 |---|---|
-| `verify` fails at re-check | "VERIFY fails at re-check: <first error>. Fix it on your branch, run VERIFY again, push." |
 | CI fails | "CI fails on PR #P: <first error>. Fix it on your branch, run VERIFY again, push." |
 | conflict with `master` | "PR #P conflicts with master. Rebase onto `origin/master`, run VERIFY again, push with `--force-with-lease`." |
 | the owner's review | "The owner reviewed PR #P. Address every comment (`gh pr view P --comments`), run VERIFY again, push." |
 
-- **Rounds:** after 2 failed rounds on the same finding, re-dispatch the task to the next model tier (Haiku → Sonnet → Opus) on the same worktree.
-- **Disputes:** a worker that thinks a finding is wrong replies `disputed: …` and stops. The owner decides; if the finding was wrong, the rule or checklist that produced it changes.
-- **Learning:** a finding the owner makes in review that could recur becomes a rule: a lint rule when it is mechanical, an `AGENTS.md` line when it needs judgment.
-
-## Dispatch checklist
-
-Before sending, from the dispatch branch:
-
-1. **The branch holds everything the worker needs**: the current `scripts/verify.ts`, the reference code, the locked tests. Anything missing here fails the worker's gate for reasons it cannot fix. (Pilot 2 lost a round to this.)
-2. Each `locked` entry is `path: hash` from `bun run verify --print-locked`, so a rebase never invalidates it.
-3. The draft's VERIFY line carries the real limits hash before the issue is created (it sits outside the yaml block, so writing it doesn't change the hash); CI reads it from there. Issues are never edited after creation: the agent hook refuses it. Then `bun run verify --issue N --hash H` gets past `✓ path guard` (it fails later, on the red tests, which is expected).
-4. The red tests are satisfiable: the full `bun run verify --issue N --hash H` (not only `bun test`: lint and typecheck too) is green against a throwaway implementation written the way the DO list says, which you then discard. (B1 lost a round: its test and its DO list each broke a lint rule.)
-5. Every fact the task depends on is in the issue (pilot 2: the contract declares no not-found error for the endpoint, so the task said to use `Effect.orDie`).
-
-Dispatch message (the same every time; the issue carries the content):
-
-```
-Do GitHub issue #N in the repo you are in (arvinpaundra/voca). The issue is the approved design: implement it now, no separate design round.
-Your limits hash is H: your VERIFY command is `bun run verify --issue N --hash H`. (It is a hash of the issue's limits block, not a git commit.)
-Your worktree already contains the task's locked test and stub: create your branch from the commit you start at (`git switch -c <name>`), never from master.
-Read AGENTS.md first, then `gh issue view N`. Follow AGENTS.md exactly, including the commit and PR rules. Do not edit the issue.
-Reply with the issue's REPLY WITH list.
-```
-
-If the worker reports a blocker, fix the cause yourself (it is usually the dispatch), then send it the corrected hash through the same thread; do not count that as a failed round.
+After 2 failed rounds on the same finding, move the task to the next model tier. A finding the owner makes that could recur becomes a rule: a lint rule when mechanical, an `AGENTS.md` line when it needs judgment.
 
 ## Definition of done
 
-A task is done when all of these hold. The evidence comes from tools, never from the worker's description.
+1. CI `verify` is green on the PR and ran the path guard (the PR is linked to its task issue).
+2. The locked tests are unchanged, and behaviour the worker added has its own test.
+3. No `not implemented: <TASK>` stub is left in the task's files.
+4. **UI tasks:** the issue names the screenshots; the decision thread runs `bun scripts/shots.ts <specs>` on the PR's branch and gives the paths to the owner. No model views them.
 
-1. `verify` is green in CI on the PR, and the PR is linked to its task issue (so the path guard ran).
-2. Every DO item maps to a file and a test; the worker's reply lists the mapping.
-3. The locked tests are unchanged (the guard checks their content), and behaviour the worker added has its own test.
-4. No stub is left for the task's endpoints or components: `grep -rn "not implemented"` over the allowed paths is empty.
-5. **UI tasks:** the issue's DONE line names the screenshots. At re-check the dispatcher runs `bun scripts/shots.ts <specs>` on the worker's branch and gives the image paths to the owner, who judges the visuals. No model views them. Default: one desktop shot per changed state; add `:390` for layout changes and `:dark` for style changes.
+## Merging and branches
 
-Backend tasks need no screenshots or captured responses: the integration tests assert status, shape and values against real Postgres. Put an example response in the PR only when it helps review, printed by a test run, never typed.
-
-## Merging
-
-The decision thread may merge a PR itself only when `bun scripts/merge-gate.ts <pr>` prints `merge: ok` **and** the worker's report flags nothing (no "couldn't do", no deviation, no gap). The gate checks:
-
-1. CI `verify` green on the current head, and the branch not behind master.
-2. A task PR is linked to its task issue, so CI ran the path guard (the dispatcher checks this at re-check).
-3. No critical path: `contract/`, `be/migrations/`, `be/src/identity/` (auth), `be/src/shared/`, `lint/`, `scripts/`, `.github/`, `.githooks/`, `.claude/`, `AGENTS.md`, `docs/13-decisions.md`, any `package.json`, `bun.lock`.
-4. Small: at most 8 files and 300 changed lines, the task's locked tests not counted.
-
-Then: `gh pr merge <pr> --squash --delete-branch`, clean up the worktree, and tell the owner which PR was merged and why it qualified. Anything else waits for the owner, with the gate's reasons in a PR comment. Workers never merge.
-
-## Task sizing
-
-- One use case, endpoint or component per task, about 5 files.
-- The issue's limits block is hash-checked: the worker can't widen `allow`/`locked` without verify failing.
-- Red tests first: a task whose behaviour has no locked test is not ready to dispatch.
-- Name the reference files to copy. Without one, the first task in a new area goes to Sonnet or Opus.
+- `master` is the trunk: always green. Branches are short-lived, one issue per PR, squash-merged, then deleted. Merge only with CI green; if `master` breaks, revert first.
+- Unfinished work still merges, unreachable (not wired in, or behind a flag). Contract changes are additive first: add, migrate both sides, remove later.
+- The decision thread merges a PR itself only when `bun scripts/merge-gate.ts <pr>` prints `merge: ok` and the worker's reply flags nothing. Critical paths (`contract/`, `be/migrations/`, `be/src/identity/`, `be/src/shared/`, `lint/`, `scripts/`, `.github/`, `.githooks/`, `.claude/`, `AGENTS.md`, `docs/13-decisions.md`, `package.json`, `bun.lock`) and PRs over 8 files or 300 lines wait for the owner.
+- The decision thread may `git push --force-with-lease` a stacked PR it rebased; never plain `--force`.
 
 ## What each gate catches
 
 | Gate | Catches |
 |---|---|
-| path guard | edits outside `allow`, weakened tests, contract/docs edits |
-| lint (`lint/*.yml`) | throw/try/async, layer and cross-package imports |
-| typecheck | contract mismatches, missing handlers (`HttpApiBuilder` requires every endpoint), invented Effect APIs |
+| pre-check | tests that can't pass, cross-task dependencies |
+| path guard | edits outside `allow`, weakened tests |
+| lint | throw/try/async, layer imports, raw SQL |
+| typecheck | contract mismatches, missing handlers, invented Effect APIs |
 | tests | behaviour against the spec |
-| the owner's review | hardcoded answers that only satisfy the tests, spec intent the tests miss, anything a rule doesn't cover yet |
+| the owner's review | spec intent the tests miss, anything no rule covers yet |

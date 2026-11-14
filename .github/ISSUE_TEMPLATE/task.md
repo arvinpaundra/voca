@@ -15,15 +15,15 @@ locked:                         # tests written red by the decision thread, each
   be/test/auth.test.ts: 1a2b3c4d  # from `bun run verify --print-locked be/test/auth.test.ts`
 ```
 
-MODEL: picked by the dispatcher (haiku first). Workers never switch models; the dispatcher escalates after 2 failed verify rounds.
-WHY: <decision # in docs/13-decisions.md, or "new decision, added as #N">
-SPEC: <docs/NN-*.md sections to follow>
+WHY: <one line: the decision or FR behind this task>
+SPEC: <docs sections, for reference only>
 CONTRACT: <contract/src/*.ts files relied on>
-BRANCH: feat/<name> from master, in its own worktree. The PR body says `Closes #<this issue>`.
-REFERENCE: <existing files to copy the pattern from>
+CONTEXT PACK:
+- read: <the reference file to copy> , <the stubs to fill>
+- spec lines that matter (pasted, 10-20 lines):
+  > ...
 DO:
 - <node: endpoint X returns Y / use case Z does W>
 DON'T: anything outside `allow`. Never edit contract/, docs/ or locked tests; report if they look wrong.
 VERIFY: bun run verify --issue <N> --hash <hash>   # the dispatcher writes the real 8-hex hash here; CI reads it from this line
-DONE: docs/agents/loop.md "Definition of done". Screenshots (UI tasks only): <specs for bun scripts/shots.ts, e.g. /login /login:390, or none>
-REPLY WITH: files changed + DO item → file and test that proves it + the last 20 lines of VERIFY output + PR URL + anything you couldn't do
+DONE: CI green with the path guard, no `not implemented: <TASK>` left. Screenshots (UI only): <specs for bun scripts/shots.ts, or none>

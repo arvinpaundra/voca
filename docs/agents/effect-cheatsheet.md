@@ -26,6 +26,11 @@ Names you remember from Effect 2/3 are often wrong. Everything here was checked 
 | `Effect.Effect.Success<T>` | `Effect.Success<T>` (also `Effect.Error<T>`) |
 | `Effect.either` | `Effect.result` → `Result.Result<A, E>` (`Result.isSuccess` / `Result.isFailure`) |
 | time in tests | `TestClock.layer()` from `effect/testing` in the test runtime, then `TestClock.setTime(ms)` / `TestClock.adjust("31 days")`; `Clock.currentTimeMillis` follows it |
+| handler arguments | `({ params, query, payload }) => …`: path params, query string and body, already decoded by the contract |
+| several values in an INSERT / UPDATE | `sql\`INSERT INTO t ${sql.insert({ col: value })}\``, `sql\`UPDATE t SET ${sql.update({ col: value })} WHERE id = ${id}\``: every value a placeholder |
+| randomness a test can control | `Random.nextIntBetween(0, 256)` (not `crypto`); tests run the effect under `Random.withSeed("seed")` |
+| a test that needs the real web handler | `HttpRouter.toWebHandler(layer, { memoMap: rt.memoMap })` shares the test runtime's database (see `be/test/server.test.ts`) |
+| transaction inside a use case | the handler's `Effect.context<…>()` must list `Transaction` too, or the use case's requirement leaks out of the layer |
 | unhandled infra errors | repositories end with `Effect.orDie`: `SqlError`/`SchemaError` are defects, so ports have no error channel |
 
 ## Rules that bit us
