@@ -26,6 +26,7 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 
 - Commit message: the header only, `type(scope): subject` (Conventional Commits). No body: the why goes in the PR description. No attribution (`Co-authored-by`, "Generated with").
 - One logical change per commit; no WIP commits.
+- Write for the reviewer: a blank line between logical steps (setup, each step, the result), one statement per line, and long argument lists, objects, chains and conditions broken across lines. Short code is fine; dense code isn't.
 - Comments say what the code can't: why, an invariant, a trap. Never point to docs (a `docs/` path, a section name, an ADR or FR number): docs move and the reference goes stale.
 - Never `--no-verify`, never amend after pushing, never push to `master`, never commit `.env` or secrets.
 - Workers never force-push. The decision thread may `git push --force-with-lease` a PR branch it has rebased onto `master` (a stacked PR after a squash merge); never plain `--force`.
