@@ -1,44 +1,21 @@
 import { useState } from "react";
 import { Result } from "effect";
-import type { Deck, Word, WordWithCards } from "@voca/contract";
+import type { Deck, WordWithCards } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { session } from "../../lib/appSession";
-import type { WordLabels } from "@voca/contract";
 import styles from "./deck.module.css";
-import { WordForm } from "./WordForm";
-import { DUPLICATE_MESSAGE, draftFromWord, failureTag, updatePayload, type WordDraft } from "./wordModel";
 
 type WordItemProps = {
   deck: Deck;
-  labels: WordLabels;
   word: WordWithCards;
-  onUpdated: (word: Word) => void;
+  onEdit: () => void;
   onDeleted: (slug: string) => void;
 };
 
-type Mode = "view" | "edit" | "confirm-delete";
-
-export function WordItem({ deck, labels, word, onUpdated, onDeleted }: WordItemProps) {
-  const [mode, setMode] = useState<Mode>("view");
+export function WordItem({ deck, word, onEdit, onDeleted }: WordItemProps) {
+  const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const save = async (draft: WordDraft) => {
-    setBusy(true);
-    setError(null);
-
-    const result = await session.call((client) =>
-      client.library.updateWord({ params: { wordSlug: word.slug }, payload: updatePayload(draft) })
-    );
-
-    setBusy(false);
-    if (Result.isSuccess(result)) {
-      onUpdated(result.success);
-      setMode("view");
-      return;
-    }
-    setError(failureTag(result.failure) === "DuplicateWord" ? DUPLICATE_MESSAGE : "Could not save the word. Try again.");
-  };
 
   const remove = async () => {
     setBusy(true);
@@ -51,26 +28,9 @@ export function WordItem({ deck, labels, word, onUpdated, onDeleted }: WordItemP
       onDeleted(word.slug);
       return;
     }
-    setMode("view");
+    setConfirming(false);
     setError("Could not delete the word. Try again.");
   };
-
-  if (mode === "edit") {
-    return (
-      <WordForm
-        labels={labels}
-        initial={draftFromWord(word)}
-        submitLabel="Save"
-        busy={busy}
-        error={error}
-        onSubmit={(draft) => void save(draft)}
-        onCancel={() => {
-          setMode("view");
-          setError(null);
-        }}
-      />
-    );
-  }
 
   return (
     <article className={styles.word}>
@@ -94,22 +54,22 @@ export function WordItem({ deck, labels, word, onUpdated, onDeleted }: WordItemP
       {word.notes !== null && <p className={styles.note} dir="auto">{word.notes}</p>}
       {error !== null && <p className={styles.error} role="alert">{error}</p>}
 
-      {mode === "confirm-delete" ? (
+      {confirming ? (
         <div className={styles.actions}>
           <span className={styles.note}>Delete this word?</span>
           <Button variant="accent" disabled={busy} onClick={() => void remove()}>
             Delete
           </Button>
-          <Button variant="ghost" onClick={() => setMode("view")}>
+          <Button variant="ghost" onClick={() => setConfirming(false)}>
             Keep
           </Button>
         </div>
       ) : (
         <div className={styles.actions}>
-          <Button variant="ghost" onClick={() => setMode("edit")}>
+          <Button variant="ghost" onClick={onEdit}>
             Edit
           </Button>
-          <Button variant="ghost" onClick={() => setMode("confirm-delete")}>
+          <Button variant="ghost" onClick={() => setConfirming(true)}>
             Delete
           </Button>
         </div>
