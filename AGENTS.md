@@ -9,6 +9,8 @@ Voca is a spaced-repetition vocabulary app. Bun workspaces: `contract/` (shared 
 3. Change only files matching the issue's `allow` globs. Never edit the issue itself.
 4. Run the VERIFY command from the issue (`bun run verify --issue <N> --hash <hash>`; the hash is the limits hash from your task message, not a git commit) and repeat until it ends with `verify: all green`. Fix the first error first.
 5. Commit, push, open a PR to `master` whose body says `Closes #<N>`, and reply with the issue's REPLY WITH list.
+6. Your PR stays yours until it merges. You may be sent findings: a CI failure, a conflict with `master`, or the owner's review comments (read them with `gh pr view <PR> --comments`). Fix them on the same branch, run VERIFY again, and push. After a rebase onto `master`, push with `--force-with-lease`.
+7. If you think a finding is wrong, don't work around it: stop and reply `disputed: <finding>: <why>`. If the same check fails 3 rounds in a row, stop and report it.
 
 If the spec, the contract or a locked test looks wrong or contradictory, **stop and report it**. Don't work around it. `contract/`, `docs/`, `scripts/`, `lint/`, `.github/`, `.githooks/` and this file belong to the decision thread.
 
@@ -29,7 +31,7 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 - Write for the reviewer: a blank line between logical steps (setup, each step, the result), one statement per line, and long argument lists, objects, chains and conditions broken across lines. Short code is fine; dense code isn't.
 - Comments say what the code can't: why, an invariant, a trap. Never point to docs (a `docs/` path, a section name, an ADR or FR number): docs move and the reference goes stale.
 - Never `--no-verify`, never amend after pushing, never push to `master`, never commit `.env` or secrets.
-- Workers never force-push. The decision thread may `git push --force-with-lease` a PR branch it has rebased onto `master` (a stacked PR after a squash merge); never plain `--force`.
+- `git push --force-with-lease` only on your own PR branch after rebasing it onto `master`; never plain `--force`. The decision thread never edits or pushes to a worker's branch: findings go to the worker.
 - Branch `<type>/<name>` from the latest `master`, except task work, which branches from its dispatch commit (step 1 above).
 - `.claude/hooks/guard.ts` refuses the never-rules above, plus editing issues and writes through `gh api`, before the command runs. If it blocks you, don't work around it: report it.
 - Workers never merge. The decision thread merges a PR itself only when `scripts/merge-gate.ts` passes (docs/agents/loop.md "Merging"); otherwise the owner merges.

@@ -22,10 +22,8 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets the message below (AGENTS.md is loaded automatically)
 4. self-check  → implementer loops on `bun run verify --issue N --hash H` until green, opens a PR
 5. re-check    → decision thread re-runs the same command in the worktree; checks the Definition of done below
-6. fail        → failing output goes back to the same implementer; max 2 rounds,
-                 then escalate the model tier on the same worktree
-7. review      → reviewer reads diff + task + cited docs (never the implementer's summary);
-                 blocking findings go back to the implementer, max 1 round
+6. review      → the owner reviews the PR (no agent reviewer at this scale)
+7. self-heal   → every finding goes back to the worker that wrote the code: see "Self-healing"
 8. merge       → CI green → `bun scripts/merge-gate.ts <pr>`: `merge: ok` and the worker's report flags nothing → the decision thread
                  squash-merges and tells the owner; otherwise the owner merges. `Closes #N` closes the issue
 ```
@@ -33,7 +31,22 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 **Stop and ask the user when:**
 - a task needs a change to `contract/`, `docs/` or a locked test;
 - Opus also fails verify;
-- the reviewer and the tests disagree about what the spec means.
+- a worker replies `disputed: …` about a finding.
+
+## Self-healing
+
+The decision thread never edits or pushes to a worker's branch. Every finding goes back to the worker, through the same thread (`t3_thread_send`), with the matching message:
+
+| Finding | Message to the worker |
+|---|---|
+| `verify` fails at re-check | "VERIFY fails at re-check: <first error>. Fix it on your branch, run VERIFY again, push." |
+| CI fails | "CI fails on PR #P: <first error>. Fix it on your branch, run VERIFY again, push." |
+| conflict with `master` | "PR #P conflicts with master. Rebase onto `origin/master`, run VERIFY again, push with `--force-with-lease`." |
+| the owner's review | "The owner reviewed PR #P. Address every comment (`gh pr view P --comments`), run VERIFY again, push." |
+
+- **Rounds:** after 2 failed rounds on the same finding, re-dispatch the task to the next model tier (Haiku → Sonnet → Opus) on the same worktree.
+- **Disputes:** a worker that thinks a finding is wrong replies `disputed: …` and stops. The owner decides; if the finding was wrong, the rule or checklist that produced it changes.
+- **Learning:** a finding the owner makes in review that could recur becomes a rule: a lint rule when it is mechanical, an `AGENTS.md` line when it needs judgment.
 
 ## Dispatch checklist
 
@@ -95,4 +108,4 @@ Then: `gh pr merge <pr> --squash --delete-branch`, clean up the worktree, and te
 | lint (`lint/*.yml`) | throw/try/async, layer and cross-package imports |
 | typecheck | contract mismatches, missing handlers (`HttpApiBuilder` requires every endpoint), invented Effect APIs |
 | tests | behaviour against the spec |
-| reviewer | hardcoded answers that only satisfy the tests, spec intent the tests miss |
+| the owner's review | hardcoded answers that only satisfy the tests, spec intent the tests miss, anything a rule doesn't cover yet |
