@@ -56,7 +56,7 @@ Never guess a name; `bun run verify` will reject it at typecheck.
 
 ## Frontend rules
 
-- Call the API only through `HttpApiClient.make(VocaApi)` from `@voca/contract`. Never import `be/`.
+- Call the API only through `callApi` in `fe/src/lib/api.ts` (the typed `HttpApiClient` for `VocaApi`); copy its use from `fe/src/lib/api.test.ts`. Never import `be/`.
 - Access token in memory, refresh token in `localStorage` (`docs/08-auth.md`).
 
 ## Commands

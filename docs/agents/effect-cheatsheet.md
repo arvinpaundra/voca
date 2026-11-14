@@ -23,6 +23,9 @@ Names you remember from Effect 2/3 are often wrong. Everything here was checked 
 | bigint from a Postgres `bigint` | select `id::text`, decode with `Schema.BigIntFromString` (`Schema.BigInt` only accepts a real `bigint`) |
 | `timestamptz` column | pg returns a `Date`: decode with `Schema.DateTimeUtcFromDate` |
 | `Layer.provide` for everything | `Layer.provide` feeds a dependency in; `Layer.provideMerge` feeds it in **and** keeps its services in the output |
+| `Effect.Effect.Success<T>` | `Effect.Success<T>` (also `Effect.Error<T>`) |
+| `Effect.either` | `Effect.result` → `Result.Result<A, E>` (`Result.isSuccess` / `Result.isFailure`) |
+| time in tests | `TestClock.layer()` from `effect/testing` in the test runtime, then `TestClock.setTime(ms)` / `TestClock.adjust("31 days")`; `Clock.currentTimeMillis` follows it |
 | unhandled infra errors | repositories end with `Effect.orDie`: `SqlError`/`SchemaError` are defects, so ports have no error channel |
 
 ## Rules that bit us
@@ -32,4 +35,7 @@ Names you remember from Effect 2/3 are often wrong. Everything here was checked 
 - **Unimplemented endpoint**: `Effect.die("not implemented")`, never `throw`.
 - **Clock**: read time with `Clock.currentTimeMillis`, never `Date.now()` in `be/src`, so tests can control it.
 - **Floating columns**: use `double precision`, never `real`, for values that go back out on the wire (0.9 read back as 0.8999999761581421).
+- **Identity tests**: build the runtime with `makeIdentityRuntime(googleStub({...}))` from `be/test/identity.ts`, and call endpoints with `call((c) => c.auth.refresh({ payload }), bearer?)`. See `be/test/refreshTokens.test.ts`.
+- **Atomic use cases**: wrap the steps in `Transaction.run(...)` (`be/src/shared/transaction.ts`); `RefreshTokens.findForUpdate` locks its row until the transaction ends.
+- **Frontend API calls**: `callApi(options, (client) => client.me.get())` from `fe/src/lib/api.ts` resolves to a `Result`, never rejects; tests pass a fake `fetch` (see `fe/src/lib/api.test.ts`).
 - **Tests**: `ManagedRuntime.make(layer)` once per file, `afterAll(() => rt.dispose())`, `beforeEach(() => rt.runPromise(resetDb))`; call endpoints through `HttpApiTest.groups(VocaApi, ["<group>"])` with `Effect.scoped`; attach a bearer with `HttpApiMiddleware.layerClient`. Assert on `error._tag` after `Effect.flip`.
