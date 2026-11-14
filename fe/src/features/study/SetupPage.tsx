@@ -123,7 +123,7 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
             <p className={styles.note}>This deck has no words to study yet.</p>
           )}
           {state.kind === "ready" && state.drills.length > 0 && (
-            <section className={styles.setup}>
+            <section className={`${styles.setup} ${styles.card}`}>
               <h1 className={styles.title}>Study this deck</h1>
 
               <fieldset className={styles.group}>

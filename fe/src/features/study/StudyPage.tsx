@@ -14,8 +14,18 @@ import { Term } from "../../components/Term";
 import { Wordmark } from "../../components/Wordmark";
 import { session } from "../../lib/appSession";
 import { advance } from "./queue";
+import { segments, tally } from "./progress";
 import { studyReturnHref } from "./returnTo";
 import styles from "./study.module.css";
+
+// Segments and the tally count only first attempts, so a retry never adds a segment.
+const SegmentStrip = ({ size, firstAttempts }: { size: number; firstAttempts: readonly boolean[] }) => (
+  <div className={styles.strip} aria-hidden="true">
+    {segments(size, firstAttempts).map((segment, index) => (
+      <span key={index} className={`${styles.segment} ${styles[segment]}`} />
+    ))}
+  </div>
+);
 
 type LoadState =
   | { readonly kind: "loading" }
@@ -57,17 +67,17 @@ export function StudyPage() {
   }
 
   return (
-    <Shell>
+    <Shell wide>
       <StudyFlow key={state.studySession.slug} studySession={state.studySession} />
     </Shell>
   );
 }
 
-function Shell({ children }: { children: ReactNode }) {
+function Shell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
     <div className={styles.page}>
       <Container>
-        <div className={styles.inner}>
+        <div className={wide ? styles.innerWide : styles.inner}>
           <Wordmark />
           {children}
         </div>
@@ -84,6 +94,7 @@ type Feedback = {
 function StudyFlow({ studySession }: { studySession: Session }) {
   const [queue, setQueue] = useState<readonly Question[]>(studySession.questions);
   const [cleared, setCleared] = useState(studySession.cleared);
+  const [firstAttempts, setFirstAttempts] = useState<readonly boolean[]>([]);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [finished, setFinished] = useState(studySession.status !== "active");
   const [busy, setBusy] = useState(false);
@@ -118,6 +129,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     if (Result.isSuccess(result)) {
       setFeedback({ chosen: wordSlug, result: result.success });
       if (result.success.correct) setCleared((count) => count + 1);
+      if (question.attempt === 1) setFirstAttempts((previous) => [...previous, result.success.correct]);
       return;
     }
 
@@ -154,11 +166,20 @@ function StudyFlow({ studySession }: { studySession: Session }) {
   };
 
   if (finished) {
+    const summary = tally(firstAttempts);
+
     return (
       <section className={styles.setup}>
         <h1 className={styles.title} aria-live="polite">Session complete</h1>
-        <p className={styles.progress}>{`${cleared} / ${studySession.size} cleared`}</p>
-        <Button variant="primary" href={studyReturnHref()}>Back to deck</Button>
+        <SegmentStrip size={studySession.size} firstAttempts={firstAttempts} />
+        <p className={styles.progress}>{`${summary.right} right · ${summary.wrong} wrong`}</p>
+        {summary.accuracy !== null && (
+          <p className={styles.progress}>{`${Math.round(summary.accuracy * 100)}% accuracy`}</p>
+        )}
+        <div className={styles.actions}>
+          <Button variant="primary" href={studyReturnHref()}>Back to deck</Button>
+          <Button variant="ghost" href="/app">Dashboard</Button>
+        </div>
       </section>
     );
   }
@@ -183,10 +204,17 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     return styles.option;
   };
 
+  const summary = tally(firstAttempts);
+
   return (
-    <section className={styles.study}>
-      <p className={styles.progress}>{`${cleared} / ${studySession.size} cleared`}</p>
-      <p className={styles.drill} dir="auto">{head.drillLabel}</p>
+    <div className={styles.layout}>
+      <div className={styles.main}>
+        <header className={styles.header}>
+          <a className={styles.back} href={studyReturnHref()}>Back</a>
+          <p className={styles.drill} dir="auto">{head.drillLabel}</p>
+          <SegmentStrip size={studySession.size} firstAttempts={firstAttempts} />
+          <p className={styles.progress}>{`${cleared} / ${studySession.size}`}</p>
+        </header>
 
       <p className={styles.prompt}>
         {promptIsTerm ? (
@@ -232,6 +260,26 @@ function StudyFlow({ studySession }: { studySession: Session }) {
           End session
         </Button>
       </div>
-    </section>
+      </div>
+
+      <aside className={styles.side} aria-label="This session">
+        <h2 className={styles.sideTitle}>This session</h2>
+        <p className={styles.sideNumber}>{`${cleared} / ${studySession.size}`}</p>
+        <dl className={styles.tallyList}>
+          <div className={styles.tallyRow}>
+            <dt>Right</dt>
+            <dd>{summary.right}</dd>
+          </div>
+          <div className={styles.tallyRow}>
+            <dt>Wrong</dt>
+            <dd>{summary.wrong}</dd>
+          </div>
+          <div className={styles.tallyRow}>
+            <dt>Accuracy</dt>
+            <dd>{summary.accuracy === null ? "—" : `${Math.round(summary.accuracy * 100)}%`}</dd>
+          </div>
+        </dl>
+      </aside>
+    </div>
   );
 }

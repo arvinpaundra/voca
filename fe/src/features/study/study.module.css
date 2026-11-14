@@ -159,3 +159,125 @@
   font-weight: 700;
   color: var(--ink);
 }
+
+.innerWide {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+  justify-items: start;
+}
+
+.layout {
+  width: 100%;
+  display: grid;
+  gap: 32px;
+}
+
+.main {
+  min-width: 0;
+  display: grid;
+  gap: 24px;
+}
+
+.header {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.back {
+  justify-self: start;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.strip {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6px, 1fr));
+  gap: 3px;
+}
+
+.segment {
+  height: 8px;
+  border-radius: var(--radius);
+  background: var(--line);
+}
+
+.right {
+  background: var(--ok);
+}
+
+.wrong {
+  background: var(--bad);
+}
+
+.pending {
+  background: var(--line);
+}
+
+.side {
+  display: none;
+}
+
+.sideTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.sideNumber {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tallyList {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.tallyRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.tallyRow dt {
+  color: var(--muted);
+}
+
+.tallyRow dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.card {
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 32px;
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    align-items: start;
+  }
+
+  .side {
+    display: grid;
+    gap: 16px;
+    border: var(--bw) solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: sticky;
+    top: 24px;
+  }
+}
