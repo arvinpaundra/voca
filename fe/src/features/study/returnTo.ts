@@ -18,5 +18,5 @@ export const studyReturnHref = (): string => {
     deckSlug = null;
   }
 
-  return deckSlug === null ? "/dashboard" : `/decks/${deckSlug}`;
+  return deckSlug === null ? "/app" : `/app/decks/${deckSlug}`;
 };

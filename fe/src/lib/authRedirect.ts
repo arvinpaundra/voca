@@ -1,8 +1,11 @@
-/** Routes that need a session: the signed-in app. The landing page and the callback are for everyone. */
+/** Routes that need a session: the signed-in app under `/app`. The landing page and the callback are for everyone. */
 export const isAppPath = (path: string): boolean => {
-  if (path === "/dashboard" || path === "/study") return true;
+  return path === "/app" || path.startsWith("/app/");
+}
 
-  return path.startsWith("/decks/");
+/** App pages framed by the sidebar. A study session takes the whole screen. */
+export const hasShell = (path: string): boolean => {
+  return isAppPath(path) && path !== "/app/study";
 }
 
 /**
@@ -10,7 +13,7 @@ export const isAppPath = (path: string): boolean => {
  * Null means "render this route".
  */
 export const authRedirect = (path: string, signedIn: boolean): string | null => {
-  if (signedIn && path === "/login") return "/dashboard"
+  if (signedIn && path === "/login") return "/app"
   if (!signedIn && isAppPath(path)) return "/login"
   return null
 }

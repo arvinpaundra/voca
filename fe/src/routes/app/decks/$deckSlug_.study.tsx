@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { StudySetupPage } from "../../features/study/SetupPage";
+import { StudySetupPage } from "../../../features/study/SetupPage";
 
 // The trailing underscore keeps this route beside the deck page rather than inside its layout.
-export const Route = createFileRoute("/decks/$deckSlug_/study")({
+export const Route = createFileRoute("/app/decks/$deckSlug_/study")({
   component: StudySetupRoute,
 });
 

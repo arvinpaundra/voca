@@ -1,21 +1,23 @@
 import { expect, test } from "bun:test"
-import { authRedirect, isAppPath } from "./authRedirect.ts"
+import { authRedirect, hasShell, isAppPath } from "./authRedirect.ts"
 
 // Where each route sends the browser before rendering. The landing page is for everyone; the app is for the signed-in;
-// the sign-in page is for the signed-out. App paths are also the pages that get the sidebar.
+// the sign-in page is for the signed-out.
 
 test.each([
   ["/", false, null],
   ["/", true, null],
   ["/login", false, null],
-  ["/login", true, "/dashboard"],
-  ["/dashboard", false, "/login"],
-  ["/dashboard", true, null],
-  ["/decks/TQ7KM2PV9X", false, "/login"],
-  ["/decks/TQ7KM2PV9X", true, null],
-  ["/decks/TQ7KM2PV9X/study", false, "/login"],
-  ["/study", false, "/login"],
-  ["/study", true, null],
+  ["/login", true, "/app"],
+  ["/app", false, "/login"],
+  ["/app", true, null],
+  ["/app/decks", false, "/login"],
+  ["/app/decks/TQ7KM2PV9X", false, "/login"],
+  ["/app/decks/TQ7KM2PV9X", true, null],
+  ["/app/decks/TQ7KM2PV9X/study", false, "/login"],
+  ["/app/study", false, "/login"],
+  ["/app/study", true, null],
+  ["/app/discover", false, "/login"],
   ["/auth/callback", false, null],
   ["/auth/callback", true, null]
 ] as const)("%s, signed in: %s → %s", (path, signedIn, expected) => {
@@ -23,15 +25,26 @@ test.each([
 })
 
 test.each([
-  ["/dashboard", true],
-  ["/decks/TQ7KM2PV9X", true],
-  ["/decks/TQ7KM2PV9X/study", true],
-  ["/study", true],
+  ["/app", true],
+  ["/app/", true],
+  ["/app/decks/TQ7KM2PV9X/study", true],
+  ["/app/study", true],
   ["/", false],
   ["/login", false],
   ["/auth/callback", false],
-  ["/studying", false],
-  ["/dashboards", false]
+  ["/apple", false],
+  ["/dashboard", false]
 ] as const)("%s is an app path: %s", (path, expected) => {
   expect(isAppPath(path)).toBe(expected)
+})
+
+test.each([
+  ["/app", true],
+  ["/app/decks", true],
+  ["/app/decks/TQ7KM2PV9X/study", true],
+  ["/app/discover", true],
+  ["/app/study", false],
+  ["/login", false]
+] as const)("%s has the sidebar: %s", (path, expected) => {
+  expect(hasShell(path)).toBe(expected)
 })
