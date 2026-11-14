@@ -1,5 +1,7 @@
 /** Routes that need a session: the signed-in app. The landing page and the callback are for everyone. */
-const isAppPath = (path: string): boolean => path === "/dashboard" || path.startsWith("/decks/")
+export const isAppPath = (_path: string): boolean => {
+  throw new Error("not implemented: NAV")
+}
 
 /**
  * Where a route sends the browser before rendering, given whether a session exists (a refresh token is stored).
