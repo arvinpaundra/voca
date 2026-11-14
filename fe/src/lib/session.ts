@@ -23,6 +23,11 @@ export interface Session {
    * remain; on 401 Unauthorized refreshes once and retries once. Resolves to a `Result`, like `callApi`.
    */
   readonly call: <A, E>(f: (client: ApiClient) => Effect.Effect<A, E>) => Promise<Result.Result<A, E | unknown>>
+  /**
+   * One call without a bearer token, for public routes such as Google sign-in. Never refreshes and never signs out:
+   * a 401 there means the request was refused, not that the session ended.
+   */
+  readonly callPublic: <A, E>(f: (client: ApiClient) => Effect.Effect<A, E>) => Promise<Result.Result<A, E | unknown>>
   /** Stores the tokens of a successful sign-in (`POST /auth/google`). */
   readonly signIn: (tokens: AuthTokens) => void
   /** `POST /auth/logout` with the refresh token (best effort), then clears the tokens and calls `onSignedOut`. */
@@ -96,6 +101,9 @@ export const createSession = (deps: SessionDeps): Session => {
     return attempt()
   }
 
+  const callPublic = <A, E>(f: (client: ApiClient) => Effect.Effect<A, E>): Promise<Result.Result<A, E | unknown>> =>
+    callApi(options(() => null), f)
+
   const signIn = (tokens: AuthTokens): void => {
     store.setRefresh(tokens.refreshToken)
     store.setAccess(tokens.accessToken, tokens.expiresIn, deps.now())
@@ -109,5 +117,5 @@ export const createSession = (deps: SessionDeps): Session => {
     signedOut()
   }
 
-  return { call, signIn, signOut }
+  return { call, callPublic, signIn, signOut }
 }

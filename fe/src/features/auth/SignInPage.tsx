@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../components/Button";
 import { Container } from "../../components/Container";
 import { Wordmark } from "../../components/Wordmark";
@@ -10,6 +10,18 @@ export function SignInPage() {
   const configured = clientId != null && clientId !== "";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // A page restored from the back-forward cache keeps its state, so the busy flag from the
+  // redirect would still show "Redirecting…" when the learner comes back from Google.
+  useEffect(() => {
+    function onPageShow(event: PageTransitionEvent) {
+      if (!event.persisted) return;
+      setBusy(false);
+      setError(null);
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   async function handleSignIn() {
     if (!configured || busy) return;
