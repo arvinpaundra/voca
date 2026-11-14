@@ -7,6 +7,7 @@
 //   bun run verify --scope all          or a list: --scope be,fe
 //   bun run verify --fast               skip Testcontainers tests and the fe build (pre-push)
 import { Glob } from "bun"
+import { writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 
 const { values: opt } = parseArgs({
@@ -23,6 +24,8 @@ const run = (cmd: string[], cwd = ".") => {
 }
 
 const fail = (step: string, out: string): never => {
+  // The full output survives even when the console is cut (`| tail`), so an intermittent failure can be diagnosed.
+  writeFileSync(".verify-last.log", `${new Date().toISOString()} ✗ ${step}\n${out}\n`)
   const lines = out.split("\n")
   console.log(`✗ ${step}\n${lines.slice(0, 80).join("\n")}${lines.length > 80 ? `\n… ${lines.length - 80} more lines` : ""}`)
   console.log(`\nFix the FIRST error above, then re-run: bun run verify ${process.argv.slice(2).join(" ")}`)

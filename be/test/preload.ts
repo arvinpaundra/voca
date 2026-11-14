@@ -6,7 +6,11 @@
 import "./runtime.ts"
 import { afterAll } from "bun:test"
 import { SQL } from "bun"
+import { PgClient } from "@effect/sql-pg"
+import { Effect, Redacted } from "effect"
 import { GenericContainer, getContainerRuntimeClient, type WaitStrategy } from "testcontainers"
+import { migrate } from "../migrations/index.ts"
+import { TEMPLATE_DB } from "./setup.ts"
 
 const TIMEOUT_MS = 60_000
 
@@ -25,7 +29,10 @@ class QueryWait implements WaitStrategy {
     const url = `postgres://postgres:voca@${host}:${boundPorts.getFirstBinding()}/postgres`
     const deadline = Date.now() + TIMEOUT_MS
     while (Date.now() < deadline) {
-      if (await new SQL(url).unsafe("SELECT 1").then(() => true, () => false)) return
+      const probe = new SQL(url)
+      const ok = await probe.unsafe("SELECT 1").then(() => true, () => false)
+      await probe.close()
+      if (ok) return
       await Bun.sleep(250)
     }
     return Promise.reject(new Error(`Postgres did not accept connections within ${TIMEOUT_MS / 1000}s`))
@@ -53,6 +60,16 @@ const container = await new GenericContainer("postgres:18.3-alpine")
     return process.exit(1)
   })
 
-process.env.TEST_PG_ADMIN_URL = `postgres://postgres:voca@${container.getHost()}:${container.getMappedPort(5432)}/postgres`
+const server = `postgres://postgres:voca@${container.getHost()}:${container.getMappedPort(5432)}`
+process.env.TEST_PG_ADMIN_URL = `${server}/postgres`
 afterAll(() => container.stop())
+
+// Migrate once, into a template; each test file then copies it (setup.ts). The slow part (migrations, and the first
+// round trips to a just-woken Podman VM) happens here, outside the per-test timeout.
+const admin = new SQL(`${server}/postgres`)
+await admin.unsafe(`CREATE DATABASE ${TEMPLATE_DB}`)
+await admin.close()
+await Effect.runPromise(
+  migrate.pipe(Effect.provide(PgClient.layer({ url: Redacted.make(`${server}/${TEMPLATE_DB}`), maxConnections: 1 })))
+)
 process.on("SIGINT", () => process.exit(130)) // the sweep above removes what a killed run leaves behind
