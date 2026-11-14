@@ -31,8 +31,13 @@ export interface Session {
 
 const REFRESH_LOCK = "voca-refresh"
 
-const isUnauthorized = (error: unknown): boolean =>
-  typeof error === "object" && error !== null && "_tag" in error && error._tag === "Unauthorized"
+// "rejected" ends the session; "failed" (network, server) keeps the tokens so a later call can try again.
+type Rotation = "rotated" | "rejected" | "failed"
+
+const hasTag = (error: unknown, tag: string): boolean =>
+  typeof error === "object" && error !== null && "_tag" in error && error._tag === tag
+
+const isUnauthorized = (error: unknown): boolean => hasTag(error, "Unauthorized")
 
 export const createSession = (deps: SessionDeps): Session => {
   const { store } = deps
@@ -48,26 +53,28 @@ export const createSession = (deps: SessionDeps): Session => {
   }
 
   // Concurrent callers share one refresh, so a single rotation happens per burst of 401s.
-  let inFlight: Promise<boolean> | null = null
+  let inFlight: Promise<Rotation> | null = null
 
-  const rotate = async (): Promise<boolean> => {
+  const rotate = async (): Promise<Rotation> => {
     // Read the refresh token here, inside the lock: another tab may have rotated it while we waited.
     const refreshToken = store.getRefresh()
-    if (refreshToken === null) return false
+    if (refreshToken === null) return "rejected"
+
     const result = await callApi(options(() => null), (c) => c.auth.refresh({ payload: { refreshToken } }))
-    if (Result.isFailure(result)) return false
+    if (Result.isFailure(result)) return hasTag(result.failure, "RefreshTokenInvalid") ? "rejected" : "failed"
+
     store.setRefresh(result.success.refreshToken)
     store.setAccess(result.success.accessToken, result.success.expiresIn, deps.now())
-    return true
+    return "rotated"
   }
 
-  const refresh = (): Promise<boolean> => {
+  const refresh = (): Promise<Rotation> => {
     if (inFlight === null) {
       inFlight = deps
         .lock(REFRESH_LOCK, rotate)
-        .then((ok) => {
-          if (!ok) signedOut()
-          return ok
+        .then((outcome) => {
+          if (outcome === "rejected") signedOut()
+          return outcome
         })
         .finally(() => {
           inFlight = null
@@ -77,15 +84,15 @@ export const createSession = (deps: SessionDeps): Session => {
   }
 
   const call = async <A, E>(f: (client: ApiClient) => Effect.Effect<A, E>): Promise<Result.Result<A, E | unknown>> => {
-    if (store.getRefresh() !== null && store.needsRefresh(deps.now()) && !(await refresh())) {
-      return Result.fail(new Error("signed out"))
-    }
+    const needsRefresh = store.getRefresh() !== null && store.needsRefresh(deps.now())
+    if (needsRefresh && (await refresh()) === "rejected") return Result.fail(new Error("signed out"))
+
     const used = store.getAccess()
     const attempt = () => callApi(options(() => store.getAccess()), f)
     const first = await attempt()
     if (Result.isSuccess(first) || !isUnauthorized(first.failure)) return first
     // Another call already refreshed while this one was in flight: retry with the new token, without refreshing again.
-    if (store.getAccess() === used && !(await refresh())) return first
+    if (store.getAccess() === used && (await refresh()) !== "rotated") return first
     return attempt()
   }
 
