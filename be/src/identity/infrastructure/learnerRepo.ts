@@ -63,11 +63,20 @@ export const LearnerRepoLive = Layer.effect(
       Request: NewGoogleLearner,
       Result: LearnerRow,
       execute: (learner) => sql`
-        INSERT INTO learners (slug, google_sub, email, name, avatar_url, timezone, day_start_hour, desired_retention,
-          new_per_day, default_session_size, default_mode, created_at)
-        VALUES (${learner.slug}, ${learner.googleSub}, ${learner.email}, ${learner.name}, ${learner.avatarUrl},
-          ${learner.timezone}, ${NEW_LEARNER.dayStartHour}, ${NEW_LEARNER.desiredRetention}, ${NEW_LEARNER.newPerDay},
-          ${NEW_LEARNER.defaultSessionSize}, ${NEW_LEARNER.defaultMode}, ${new Date(learner.createdAt)})
+        INSERT INTO learners ${sql.insert({
+          slug: learner.slug,
+          google_sub: learner.googleSub,
+          email: learner.email,
+          name: learner.name,
+          avatar_url: learner.avatarUrl,
+          timezone: learner.timezone,
+          day_start_hour: NEW_LEARNER.dayStartHour,
+          desired_retention: NEW_LEARNER.desiredRetention,
+          new_per_day: NEW_LEARNER.newPerDay,
+          default_session_size: NEW_LEARNER.defaultSessionSize,
+          default_mode: NEW_LEARNER.defaultMode,
+          created_at: new Date(learner.createdAt)
+        })}
         ON CONFLICT (google_sub) WHERE deleted_at IS NULL
         DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url
         RETURNING id::text AS id, slug, email, name, avatar_url AS "avatarUrl", created_at AS "createdAt",
@@ -102,9 +111,14 @@ export const LearnerRepoLive = Layer.effect(
           )
         }),
       saveSettings: (id, settings) => sql`
-        UPDATE learners SET timezone = ${settings.timezone}, day_start_hour = ${settings.dayStartHour},
-          desired_retention = ${settings.desiredRetention}, new_per_day = ${settings.newPerDay},
-          default_session_size = ${settings.defaultSessionSize}, default_mode = ${settings.defaultMode}
+        UPDATE learners SET ${sql.update({
+          timezone: settings.timezone,
+          day_start_hour: settings.dayStartHour,
+          desired_retention: settings.desiredRetention,
+          new_per_day: settings.newPerDay,
+          default_session_size: settings.defaultSessionSize,
+          default_mode: settings.defaultMode
+        })}
         WHERE id = ${id}`.pipe(Effect.asVoid, Effect.orDie)
     })
   })
