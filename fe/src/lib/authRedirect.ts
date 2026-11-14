@@ -1,6 +1,8 @@
 /** Routes that need a session: the signed-in app. The landing page and the callback are for everyone. */
-export const isAppPath = (_path: string): boolean => {
-  throw new Error("not implemented: NAV")
+export const isAppPath = (path: string): boolean => {
+  if (path === "/dashboard" || path === "/study") return true;
+
+  return path.startsWith("/decks/");
 }
 
 /**
