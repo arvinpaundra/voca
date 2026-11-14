@@ -12,6 +12,7 @@ import { LearnerRepoLive } from "../src/identity/infrastructure/learnerRepo.ts"
 import { RefreshTokensLive } from "../src/identity/infrastructure/refreshTokens.ts"
 import { TokenSignerLive } from "../src/identity/infrastructure/tokenSigner.ts"
 import { TransactionLive } from "../src/shared/transaction.ts"
+import { CommunityHandlers } from "../src/library/http/community.ts"
 import { LibraryHandlers } from "../src/library/http/library.ts"
 import { DeckRepoLive } from "../src/library/infrastructure/deckRepo.ts"
 import { WordRepoLive } from "../src/library/infrastructure/wordRepo.ts"
@@ -21,7 +22,7 @@ import { StudyHandlers } from "../src/study/http/index.ts"
 import { StudyLive } from "../src/study/infrastructure/index.ts"
 import { TestLayer } from "./layers.ts"
 
-// Harness for API tests (identity, library, study and insight): the real identity stack against real Postgres, Google stubbed, time on a TestClock.
+// Harness for API tests (identity, library, community, study and insight): the real identity stack against real Postgres, Google stubbed, time on a TestClock.
 // Each file: `const rt = makeIdentityRuntime(googleStub({...})); afterAll(() => rt.dispose()); beforeEach(() => rt.runPromise(resetDb))`.
 
 export const TEST_SECRET = Redacted.make("test-secret-test-secret-test-secret!")
@@ -51,7 +52,7 @@ export const makeIdentityRuntime = (google = googleStub({})) => {
     google
   ).pipe(Layer.provideMerge(TestLayer))
 
-  const api = Layer.mergeAll(MeHandlers, AuthHandlers, LibraryHandlers, StudyHandlers, InsightHandlers).pipe(
+  const api = Layer.mergeAll(MeHandlers, AuthHandlers, LibraryHandlers, CommunityHandlers, StudyHandlers, InsightHandlers).pipe(
     Layer.provideMerge(AuthorizationLive),
     Layer.provideMerge(infra)
   )
@@ -73,7 +74,7 @@ export const call = <A, E, R>(
     ),
     Effect.scoped
   )
-const makeClient = () => HttpApiTest.groups(VocaApi, ["auth", "me", "library", "study", "insight"])
+const makeClient = () => HttpApiTest.groups(VocaApi, ["auth", "me", "library", "community", "study", "insight"])
 
 /** Moves the test clock to an ISO instant, e.g. `at("2026-11-14T00:00:00Z")`. */
 export const at = (iso: string) => TestClock.setTime(Date.parse(iso))

@@ -8,9 +8,9 @@ export const CommunityHandlers = HttpApiBuilder.group(
   "community",
   Effect.fn(function* (handlers) {
     return handlers.handleAll({
-      list: () => Effect.die("not implemented"),
-      get: () => Effect.die("not implemented"),
-      fork: () => Effect.die("not implemented")
+      list: () => Effect.die("not implemented: CB"),
+      get: () => Effect.die("not implemented: CB"),
+      fork: () => Effect.die("not implemented: CB")
     })
   })
 )
