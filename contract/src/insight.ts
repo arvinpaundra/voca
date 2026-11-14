@@ -60,6 +60,19 @@ export const DeckStats = Schema.Struct({
 })
 export type DeckStats = typeof DeckStats.Type
 
+// ───── Learner stats ─────
+
+/**
+ * `DeckStats` over every live deck of the Learner, plus the study streak.
+ * `streak.days` counts consecutive study days with at least one review, ending today when `studiedToday`,
+ * otherwise ending yesterday: the streak breaks only once a whole study day passes without a review.
+ */
+export const LearnerStats = Schema.Struct({
+  ...DeckStats.fields,
+  streak: Schema.Struct({ days: Count, studiedToday: Schema.Boolean })
+})
+export type LearnerStats = typeof LearnerStats.Type
+
 // ───── Notifications ─────
 
 export const Notifications = Schema.Struct({
@@ -88,6 +101,7 @@ export type Activity = typeof Activity.Type
 export class InsightGroup extends HttpApiGroup.make("insight").add(
   HttpApiEndpoint.get("wordStats", "/words/:wordSlug/stats", { params: { wordSlug: WordSlug }, success: WordStats, error: NotFound }),
   HttpApiEndpoint.get("deckStats", "/decks/:deckSlug/stats", { params: { deckSlug: DeckSlug }, success: DeckStats, error: NotFound }),
+  HttpApiEndpoint.get("learnerStats", "/me/stats", { success: LearnerStats }),
   HttpApiEndpoint.get("notifications", "/notifications", { success: Notifications }),
   /** Default month: the current study month. A future month returns `days: []`. */
   HttpApiEndpoint.get("activity", "/me/activity", { query: { month: Schema.optionalKey(Month) }, success: Activity })
