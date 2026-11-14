@@ -1,7 +1,10 @@
 import type { DateTime, Effect, Option } from "effect"
 import { Context, Data } from "effect"
 import type { LearnerSettings, LearnerSlug } from "@voca/contract"
+import type { GoogleProfile } from "../domain/auth.ts"
 import type { LearnerRecord } from "../domain/learner.ts"
+
+export type { GoogleProfile }
 
 /** Ports have exactly one implementation each, in `infrastructure/`; tests swap in other layers. Infra failures are defects. */
 export class LearnerRepo extends Context.Service<LearnerRepo, {
@@ -17,14 +20,6 @@ export class TokenSigner extends Context.Service<TokenSigner, {
   sign(slug: LearnerSlug): Effect.Effect<{ readonly token: string; readonly expiresIn: number }>
   verify(token: string): Effect.Effect<LearnerSlug, InvalidToken>
 }>()("voca/identity/TokenSigner") {}
-
-/** What Voca keeps from a Google sign-in: the ID token's claims after `checkIdTokenClaims` accepted them (docs/08). */
-export interface GoogleProfile {
-  readonly sub: string
-  readonly email: string
-  readonly name: string
-  readonly avatarUrl: string | null
-}
 
 export class GoogleSignInFailed extends Data.TaggedError("GoogleSignInFailed")<{ readonly reason: string }> {}
 
