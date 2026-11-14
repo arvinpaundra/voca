@@ -52,7 +52,7 @@ function DeckList({ state }: { state: DeckListState }) {
       <ul className={styles.deckList}>
         {state.decks.map((deck) => (
           <li key={deck.slug}>
-            <a className={styles.deck} href={`/decks/${deck.slug}`}>
+            <a className={styles.deck} href={`/app/decks/${deck.slug}`}>
               <span className={styles.deckTitle}>{deck.title}</span>
               <span className={styles.deckMeta}>
                 {deck.termLang} → {deck.meaningLang} · {deck.wordCount} words · {deck.dueCount} due

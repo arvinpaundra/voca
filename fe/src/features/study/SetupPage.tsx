@@ -103,7 +103,7 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
     if (Result.isSuccess(result)) {
       rememberDrills(window.localStorage, parsedSlug, selected);
       rememberStudyDeck(parsedSlug);
-      window.location.assign("/study");
+      window.location.assign("/app/study");
       return;
     }
 
@@ -163,7 +163,7 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
                 <Button variant="primary" disabled={busy || selected.length === 0} onClick={() => void start()}>
                   Start session
                 </Button>
-                <Button variant="ghost" href={`/decks/${deckSlug}`}>
+                <Button variant="ghost" href={`/app/decks/${deckSlug}`}>
                   Back to deck
                 </Button>
               </div>

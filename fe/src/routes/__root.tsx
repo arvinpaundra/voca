@@ -1,7 +1,7 @@
 import { Outlet, createRootRoute, redirect, useRouterState } from "@tanstack/react-router";
 import { AppShell } from "../components/AppShell";
 import { tokenStore } from "../lib/appSession";
-import { authRedirect, isAppPath } from "../lib/authRedirect";
+import { authRedirect, hasShell } from "../lib/authRedirect";
 
 export const Route = createRootRoute({
   // Runs before every route, so the sign-in rules live in one place.
@@ -16,8 +16,8 @@ export const Route = createRootRoute({
 function RootComponent() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  // The shell stays mounted while moving between app pages, so its deck list loads once.
-  if (!isAppPath(pathname)) return <Outlet />;
+  // The shell stays mounted while moving between app pages, so the learner loads once.
+  if (!hasShell(pathname)) return <Outlet />;
 
   return (
     <AppShell>

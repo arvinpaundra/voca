@@ -173,6 +173,16 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 - Hovering a square shows "23 reviews · Tue, 4 Nov 2026". The header shows the month's total.
 - History is kept when a deck is deleted, so the heatmap never loses days.
 
+## FR-19 Dashboard (M)
+
+The signed-in home at `/app`, top to bottom:
+- **Streak:** consecutive study days, with a nudge to study today when today has no review yet.
+- **Today:** due, overdue, hard words due and new words available, with a Start studying button (FR-7's counts).
+- **Activity:** the heatmap (FR-18).
+- **Progress:** cards by maturity (new, learning, mature), true retention and calibration over 30 days, reviews per day over 30 days, and the due forecast for the next 7 study days.
+- **My decks:** each deck with its languages, word count and due count.
+- **Won't:** tags, weekly chart, "words mastered", "best deck". They need definitions the data model does not have.
+
 ---
 
 ## Extra ideas (not in your list)

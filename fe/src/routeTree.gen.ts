@@ -10,21 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as StudyRouteImport } from './routes/study'
+import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppDiscoverRouteImport } from './routes/app/discover'
+import { Route as AppStudyRouteImport } from './routes/app/study'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
-import { Route as DecksDeckSlugRouteImport } from './routes/decks/$deckSlug'
-import { Route as DecksDeckSlugStudyRouteImport } from './routes/decks/$deckSlug_.study'
+import { Route as AppDecksIndexRouteImport } from './routes/app/decks/index'
+import { Route as AppDecksDeckSlugRouteImport } from './routes/app/decks/$deckSlug'
+import { Route as AppDecksDeckSlugStudyRouteImport } from './routes/app/decks/$deckSlug_.study'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -32,9 +29,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StudyRoute = StudyRouteImport.update({
-  id: '/study',
-  path: '/study',
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/app/',
+  path: '/app/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppDiscoverRoute = AppDiscoverRouteImport.update({
+  id: '/app/discover',
+  path: '/app/discover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppStudyRoute = AppStudyRouteImport.update({
+  id: '/app/study',
+  path: '/app/study',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -42,83 +49,102 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DecksDeckSlugRoute = DecksDeckSlugRouteImport.update({
-  id: '/decks/$deckSlug',
-  path: '/decks/$deckSlug',
+const AppDecksIndexRoute = AppDecksIndexRouteImport.update({
+  id: '/app/decks/',
+  path: '/app/decks/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DecksDeckSlugStudyRoute = DecksDeckSlugStudyRouteImport.update({
-  id: '/decks/$deckSlug_/study',
-  path: '/decks/$deckSlug/study',
+const AppDecksDeckSlugRoute = AppDecksDeckSlugRouteImport.update({
+  id: '/app/decks/$deckSlug',
+  path: '/app/decks/$deckSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppDecksDeckSlugStudyRoute = AppDecksDeckSlugStudyRouteImport.update({
+  id: '/app/decks/$deckSlug_/study',
+  path: '/app/decks/$deckSlug/study',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/study': typeof StudyRoute
+  '/app/discover': typeof AppDiscoverRoute
+  '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/decks/$deckSlug': typeof DecksDeckSlugRoute
-  '/decks/$deckSlug/study': typeof DecksDeckSlugStudyRoute
+  '/app/': typeof AppIndexRoute
+  '/app/decks/$deckSlug': typeof AppDecksDeckSlugRoute
+  '/app/decks/': typeof AppDecksIndexRoute
+  '/app/decks/$deckSlug/study': typeof AppDecksDeckSlugStudyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/study': typeof StudyRoute
+  '/app/discover': typeof AppDiscoverRoute
+  '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/decks/$deckSlug': typeof DecksDeckSlugRoute
-  '/decks/$deckSlug/study': typeof DecksDeckSlugStudyRoute
+  '/app': typeof AppIndexRoute
+  '/app/decks/$deckSlug': typeof AppDecksDeckSlugRoute
+  '/app/decks': typeof AppDecksIndexRoute
+  '/app/decks/$deckSlug/study': typeof AppDecksDeckSlugStudyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/study': typeof StudyRoute
+  '/app/discover': typeof AppDiscoverRoute
+  '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/decks/$deckSlug': typeof DecksDeckSlugRoute
-  '/decks/$deckSlug_/study': typeof DecksDeckSlugStudyRoute
+  '/app/': typeof AppIndexRoute
+  '/app/decks/$deckSlug': typeof AppDecksDeckSlugRoute
+  '/app/decks/': typeof AppDecksIndexRoute
+  '/app/decks/$deckSlug_/study': typeof AppDecksDeckSlugStudyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
     | '/login'
-    | '/study'
+    | '/app/discover'
+    | '/app/study'
     | '/auth/callback'
-    | '/decks/$deckSlug'
-    | '/decks/$deckSlug/study'
+    | '/app/'
+    | '/app/decks/$deckSlug'
+    | '/app/decks/'
+    | '/app/decks/$deckSlug/study'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
     | '/login'
-    | '/study'
+    | '/app/discover'
+    | '/app/study'
     | '/auth/callback'
-    | '/decks/$deckSlug'
-    | '/decks/$deckSlug/study'
+    | '/app'
+    | '/app/decks/$deckSlug'
+    | '/app/decks'
+    | '/app/decks/$deckSlug/study'
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
     | '/login'
-    | '/study'
+    | '/app/discover'
+    | '/app/study'
     | '/auth/callback'
-    | '/decks/$deckSlug'
-    | '/decks/$deckSlug_/study'
+    | '/app/'
+    | '/app/decks/$deckSlug'
+    | '/app/decks/'
+    | '/app/decks/$deckSlug_/study'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  StudyRoute: typeof StudyRoute
+  AppDiscoverRoute: typeof AppDiscoverRoute
+  AppStudyRoute: typeof AppStudyRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  DecksDeckSlugRoute: typeof DecksDeckSlugRoute
-  DecksDeckSlugStudyRoute: typeof DecksDeckSlugStudyRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppDecksDeckSlugRoute: typeof AppDecksDeckSlugRoute
+  AppDecksIndexRoute: typeof AppDecksIndexRoute
+  AppDecksDeckSlugStudyRoute: typeof AppDecksDeckSlugStudyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -130,13 +156,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -144,11 +163,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/study': {
-      id: '/study'
-      path: '/study'
-      fullPath: '/study'
-      preLoaderRoute: typeof StudyRouteImport
+    '/app/': {
+      id: '/app/'
+      path: '/app'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/discover': {
+      id: '/app/discover'
+      path: '/app/discover'
+      fullPath: '/app/discover'
+      preLoaderRoute: typeof AppDiscoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/study': {
+      id: '/app/study'
+      path: '/app/study'
+      fullPath: '/app/study'
+      preLoaderRoute: typeof AppStudyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
@@ -158,18 +191,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/decks/$deckSlug': {
-      id: '/decks/$deckSlug'
-      path: '/decks/$deckSlug'
-      fullPath: '/decks/$deckSlug'
-      preLoaderRoute: typeof DecksDeckSlugRouteImport
+    '/app/decks/': {
+      id: '/app/decks/'
+      path: '/app/decks'
+      fullPath: '/app/decks/'
+      preLoaderRoute: typeof AppDecksIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/decks/$deckSlug_/study': {
-      id: '/decks/$deckSlug_/study'
-      path: '/decks/$deckSlug/study'
-      fullPath: '/decks/$deckSlug/study'
-      preLoaderRoute: typeof DecksDeckSlugStudyRouteImport
+    '/app/decks/$deckSlug': {
+      id: '/app/decks/$deckSlug'
+      path: '/app/decks/$deckSlug'
+      fullPath: '/app/decks/$deckSlug'
+      preLoaderRoute: typeof AppDecksDeckSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/decks/$deckSlug_/study': {
+      id: '/app/decks/$deckSlug_/study'
+      path: '/app/decks/$deckSlug/study'
+      fullPath: '/app/decks/$deckSlug/study'
+      preLoaderRoute: typeof AppDecksDeckSlugStudyRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -177,12 +217,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  StudyRoute: StudyRoute,
+  AppDiscoverRoute: AppDiscoverRoute,
+  AppStudyRoute: AppStudyRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  DecksDeckSlugRoute: DecksDeckSlugRoute,
-  DecksDeckSlugStudyRoute: DecksDeckSlugStudyRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppDecksDeckSlugRoute: AppDecksDeckSlugRoute,
+  AppDecksIndexRoute: AppDecksIndexRoute,
+  AppDecksDeckSlugStudyRoute: AppDecksDeckSlugStudyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

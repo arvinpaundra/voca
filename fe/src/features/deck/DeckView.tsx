@@ -117,7 +117,7 @@ export function DeckView({ deck }: DeckViewProps) {
         <h1 className={styles.title} dir="auto">{deck.title}</h1>
         {deck.description !== "" && <p className={styles.body} dir="auto">{deck.description}</p>}
         <div>
-          <Button variant="accent" href={`/decks/${deck.slug}/study`}>
+          <Button variant="accent" href={`/app/decks/${deck.slug}/study`}>
             Study
           </Button>
         </div>

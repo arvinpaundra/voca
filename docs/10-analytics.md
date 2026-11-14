@@ -59,6 +59,15 @@ Accuracy, streak, history, and latency come from `reviews`, which holds first at
 | Calibration (30 days) | Average predicted `retrievability` vs. actual correct share for the same reviews. If the gap exceeds 5 points, MCQ inflation is happening and lowering retention helps |
 | Reviews per day (30 days) | For a sparkline |
 
+`new` in the maturity counts is the number of (word, drill) pairs the Learner can study but has no Card for: the same pairs the setup screen counts as new per drill (a reading drill applies only to words with a reading).
+
+## Learner stats and streak (FR-19)
+
+`GET /me/stats` returns `LearnerStats`: every Deck stats metric above, computed over all of the Learner's live decks (the same queries without the deck filter), plus the study streak.
+
+- **Streak:** the number of consecutive study days with at least one row in `reviews` (first attempts only, as in the heatmap), counting back from today. When today has no review yet, it counts back from yesterday and `studiedToday` is false, so the streak breaks only after a whole study day passes without a review.
+- Days are study days (timezone and `dayStartHour`), bucketed with the same expression as the heatmap. A gaps-and-islands query over the distinct days, newest first, on the `(learner_id, reviewed_at)` index.
+
 ## Study activity heatmap (FR-18)
 
 One month per request: one grouped query over the `(learner_id, reviewed_at)` index. Each review is shifted into its study day, so days match the scheduler's:
@@ -99,6 +108,6 @@ ORDER BY overdue DESC, due DESC;
 
 The `newAvailable` count is `newPerDay − newDoneToday`, where new-done counts today's reviews with `state_before = 'new'` across all drills. The per-drill new counts on the setup screen come from `/decks/:deckSlug/drills`.
 
-**Frontend:** a TanStack Query with `refetchOnWindowFocus: true` and `refetchInterval: 5 min`. The badge shows the total due. The panel is a native `<dialog>`, and each row links to `/study?deck=…`.
+**Frontend:** a TanStack Query with `refetchOnWindowFocus: true` and `refetchInterval: 5 min`. The badge shows the total due. The panel is a native `<dialog>`, and each row links to `/app/decks/:deckSlug/study`.
 
 Web push, email, and service workers are not included (YAGNI). Add them if retention data shows that learners forget to come back.

@@ -107,7 +107,7 @@ describe("endpoint inventory", () => {
     "post /api/sessions", "get /api/sessions/active", "post /api/sessions/{sessionSlug}/answers",
     "post /api/sessions/{sessionSlug}/abandon",
     "get /api/hard-words", "put /api/words/{wordSlug}/drills/{drill}/hard", "delete /api/words/{wordSlug}/drills/{drill}/hard",
-    "get /api/words/{wordSlug}/stats", "get /api/decks/{deckSlug}/stats", "get /api/notifications"
+    "get /api/words/{wordSlug}/stats", "get /api/decks/{deckSlug}/stats", "get /api/me/stats", "get /api/notifications"
   ]
 
   const spec = OpenApi.fromApi(VocaApi)

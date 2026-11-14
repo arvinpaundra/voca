@@ -51,7 +51,7 @@ export function StudyPage() {
     return (
       <Shell>
         <p className={styles.note}>No study session is running.</p>
-        <Button variant="ghost" href="/dashboard">Back to dashboard</Button>
+        <Button variant="ghost" href="/app">Back to dashboard</Button>
       </Shell>
     );
   }

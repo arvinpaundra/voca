@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DeckPage } from "../../features/deck/DeckPage";
+import { DeckPage } from "../../../features/deck/DeckPage";
 
-export const Route = createFileRoute("/decks/$deckSlug")({
+export const Route = createFileRoute("/app/decks/$deckSlug")({
   component: DeckRoute,
 });
 

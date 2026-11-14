@@ -32,7 +32,7 @@ export function CallbackPage() {
       timezone,
     }).then((outcome) => {
       if (outcome.kind === "signed-in") {
-        void navigate({ to: "/dashboard", replace: true });
+        void navigate({ to: "/app", replace: true });
         return;
       }
       setFailure(outcome.reason);
