@@ -10,6 +10,8 @@ export type { GoogleProfile }
 export class LearnerRepo extends Context.Service<LearnerRepo, {
   findBySlug(slug: LearnerSlug): Effect.Effect<Option.Option<LearnerRecord>>
   findById(id: bigint): Effect.Effect<Option.Option<LearnerRecord>>
+  /** Creates the Learner for this Google account with the new-Learner defaults, or refreshes the profile of the existing one. */
+  upsertGoogle(profile: GoogleProfile, timezone: LearnerSettings["timezone"]): Effect.Effect<LearnerRecord>
   saveSettings(id: bigint, settings: LearnerSettings): Effect.Effect<void>
 }>()("voca/identity/LearnerRepo") {}
 
