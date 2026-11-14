@@ -1,4 +1,4 @@
-import { Clock, Effect, Layer, Option, Schema } from "effect"
+import { Clock, Effect, Layer, Option, Random, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
 import { LearnerSettings, LearnerSlug, SLUG_LENGTH, slug } from "@voca/contract"
 import { LearnerRecord } from "../domain/learner.ts"
@@ -34,9 +34,12 @@ const toRecord = ({ id, slug, email, name, avatarUrl, createdAt, ...settings }: 
 
 /**
  * A new Learner slug: 8 Crockford characters drawn from Effect's `Random`, so a test can seed it.
- * Not implemented yet: the slug-collision task.
  */
-export const newLearnerSlug: Effect.Effect<string> = Effect.die("not implemented")
+export const newLearnerSlug: Effect.Effect<string> = Effect.gen(function* () {
+  const bytes = yield* Effect.forEach(Array.from({ length: SLUG_LENGTH.learner }), () => Random.nextIntBetween(0, 256))
+
+  return slug(Uint8Array.from(bytes))
+})
 
 export const LearnerRepoLive = Layer.effect(
   LearnerRepo,
@@ -90,8 +93,6 @@ export const LearnerRepoLive = Layer.effect(
           new_per_day AS "newPerDay", default_session_size AS "defaultSessionSize", default_mode AS "defaultMode"`
     })
 
-    const newSlug = () => slug(crypto.getRandomValues(new Uint8Array(SLUG_LENGTH.learner)))
-
     return LearnerRepo.of({
       findBySlug: (slug) => findBySlug(slug).pipe(Effect.map(Option.map(toRecord)), Effect.orDie),
       findById: (id) => findById(id).pipe(Effect.map(Option.map(toRecord)), Effect.orDie),
@@ -108,9 +109,12 @@ export const LearnerRepoLive = Layer.effect(
               timezone,
               createdAt
             }).pipe(sql.withTransaction) // a savepoint inside the caller's transaction, so a slug clash can be retried
-          return yield* attempt(newSlug()).pipe(
+          return yield* newLearnerSlug.pipe(
+            Effect.flatMap(attempt),
             Effect.catchTag("SqlError", (error) =>
-              error.reason._tag === "UniqueViolation" ? attempt(newSlug()) : Effect.fail(error)
+              error.reason._tag === "UniqueViolation"
+                ? newLearnerSlug.pipe(Effect.flatMap(attempt))
+                : Effect.fail(error)
             ),
             Effect.map(toRecord),
             Effect.orDie
