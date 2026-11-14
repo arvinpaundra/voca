@@ -1,4 +1,4 @@
-import { Layer } from "effect"
+import { StudyRepoLive } from "./studyRepo.ts"
 
-/** Every study port implementation, as one layer. app.ts and the test harness provide it; the study task fills it. */
-export const StudyLive = Layer.empty
+/** Every study port implementation, as one layer. app.ts and the test harness provide it. */
+export const StudyLive = StudyRepoLive
