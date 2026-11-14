@@ -39,7 +39,7 @@ export function DeckPage({ deckSlug }: { deckSlug: string }) {
       <Container>
         <div className={styles.inner}>
           <Wordmark />
-          {deck !== null && <DeckView deck={deck} />}
+          {deck !== null && <DeckView deck={deck} onDeckChanged={setDeck} />}
           {deck === null && failed && <p className={styles.note}>This deck could not be loaded.</p>}
           {deck === null && !failed && <p className={styles.note}>Loading…</p>}
         </div>

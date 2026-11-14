@@ -1,0 +1,26 @@
+.dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  padding: 0;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.dialog::backdrop {
+  background: rgb(30 28 25 / 0.4);
+}
+
+.body {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.title {
+  font-family: var(--f-display);
+  font-size: 22px;
+  font-weight: 400;
+}
