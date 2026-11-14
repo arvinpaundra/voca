@@ -50,6 +50,7 @@ Dispatch message (the same every time; the issue carries the content):
 ```
 Do GitHub issue #N in the repo you are in (arvinpaundra/voca). The issue is the approved design: implement it now, no separate design round.
 Your limits hash is H: your VERIFY command is `bun run verify --issue N --hash H`. (It is a hash of the issue's limits block, not a git commit.)
+Your worktree already contains the task's locked test and stub: create your branch from the commit you start at (`git switch -c <name>`), never from master.
 Read AGENTS.md first, then `gh issue view N`. Follow AGENTS.md exactly, including the commit and PR rules. Do not edit the issue.
 Reply with the issue's REPLY WITH list.
 ```

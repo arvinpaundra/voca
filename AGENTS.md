@@ -4,7 +4,7 @@ Voca is a spaced-repetition vocabulary app. Bun workspaces: `contract/` (shared 
 
 ## If you were given a task (a GitHub issue)
 
-1. Work only in your own worktree and branch (named in the task).
+1. Work only in your own worktree. It starts at the dispatch commit, which already holds the task's locked tests and stubs: create your branch there (`git switch -c <name>`), never from `master`.
 2. Read the issue (`gh issue view <N>`), then the docs sections it lists under SPEC. Read the `locked` tests: they are the spec. Make them pass; never edit them.
 3. Change only files matching the issue's `allow` globs. Never edit the issue itself.
 4. Run the VERIFY command from the issue (`bun run verify --issue <N> --hash <hash>`; the hash is the limits hash from your task message, not a git commit) and repeat until it ends with `verify: all green`. Fix the first error first.
@@ -28,7 +28,7 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 - One logical change per commit; no WIP commits.
 - Never `--no-verify`, never amend after pushing, never push to `master`, never commit `.env` or secrets.
 - Workers never force-push. The decision thread may `git push --force-with-lease` a PR branch it has rebased onto `master` (a stacked PR after a squash merge); never plain `--force`.
-- Branch `<type>/<name>` from the latest `master`.
+- Branch `<type>/<name>` from the latest `master`, except task work, which branches from its dispatch commit (step 1 above).
 - `.claude/hooks/guard.ts` refuses the never-rules above, plus editing issues and writes through `gh api`, before the command runs. If it blocks you, don't work around it: report it.
 - Workers never merge. The decision thread merges a PR itself only when `scripts/merge-gate.ts` passes (docs/agents/loop.md "Merging"); otherwise the owner merges.
 - The dispatcher picks the model and escalates (Haiku, then Sonnet, then Opus after 2 failed verify rounds). Workers never switch models.
