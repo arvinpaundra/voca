@@ -32,6 +32,12 @@ const toRecord = ({ id, slug, email, name, avatarUrl, createdAt, ...settings }: 
   id, slug, email, name, avatarUrl, createdAt, settings
 })
 
+/**
+ * A new Learner slug: 8 Crockford characters drawn from Effect's `Random`, so a test can seed it.
+ * Not implemented yet: the slug-collision task.
+ */
+export const newLearnerSlug: Effect.Effect<string> = Effect.die("not implemented")
+
 export const LearnerRepoLive = Layer.effect(
   LearnerRepo,
   Effect.gen(function* () {
