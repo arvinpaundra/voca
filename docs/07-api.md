@@ -85,6 +85,7 @@ Session = {
 |---|---|---|
 | GET | `/words/:wordSlug/stats` | → `{ word, drills: WordStats[] }`, one entry per drill the word has a card in (see [10](10-analytics.md)) |
 | GET | `/decks/:deckSlug/stats` | → `DeckStats` |
+| GET | `/me/stats` | → `LearnerStats`: `DeckStats` over all live decks, plus `streak: {days, studiedToday}` (see [10](10-analytics.md)) |
 | GET | `/me/activity` | `?month=YYYY-MM` (default: the current study month) → `{ month: "2026-11", days: [{date: "2026-11-04", reviews: 23}] }`: only days with reviews. A future month returns `days: []`; the UI never asks for one (FR-18) |
 | GET | `/notifications` | → `{ decks: [{deckSlug, title, due, overdue, byDrill: [{drill, label, due}]}], hardDue, newAvailable }` |
 
