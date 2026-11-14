@@ -64,7 +64,7 @@ POST /auth/refresh {refreshToken}
 - **Purge:** `DELETE FROM refresh_tokens WHERE expires_at < now() - interval '7 days'`, run on boot and every 24 hours by an Effect `Schedule` inside the API process. No cron job is needed.
 
 ## Frontend handling
-- The API client wraps each request: if a call returns `401 Unauthorized`, it refreshes once and retries once. If the refresh fails, it clears storage and goes to `/login`.
+- The API client wraps each request: if a call returns `401 Unauthorized`, it refreshes once and retries once. If the server rejects the refresh token (`RefreshTokenInvalid`), it clears storage and goes to `/login`. A network or server error keeps the tokens and fails only that call, so the next call tries again.
 - A refresh is also started proactively when `exp − now < 60 s`.
 
 ## Trade-off of not using cookies (accepted)
