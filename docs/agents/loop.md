@@ -18,7 +18,7 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 1. decision    → ADR / contract change committed to master
 2. spec        → locked tests written red on a local dispatch branch (never master, so master stays green);
                  `bun run verify --print-locked <paths>` gives the `locked` lines; task issue created (limits block + DO);
-                 `bun run verify --issue N --print-hash` gives the limits hash
+                 `bun run verify --body draft.md --print-hash` gives the limits hash before the issue exists
 3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets the message below (AGENTS.md is loaded automatically)
 4. self-check  → implementer loops on `bun run verify --issue N --hash H` until green, opens a PR
 5. re-check    → decision thread re-runs the same command in the worktree; compares the diff against DO
@@ -40,7 +40,7 @@ Before sending, from the dispatch branch:
 
 1. **The branch holds everything the worker needs**: the current `scripts/verify.ts`, the reference code, the locked tests. Anything missing here fails the worker's gate for reasons it cannot fix. (Pilot 2 lost a round to this.)
 2. Each `locked` entry is `path: hash` from `bun run verify --print-locked`, so a rebase never invalidates it.
-3. Write the real limits hash into the issue's VERIFY line (it sits outside the yaml block, so the hash stays valid); CI reads it from there. `bun run verify --issue N --print-hash` works from that branch, and `bun run verify --issue N --hash H` gets past `✓ path guard` (it fails later, on the red tests, which is expected).
+3. The draft's VERIFY line carries the real limits hash before the issue is created (it sits outside the yaml block, so writing it doesn't change the hash); CI reads it from there. Issues are never edited after creation: the agent hook refuses it. Then `bun run verify --issue N --hash H` gets past `✓ path guard` (it fails later, on the red tests, which is expected).
 4. The red tests are satisfiable: they pass against a throwaway implementation that you then discard.
 5. Every fact the task depends on is in the issue (pilot 2: the contract declares no not-found error for the endpoint, so the task said to use `Effect.orDie`).
 
