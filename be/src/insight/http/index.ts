@@ -9,10 +9,10 @@ export const InsightHandlers = HttpApiBuilder.group(
   Effect.fn(function* (handlers) {
     return handlers.handleAll({
       wordStats: () => Effect.die("not implemented"),
-      deckStats: () => Effect.die("not implemented"),
-      learnerStats: () => Effect.die("not implemented"),
-      notifications: () => Effect.die("not implemented"),
-      activity: () => Effect.die("not implemented")
+      deckStats: () => Effect.die("not implemented: IB"),
+      learnerStats: () => Effect.die("not implemented: IB"),
+      notifications: () => Effect.die("not implemented: IB"),
+      activity: () => Effect.die("not implemented: IB")
     })
   })
 )
