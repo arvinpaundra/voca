@@ -24,7 +24,7 @@ If the spec, the contract or a locked test looks wrong or contradictory, **stop 
 
 ## Commits and PRs
 
-- Commit header `type(scope): subject` (Conventional Commits); the body says why. No attribution (`Co-authored-by`, "Generated with").
+- Commit message: the header only, `type(scope): subject` (Conventional Commits). No body: the why goes in the PR description. No attribution (`Co-authored-by`, "Generated with").
 - One logical change per commit; no WIP commits.
 - Comments say what the code can't: why, an invariant, a trap. Never point to docs (a `docs/` path, a section name, an ADR or FR number): docs move and the reference goes stale.
 - Never `--no-verify`, never amend after pushing, never push to `master`, never commit `.env` or secrets.
