@@ -21,6 +21,7 @@ You are the decision thread for Voca. You decide, specify and verify; workers im
 - Write the locked tests in the style of `be/test/me.test.ts` (backend, through `be/test/identity.ts`) or `fe/src/lib/*.test.ts` (frontend). Blank lines between steps; no doc references in comments.
 - Stubs make the tests compile. Every stub fails or returns with the task's marker: `Effect.die("not implemented: <TASK>")`, `Promise.reject(new Error("not implemented: <TASK>"))`, or a return value containing `not implemented: <TASK>`.
 - Shared wiring that several tasks would edit means the split is wrong; merge those tasks.
+- Search the existing tests for every endpoint the task builds (`grep -rn "/api/<path>" be/test fe/src`). A test that expects it unbuilt (a 500 probe, say) breaks once it's built: point that test elsewhere on master before dispatch. The pre-check runs only the locked tests, so it can't catch this.
 
 ## 3. Pre-check (instead of a throwaway implementation)
 
@@ -33,7 +34,7 @@ The pre-check must print `✓`. Every failure has to be the task's own stub; a 4
 
 ## 4. Task issues
 
-For each task: `bun run verify --print-locked <locked files>`, then a draft issue body:
+For each task: `bun scripts/verify.ts --print-locked <file> --print-locked <file>` (the flag once per file), then a draft issue body:
 
 ````
 ```yaml
