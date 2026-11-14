@@ -33,6 +33,7 @@ rule:
 id: http-imports
 language: TypeScript
 files: ["be/src/*/http/**/*.ts"]
+ignores: ["be/src/shared/http/**"] # the health probe runs `SELECT 1` itself; no context, no use case to go through
 severity: error
 message: "http handlers call use cases; no SQL, no repositories (docs/03). Wire infrastructure layers in be/src/main.ts."
 rule:
