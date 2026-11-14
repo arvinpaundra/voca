@@ -12,11 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/app/index'
-import { Route as AppDiscoverRouteImport } from './routes/app/discover'
 import { Route as AppStudyRouteImport } from './routes/app/study'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AppDecksIndexRouteImport } from './routes/app/decks/index'
 import { Route as AppDecksDeckSlugRouteImport } from './routes/app/decks/$deckSlug'
+import { Route as AppDiscoverIndexRouteImport } from './routes/app/discover/index'
+import { Route as AppDiscoverDeckSlugRouteImport } from './routes/app/discover/$deckSlug'
 import { Route as AppDecksDeckSlugStudyRouteImport } from './routes/app/decks/$deckSlug_.study'
 
 const IndexRoute = IndexRouteImport.update({
@@ -32,11 +33,6 @@ const LoginRoute = LoginRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppDiscoverRoute = AppDiscoverRouteImport.update({
-  id: '/app/discover',
-  path: '/app/discover',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppStudyRoute = AppStudyRouteImport.update({
@@ -59,6 +55,16 @@ const AppDecksDeckSlugRoute = AppDecksDeckSlugRouteImport.update({
   path: '/app/decks/$deckSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppDiscoverIndexRoute = AppDiscoverIndexRouteImport.update({
+  id: '/app/discover/',
+  path: '/app/discover/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppDiscoverDeckSlugRoute = AppDiscoverDeckSlugRouteImport.update({
+  id: '/app/discover/$deckSlug',
+  path: '/app/discover/$deckSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppDecksDeckSlugStudyRoute = AppDecksDeckSlugStudyRouteImport.update({
   id: '/app/decks/$deckSlug_/study',
   path: '/app/decks/$deckSlug/study',
@@ -68,35 +74,38 @@ const AppDecksDeckSlugStudyRoute = AppDecksDeckSlugStudyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/app/discover': typeof AppDiscoverRoute
   '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/decks/$deckSlug': typeof AppDecksDeckSlugRoute
+  '/app/discover/$deckSlug': typeof AppDiscoverDeckSlugRoute
   '/app/decks/': typeof AppDecksIndexRoute
+  '/app/discover/': typeof AppDiscoverIndexRoute
   '/app/decks/$deckSlug/study': typeof AppDecksDeckSlugStudyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/app/discover': typeof AppDiscoverRoute
   '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
   '/app/decks/$deckSlug': typeof AppDecksDeckSlugRoute
+  '/app/discover/$deckSlug': typeof AppDiscoverDeckSlugRoute
   '/app/decks': typeof AppDecksIndexRoute
+  '/app/discover': typeof AppDiscoverIndexRoute
   '/app/decks/$deckSlug/study': typeof AppDecksDeckSlugStudyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/app/discover': typeof AppDiscoverRoute
   '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/decks/$deckSlug': typeof AppDecksDeckSlugRoute
+  '/app/discover/$deckSlug': typeof AppDiscoverDeckSlugRoute
   '/app/decks/': typeof AppDecksIndexRoute
+  '/app/discover/': typeof AppDiscoverIndexRoute
   '/app/decks/$deckSlug_/study': typeof AppDecksDeckSlugStudyRoute
 }
 export interface FileRouteTypes {
@@ -104,46 +113,50 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/app/discover'
     | '/app/study'
     | '/auth/callback'
     | '/app/'
     | '/app/decks/$deckSlug'
+    | '/app/discover/$deckSlug'
     | '/app/decks/'
+    | '/app/discover/'
     | '/app/decks/$deckSlug/study'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
-    | '/app/discover'
     | '/app/study'
     | '/auth/callback'
     | '/app'
     | '/app/decks/$deckSlug'
+    | '/app/discover/$deckSlug'
     | '/app/decks'
+    | '/app/discover'
     | '/app/decks/$deckSlug/study'
   id:
     | '__root__'
     | '/'
     | '/login'
-    | '/app/discover'
     | '/app/study'
     | '/auth/callback'
     | '/app/'
     | '/app/decks/$deckSlug'
+    | '/app/discover/$deckSlug'
     | '/app/decks/'
+    | '/app/discover/'
     | '/app/decks/$deckSlug_/study'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
-  AppDiscoverRoute: typeof AppDiscoverRoute
   AppStudyRoute: typeof AppStudyRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDecksDeckSlugRoute: typeof AppDecksDeckSlugRoute
+  AppDiscoverDeckSlugRoute: typeof AppDiscoverDeckSlugRoute
   AppDecksIndexRoute: typeof AppDecksIndexRoute
+  AppDiscoverIndexRoute: typeof AppDiscoverIndexRoute
   AppDecksDeckSlugStudyRoute: typeof AppDecksDeckSlugStudyRoute
 }
 
@@ -168,13 +181,6 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app/discover': {
-      id: '/app/discover'
-      path: '/app/discover'
-      fullPath: '/app/discover'
-      preLoaderRoute: typeof AppDiscoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/study': {
@@ -205,6 +211,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDecksDeckSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/discover/': {
+      id: '/app/discover/'
+      path: '/app/discover'
+      fullPath: '/app/discover/'
+      preLoaderRoute: typeof AppDiscoverIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/discover/$deckSlug': {
+      id: '/app/discover/$deckSlug'
+      path: '/app/discover/$deckSlug'
+      fullPath: '/app/discover/$deckSlug'
+      preLoaderRoute: typeof AppDiscoverDeckSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/decks/$deckSlug_/study': {
       id: '/app/decks/$deckSlug_/study'
       path: '/app/decks/$deckSlug/study'
@@ -218,12 +238,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
-  AppDiscoverRoute: AppDiscoverRoute,
   AppStudyRoute: AppStudyRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AppIndexRoute: AppIndexRoute,
   AppDecksDeckSlugRoute: AppDecksDeckSlugRoute,
+  AppDiscoverDeckSlugRoute: AppDiscoverDeckSlugRoute,
   AppDecksIndexRoute: AppDecksIndexRoute,
+  AppDiscoverIndexRoute: AppDiscoverIndexRoute,
   AppDecksDeckSlugStudyRoute: AppDecksDeckSlugStudyRoute,
 }
 export const routeTree = rootRouteImport

@@ -54,6 +54,19 @@
   color: var(--bad);
 }
 
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 12px;
+}
+
+.link {
+  color: var(--ink);
+}
+
 .stats {
   display: grid;
   gap: 8px;
