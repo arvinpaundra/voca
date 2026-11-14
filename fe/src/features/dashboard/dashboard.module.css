@@ -1,0 +1,100 @@
+.page {
+  padding-top: 96px;
+  padding-bottom: 96px;
+}
+
+.inner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: grid;
+  gap: 32px;
+  justify-items: start;
+}
+
+.header {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+
+.title {
+  font-size: 32px;
+}
+
+.body {
+  color: var(--muted);
+}
+
+.section {
+  width: 100%;
+  display: grid;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+}
+
+.deckList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.deck {
+  display: grid;
+  gap: 4px;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 14px 18px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.deck:hover {
+  background-color: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.deckTitle {
+  font-weight: 700;
+}
+
+.deckMeta {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.input {
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+}
+
+.error {
+  color: var(--muted);
+  font-size: 14px;
+}

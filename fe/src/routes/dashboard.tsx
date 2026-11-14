@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router";
+import { DashboardPage } from "../features/dashboard/DashboardPage";
 
-// Placeholder until task FD moves the signed-in home here.
 export const Route = createFileRoute("/dashboard")({
-  component: () => null
-})
+  component: DashboardPage,
+});
