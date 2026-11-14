@@ -1,0 +1,1184 @@
+{
+ "generator": "ts-fsrs 5.4.2, enable_short_term false, fuzz off, default w",
+ "w": [
+  0.212,
+  1.2931,
+  2.3065,
+  8.2956,
+  6.4133,
+  0.8334,
+  3.0194,
+  0.001,
+  1.8722,
+  0.1666,
+  0.796,
+  1.4835,
+  0.0614,
+  0.2629,
+  1.6483,
+  0.6014,
+  1.8729,
+  0.5425,
+  0.0912,
+  0.0658,
+  0.1542
+ ],
+ "initial": [
+  {
+   "rating": 1,
+   "stability": 0.212,
+   "difficulty": 6.4133
+  },
+  {
+   "rating": 2,
+   "stability": 1.2931,
+   "difficulty": 5.11217071
+  },
+  {
+   "rating": 3,
+   "stability": 2.3065,
+   "difficulty": 2.11810397
+  },
+  {
+   "rating": 4,
+   "stability": 8.2956,
+   "difficulty": 1
+  }
+ ],
+ "retrievability": [
+  {
+   "elapsedDays": 1,
+   "stability": 1,
+   "r": 0.9
+  },
+  {
+   "elapsedDays": 2.3065,
+   "stability": 3,
+   "r": 0.91702508
+  },
+  {
+   "elapsedDays": 10,
+   "stability": 10,
+   "r": 0.9
+  },
+  {
+   "elapsedDays": 10,
+   "stability": 30,
+   "r": 0.9573358
+  },
+  {
+   "elapsedDays": 40,
+   "stability": 5,
+   "r": 0.71455566
+  }
+ ],
+ "interval": [
+  {
+   "stability": 0.212,
+   "desiredRetention": 0.8,
+   "days": 1
+  },
+  {
+   "stability": 1.2931,
+   "desiredRetention": 0.8,
+   "days": 4
+  },
+  {
+   "stability": 2.3065,
+   "desiredRetention": 0.8,
+   "days": 8
+  },
+  {
+   "stability": 8.2956,
+   "desiredRetention": 0.8,
+   "days": 28
+  },
+  {
+   "stability": 30,
+   "desiredRetention": 0.8,
+   "days": 99
+  },
+  {
+   "stability": 1000,
+   "desiredRetention": 0.8,
+   "days": 3316
+  },
+  {
+   "stability": 100000,
+   "desiredRetention": 0.8,
+   "days": 36500
+  },
+  {
+   "stability": 0.212,
+   "desiredRetention": 0.9,
+   "days": 1
+  },
+  {
+   "stability": 1.2931,
+   "desiredRetention": 0.9,
+   "days": 1
+  },
+  {
+   "stability": 2.3065,
+   "desiredRetention": 0.9,
+   "days": 2
+  },
+  {
+   "stability": 8.2956,
+   "desiredRetention": 0.9,
+   "days": 8
+  },
+  {
+   "stability": 30,
+   "desiredRetention": 0.9,
+   "days": 30
+  },
+  {
+   "stability": 1000,
+   "desiredRetention": 0.9,
+   "days": 1000
+  },
+  {
+   "stability": 100000,
+   "desiredRetention": 0.9,
+   "days": 36500
+  },
+  {
+   "stability": 0.212,
+   "desiredRetention": 0.95,
+   "days": 1
+  },
+  {
+   "stability": 1.2931,
+   "desiredRetention": 0.95,
+   "days": 1
+  },
+  {
+   "stability": 2.3065,
+   "desiredRetention": 0.95,
+   "days": 1
+  },
+  {
+   "stability": 8.2956,
+   "desiredRetention": 0.95,
+   "days": 3
+  },
+  {
+   "stability": 30,
+   "desiredRetention": 0.95,
+   "days": 12
+  },
+  {
+   "stability": 1000,
+   "desiredRetention": 0.95,
+   "days": 403
+  },
+  {
+   "stability": 100000,
+   "desiredRetention": 0.95,
+   "days": 36500
+  }
+ ],
+ "next": [
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 0.5,
+   "rating": 1,
+   "after": {
+    "stability": 0.09061994,
+    "difficulty": 8.80193285
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 0.5,
+   "rating": 2,
+   "after": {
+    "stability": 0.92136731,
+    "difficulty": 7.59538061
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 0.5,
+   "rating": 3,
+   "after": {
+    "stability": 1.39152662,
+    "difficulty": 6.38882837
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 0.5,
+   "rating": 4,
+   "after": {
+    "stability": 2.4211354,
+    "difficulty": 5.18227613
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 1,
+   "rating": 1,
+   "after": {
+    "stability": 0.10089865,
+    "difficulty": 8.80193285
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 1,
+   "rating": 2,
+   "after": {
+    "stability": 1.22213789,
+    "difficulty": 7.59538061
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 1,
+   "rating": 3,
+   "after": {
+    "stability": 1.89164398,
+    "difficulty": 6.38882837
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 1,
+   "rating": 4,
+   "after": {
+    "stability": 3.35780522,
+    "difficulty": 5.18227613
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 3,
+   "rating": 1,
+   "after": {
+    "stability": 0.1202987,
+    "difficulty": 8.80193285
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 3,
+   "rating": 2,
+   "after": {
+    "stability": 1.74939291,
+    "difficulty": 7.59538061
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 3,
+   "rating": 3,
+   "after": {
+    "stability": 2.76835668,
+    "difficulty": 6.38882837
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 3,
+   "rating": 4,
+   "after": {
+    "stability": 4.99980043,
+    "difficulty": 5.18227613
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 12,
+   "rating": 1,
+   "after": {
+    "stability": 0.14725481,
+    "difficulty": 8.80193285
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 12,
+   "rating": 2,
+   "after": {
+    "stability": 2.41357786,
+    "difficulty": 7.59538061
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 12,
+   "rating": 3,
+   "after": {
+    "stability": 3.87275467,
+    "difficulty": 6.38882837
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 12,
+   "rating": 4,
+   "after": {
+    "stability": 7.06822742,
+    "difficulty": 5.18227613
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 90,
+   "rating": 1,
+   "after": {
+    "stability": 0.18622113,
+    "difficulty": 8.80193285
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 90,
+   "rating": 2,
+   "after": {
+    "stability": 3.27073684,
+    "difficulty": 7.59538061
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 90,
+   "rating": 3,
+   "after": {
+    "stability": 5.29802734,
+    "difficulty": 6.38882837
+   }
+  },
+  {
+   "stability": 0.212,
+   "difficulty": 6.4,
+   "elapsedDays": 90,
+   "rating": 4,
+   "after": {
+    "stability": 9.73762061,
+    "difficulty": 5.18227613
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 0.5,
+   "rating": 1,
+   "after": {
+    "stability": 0.54954259,
+    "difficulty": 7.38855208
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 0.5,
+   "rating": 2,
+   "after": {
+    "stability": 3.95328384,
+    "difficulty": 4.74084023
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 0.5,
+   "rating": 3,
+   "after": {
+    "stability": 5.04475049,
+    "difficulty": 2.09312837
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 0.5,
+   "rating": 4,
+   "after": {
+    "stability": 7.43496934,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 1,
+   "rating": 1,
+   "after": {
+    "stability": 0.57160037,
+    "difficulty": 7.38855208
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 1,
+   "rating": 2,
+   "after": {
+    "stability": 5.32493269,
+    "difficulty": 4.74084023
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 1,
+   "rating": 3,
+   "after": {
+    "stability": 7.32551012,
+    "difficulty": 2.09312837
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 1,
+   "rating": 4,
+   "after": {
+    "stability": 11.70660406,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 3,
+   "rating": 1,
+   "after": {
+    "stability": 0.63718644,
+    "difficulty": 7.38855208
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 3,
+   "rating": 2,
+   "after": {
+    "stability": 9.24899262,
+    "difficulty": 4.74084023
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 3,
+   "rating": 3,
+   "after": {
+    "stability": 13.85038531,
+    "difficulty": 2.09312837
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 3,
+   "rating": 4,
+   "after": {
+    "stability": 23.92704279,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 12,
+   "rating": 1,
+   "after": {
+    "stability": 0.78206355,
+    "difficulty": 7.38855208
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 12,
+   "rating": 2,
+   "after": {
+    "stability": 17.23455162,
+    "difficulty": 4.74084023
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 12,
+   "rating": 3,
+   "after": {
+    "stability": 27.12866764,
+    "difficulty": 2.09312837
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 12,
+   "rating": 4,
+   "after": {
+    "stability": 48.79593777,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 90,
+   "rating": 1,
+   "after": {
+    "stability": 1.06759284,
+    "difficulty": 7.38855208
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 90,
+   "rating": 2,
+   "after": {
+    "stability": 30.98278775,
+    "difficulty": 4.74084023
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 90,
+   "rating": 3,
+   "after": {
+    "stability": 49.98905363,
+    "difficulty": 2.09312837
+   }
+  },
+  {
+   "stability": 2.3065,
+   "difficulty": 2.1,
+   "elapsedDays": 90,
+   "rating": 4,
+   "after": {
+    "stability": 91.61115469,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 0.5,
+   "rating": 1,
+   "after": {
+    "stability": 1.19484962,
+    "difficulty": 8.34176237
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 0.5,
+   "rating": 2,
+   "after": {
+    "stability": 10.9383932,
+    "difficulty": 6.66599536
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 0.5,
+   "rating": 3,
+   "after": {
+    "stability": 11.56034785,
+    "difficulty": 4.99022837
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 0.5,
+   "rating": 4,
+   "after": {
+    "stability": 12.9223755,
+    "difficulty": 3.31446137
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 1,
+   "rating": 1,
+   "after": {
+    "stability": 1.2086474,
+    "difficulty": 8.34176237
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 1,
+   "rating": 2,
+   "after": {
+    "stability": 11.8325715,
+    "difficulty": 6.66599536
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 1,
+   "rating": 3,
+   "after": {
+    "stability": 13.04717575,
+    "difficulty": 4.99022837
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 1,
+   "rating": 4,
+   "after": {
+    "stability": 15.70705546,
+    "difficulty": 3.31446137
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 3,
+   "rating": 1,
+   "after": {
+    "stability": 1.25878365,
+    "difficulty": 8.34176237
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 3,
+   "rating": 2,
+   "after": {
+    "stability": 15.03804997,
+    "difficulty": 6.66599536
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 3,
+   "rating": 3,
+   "after": {
+    "stability": 18.37720313,
+    "difficulty": 4.99022837
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 3,
+   "rating": 4,
+   "after": {
+    "stability": 25.68966375,
+    "difficulty": 3.31446137
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 12,
+   "rating": 1,
+   "after": {
+    "stability": 1.42215256,
+    "difficulty": 8.34176237
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 12,
+   "rating": 2,
+   "after": {
+    "stability": 25.04869082,
+    "difficulty": 6.66599536
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 12,
+   "rating": 3,
+   "after": {
+    "stability": 35.02276492,
+    "difficulty": 4.99022837
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 12,
+   "rating": 4,
+   "after": {
+    "stability": 56.86513642,
+    "difficulty": 3.31446137
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 90,
+   "rating": 1,
+   "after": {
+    "stability": 1.92579921,
+    "difficulty": 8.34176237
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 90,
+   "rating": 2,
+   "after": {
+    "stability": 52.62963255,
+    "difficulty": 6.66599536
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 90,
+   "rating": 3,
+   "after": {
+    "stability": 80.8839916,
+    "difficulty": 4.99022837
+   }
+  },
+  {
+   "stability": 10,
+   "difficulty": 5,
+   "elapsedDays": 90,
+   "rating": 4,
+   "after": {
+    "stability": 142.75862787,
+    "difficulty": 3.31446137
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 0.5,
+   "rating": 1,
+   "after": {
+    "stability": 2.15903811,
+    "difficulty": 9.49218857
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 0.5,
+   "rating": 2,
+   "after": {
+    "stability": 40.31615662,
+    "difficulty": 8.98945847
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 0.5,
+   "rating": 3,
+   "after": {
+    "stability": 40.52570106,
+    "difficulty": 8.48672837
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 0.5,
+   "rating": 4,
+   "after": {
+    "stability": 40.98458551,
+    "difficulty": 7.98399827
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 1,
+   "rating": 1,
+   "after": {
+    "stability": 2.16563305,
+    "difficulty": 9.49218857
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 1,
+   "rating": 2,
+   "after": {
+    "stability": 40.62839011,
+    "difficulty": 8.98945847
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 1,
+   "rating": 3,
+   "after": {
+    "stability": 41.0448788,
+    "difficulty": 8.48672837
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 1,
+   "rating": 4,
+   "after": {
+    "stability": 41.95695351,
+    "difficulty": 7.98399827
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 3,
+   "rating": 1,
+   "after": {
+    "stability": 2.19132097,
+    "difficulty": 9.49218857
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 3,
+   "rating": 2,
+   "after": {
+    "stability": 41.83990727,
+    "difficulty": 8.98945847
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 3,
+   "rating": 3,
+   "after": {
+    "stability": 43.05937357,
+    "difficulty": 8.48672837
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 3,
+   "rating": 4,
+   "after": {
+    "stability": 45.72990076,
+    "difficulty": 7.98399827
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 12,
+   "rating": 1,
+   "after": {
+    "stability": 2.29518553,
+    "difficulty": 9.49218857
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 12,
+   "rating": 2,
+   "after": {
+    "stability": 46.66512081,
+    "difficulty": 8.98945847
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 12,
+   "rating": 3,
+   "after": {
+    "stability": 51.0826751,
+    "difficulty": 8.48672837
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 12,
+   "rating": 4,
+   "after": {
+    "stability": 60.75674219,
+    "difficulty": 7.98399827
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 90,
+   "rating": 1,
+   "after": {
+    "stability": 2.82241532,
+    "difficulty": 9.49218857
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 90,
+   "rating": 2,
+   "after": {
+    "stability": 69.57741191,
+    "difficulty": 8.98945847
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 90,
+   "rating": 3,
+   "after": {
+    "stability": 89.18093102,
+    "difficulty": 8.48672837
+   }
+  },
+  {
+   "stability": 40,
+   "difficulty": 8.5,
+   "elapsedDays": 90,
+   "rating": 4,
+   "after": {
+    "stability": 132.1109657,
+    "difficulty": 7.98399827
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 0.5,
+   "rating": 1,
+   "after": {
+    "stability": 5.43223954,
+    "difficulty": 7.12559753
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 0.5,
+   "rating": 2,
+   "after": {
+    "stability": 365.85346844,
+    "difficulty": 4.20976295
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 0.5,
+   "rating": 3,
+   "after": {
+    "stability": 366.41913608,
+    "difficulty": 1.29392837
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 0.5,
+   "rating": 4,
+   "after": {
+    "stability": 367.65789996,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 1,
+   "rating": 1,
+   "after": {
+    "stability": 5.43408974,
+    "difficulty": 7.12559753
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 1,
+   "rating": 2,
+   "after": {
+    "stability": 366.70575725,
+    "difficulty": 4.20976295
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 1,
+   "rating": 3,
+   "after": {
+    "stability": 367.83631069,
+    "difficulty": 1.29392837
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 1,
+   "rating": 4,
+   "after": {
+    "stability": 370.31212629,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 3,
+   "rating": 1,
+   "after": {
+    "stability": 5.44146834,
+    "difficulty": 7.12559753
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 3,
+   "rating": 2,
+   "after": {
+    "stability": 370.10318629,
+    "difficulty": 4.20976295
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 3,
+   "rating": 3,
+   "after": {
+    "stability": 373.48551096,
+    "difficulty": 1.29392837
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 3,
+   "rating": 4,
+   "after": {
+    "stability": 380.89251348,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 12,
+   "rating": 1,
+   "after": {
+    "stability": 5.47424007,
+    "difficulty": 7.12559753
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 12,
+   "rating": 2,
+   "after": {
+    "stability": 385.16402182,
+    "difficulty": 4.20976295
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 12,
+   "rating": 3,
+   "after": {
+    "stability": 398.52846993,
+    "difficulty": 1.29392837
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 12,
+   "rating": 4,
+   "after": {
+    "stability": 427.79547133,
+    "difficulty": 1
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 90,
+   "rating": 1,
+   "after": {
+    "stability": 5.73237886,
+    "difficulty": 7.12559753
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 90,
+   "rating": 2,
+   "after": {
+    "stability": 502.20183167,
+    "difficulty": 4.20976295
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 90,
+   "rating": 3,
+   "after": {
+    "stability": 593.13739886,
+    "difficulty": 1.29392837
+   }
+  },
+  {
+   "stability": 365,
+   "difficulty": 1.3,
+   "elapsedDays": 90,
+   "rating": 4,
+   "after": {
+    "stability": 792.27853432,
+    "difficulty": 1
+   }
+  }
+ ]
+}
