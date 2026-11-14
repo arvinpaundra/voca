@@ -6,10 +6,6 @@ const SCOPE = "openid email profile";
 const VERIFIER_KEY = "voca.pkce.verifier";
 const STATE_KEY = "voca.pkce.state";
 
-// Access token lives in memory only; refresh token in localStorage.
-let accessToken: string | null = null;
-export const REFRESH_TOKEN_KEY = "voca.refreshToken";
-
 function base64Url(bytes: Uint8Array): string {
   let s = "";
   for (const byte of bytes) s += String.fromCharCode(byte);
@@ -66,12 +62,4 @@ export function consumePkce(): { verifier: string; state: string } | null {
   sessionStorage.removeItem(VERIFIER_KEY);
   sessionStorage.removeItem(STATE_KEY);
   return verifier && state ? { verifier, state } : null;
-}
-
-export function setAccessToken(token: string): void {
-  accessToken = token;
-}
-
-export function getAccessToken(): string | null {
-  return accessToken;
 }
