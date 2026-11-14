@@ -2,20 +2,20 @@ import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { VocaApi } from "@voca/contract"
 
-// Placeholder until the study task builds these: every endpoint answers 500, so the group is routed.
+// Stubs for the study task. The Hard Words endpoints arrive with a later feature.
 export const StudyHandlers = HttpApiBuilder.group(
   VocaApi,
   "study",
   Effect.fn(function* (handlers) {
     return handlers.handleAll({
-      deckDrills: () => Effect.die("not implemented"),
-      start: () => Effect.die("not implemented"),
-      active: () => Effect.die("not implemented"),
-      answer: () => Effect.die("not implemented"),
-      abandon: () => Effect.die("not implemented"),
-      hardWords: () => Effect.die("not implemented"),
-      markHard: () => Effect.die("not implemented"),
-      unmarkHard: () => Effect.die("not implemented")
+      deckDrills: () => Effect.die("not implemented: SB"),
+      start: () => Effect.die("not implemented: SB"),
+      active: () => Effect.die("not implemented: SB"),
+      answer: () => Effect.die("not implemented: SB"),
+      abandon: () => Effect.die("not implemented: SB"),
+      hardWords: () => Effect.die("not implemented: hard words"),
+      markHard: () => Effect.die("not implemented: hard words"),
+      unmarkHard: () => Effect.die("not implemented: hard words")
     })
   })
 )
