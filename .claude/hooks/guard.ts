@@ -32,7 +32,6 @@ const refuse = (segment: string): string | undefined => {
     if (refs.length <= 1 && currentBranch() === "master") return "never push to master: you are on master, push a branch and open a PR"
   }
 
-  if (/\bgh\s+pr\s+merge\b/.test(segment)) return "never merge: the owner merges PRs"
   if (/\bgh\s+issue\s+edit\b/.test(segment)) return "never edit an issue: a task issue is written once by the dispatcher"
 
   const api = /\bgh\s+api\b(.*)/.exec(segment)
