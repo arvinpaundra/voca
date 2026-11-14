@@ -1,6 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router";
+import { DeckPage } from "../../features/deck/DeckPage";
 
-// Placeholder until task FW builds the deck page.
 export const Route = createFileRoute("/decks/$deckSlug")({
-  component: () => null
-})
+  component: DeckRoute,
+});
+
+function DeckRoute() {
+  const { deckSlug } = Route.useParams();
+  return <DeckPage deckSlug={deckSlug} />;
+}

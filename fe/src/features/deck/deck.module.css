@@ -1,0 +1,118 @@
+.page {
+  padding-top: 64px;
+  padding-bottom: 96px;
+}
+
+.inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+  justify-items: start;
+}
+
+.deck {
+  width: 100%;
+  display: grid;
+  gap: 24px;
+}
+
+.header {
+  display: grid;
+  gap: 8px;
+}
+
+.title {
+  font-size: 32px;
+}
+
+.body,
+.meaning {
+  color: var(--ink);
+}
+
+.note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.error {
+  font-size: 13px;
+  color: var(--bad);
+}
+
+.search,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.input {
+  flex: 1 1 220px;
+  min-width: 0;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.words {
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.word {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.wordHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.term {
+  font-family: var(--f-term);
+  font-size: 22px;
+}
+
+.example {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.form {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
