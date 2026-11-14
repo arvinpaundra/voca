@@ -35,7 +35,7 @@ export const completeSignIn = async (deps: CallbackDeps): Promise<CallbackOutcom
 
   if (params.get("state") !== pkce.state) return { kind: "failed", reason: "state-mismatch" }
 
-  const result = await deps.session.call((client) =>
+  const result = await deps.session.callPublic((client) =>
     client.auth.google({
       payload: {
         code,
