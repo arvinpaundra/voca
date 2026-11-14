@@ -1,25 +1,80 @@
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
-import { VocaApi } from "@voca/contract"
+import { DuplicateWord, Forbidden, NotFound, VocaApi } from "@voca/contract"
+import { createDeck, deleteDeck, getDeck, listDecks, updateDeck } from "../application/decks.ts"
+import type { DeckRepo } from "../application/deckRepo.ts"
+import { createWord, deleteWord, listWords, updateWord } from "../application/words.ts"
+import type { WordRepo } from "../application/wordRepo.ts"
 
-// Placeholder until the library task builds these: every endpoint answers 500, so the group is routed.
+const notFound = (what: string) => () => Effect.fail(new NotFound({ message: `${what} not found` }))
+
+const duplicate = () =>
+  Effect.fail(new DuplicateWord({ message: "This deck already has a word with the same term and reading" }))
+
+const termLangLocked = () =>
+  Effect.fail(new Forbidden({ message: "The term language can't change once the deck has words" }))
+
+// Each endpoint calls its use case and maps the domain errors to the contract's.
+// Publishing, drills and CSV import/export belong to later features and still answer 500.
 export const LibraryHandlers = HttpApiBuilder.group(
   VocaApi,
   "library",
   Effect.fn(function* (handlers) {
+    const ports = yield* Effect.context<DeckRepo | WordRepo>()
+
     return handlers.handleAll({
-      listDecks: () => Effect.die("not implemented"),
-      createDeck: () => Effect.die("not implemented"),
-      getDeck: () => Effect.die("not implemented"),
+      listDecks: () => listDecks.pipe(Effect.provideContext(ports)),
+
+      createDeck: ({ payload }) => createDeck(payload).pipe(Effect.provideContext(ports)),
+
+      getDeck: ({ params }) =>
+        getDeck(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
+      updateDeck: ({ params, payload }) =>
+        updateDeck(params.deckSlug, payload).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck")),
+          Effect.catchTag("TermLangLocked", termLangLocked)
+        ),
+
+      deleteDeck: ({ params }) =>
+        deleteDeck(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
+      listWords: ({ params, query }) =>
+        listWords(params.deckSlug, query).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
+      createWord: ({ params, payload }) =>
+        createWord(params.deckSlug, payload).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck")),
+          Effect.catchTag("DuplicateWordError", duplicate)
+        ),
+
+      updateWord: ({ params, payload }) =>
+        updateWord(params.wordSlug, payload).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("WordNotFound", notFound("Word")),
+          Effect.catchTag("DuplicateWordError", duplicate)
+        ),
+
+      deleteWord: ({ params }) =>
+        deleteWord(params.wordSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("WordNotFound", notFound("Word"))
+        ),
+
       deckDrills: () => Effect.die("not implemented"),
-      updateDeck: () => Effect.die("not implemented"),
-      deleteDeck: () => Effect.die("not implemented"),
       publishDeck: () => Effect.die("not implemented"),
       unpublishDeck: () => Effect.die("not implemented"),
-      listWords: () => Effect.die("not implemented"),
-      createWord: () => Effect.die("not implemented"),
-      updateWord: () => Effect.die("not implemented"),
-      deleteWord: () => Effect.die("not implemented"),
       importCsv: () => Effect.die("not implemented"),
       exportCsv: () => Effect.die("not implemented")
     })

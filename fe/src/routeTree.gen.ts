@@ -10,12 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as DecksDeckSlugRouteImport } from './routes/decks/$deckSlug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -28,35 +35,55 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DecksDeckSlugRoute = DecksDeckSlugRouteImport.update({
+  id: '/decks/$deckSlug',
+  path: '/decks/$deckSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/decks/$deckSlug': typeof DecksDeckSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/decks/$deckSlug': typeof DecksDeckSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/decks/$deckSlug': typeof DecksDeckSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/auth/callback'
+  fullPaths:
+    '/' | '/dashboard' | '/login' | '/auth/callback' | '/decks/$deckSlug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/auth/callback'
-  id: '__root__' | '/' | '/login' | '/auth/callback'
+  to: '/' | '/dashboard' | '/login' | '/auth/callback' | '/decks/$deckSlug'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/auth/callback'
+    | '/decks/$deckSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  DecksDeckSlugRoute: typeof DecksDeckSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -82,13 +116,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/decks/$deckSlug': {
+      id: '/decks/$deckSlug'
+      path: '/decks/$deckSlug'
+      fullPath: '/decks/$deckSlug'
+      preLoaderRoute: typeof DecksDeckSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  DecksDeckSlugRoute: DecksDeckSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
