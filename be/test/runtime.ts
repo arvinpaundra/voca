@@ -1,4 +1,4 @@
-// Runs before Testcontainers is imported (docs/11). Picks the container runtime through DOCKER_HOST:
+// Runs before Testcontainers is imported. Picks the container runtime through DOCKER_HOST:
 //   1. DOCKER_HOST already set  → used as is
 //   2. Podman available         → its socket
 //   3. otherwise                → nothing set; Testcontainers finds Docker by itself

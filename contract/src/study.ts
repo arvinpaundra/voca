@@ -9,11 +9,11 @@ import { DeckSlug, SessionSlug, WordSlug } from "./slug.ts"
 
 export const SessionScope = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("deck"), deckSlug: DeckSlug }),
-  Schema.Struct({ kind: Schema.Literal("hard") }) // the Hard Words place (FR-8)
+  Schema.Struct({ kind: Schema.Literal("hard") }) // the Hard Words place
 ])
 export type SessionScope = typeof SessionScope.Type
 
-/** 1–4 distinct drills; a session may mix them (FR-17). */
+/** 1–4 distinct drills; a session may mix them. */
 export const DrillSet = Schema.NonEmptyArray(Drill).check(Schema.isMaxLength(4), Schema.isUnique())
 
 export const StartSession = Schema.Struct({ scope: SessionScope, drills: DrillSet, size: SessionSize, mode: Mode })

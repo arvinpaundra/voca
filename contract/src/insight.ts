@@ -60,7 +60,7 @@ export const DeckStats = Schema.Struct({
 })
 export type DeckStats = typeof DeckStats.Type
 
-// ───── Notifications (FR-7) ─────
+// ───── Notifications ─────
 
 export const Notifications = Schema.Struct({
   decks: Schema.Array(Schema.Struct({
@@ -75,7 +75,7 @@ export const Notifications = Schema.Struct({
 })
 export type Notifications = typeof Notifications.Type
 
-// ───── Activity heatmap (FR-18) ─────
+// ───── Activity heatmap ─────
 
 export const Activity = Schema.Struct({
   month: Month,

@@ -31,7 +31,7 @@ export class SystemGroup extends HttpApiGroup.make("system", { topLevel: true })
 /**
  * The whole HTTP contract. The backend implements it with `HttpApiBuilder`;
  * the frontend calls it through `HttpApiClient.make(VocaApi)`.
- * Same origin as the SPA, everything under `/api` (ADR 21).
+ * Same origin as the SPA, everything under `/api`.
  */
 export class VocaApi extends HttpApi.make("voca")
   .add(SystemGroup)

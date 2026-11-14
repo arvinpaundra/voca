@@ -1,5 +1,5 @@
 // May the decision thread merge this PR itself? `bun scripts/merge-gate.ts <pr>` prints `merge: ok`, or the reasons the
-// owner has to merge it (docs/agents/loop.md "Merging"). Rules 1-4 are checked here; rule 5 (the worker's report
+// owner has to merge it. Rules 1-4 are checked here; rule 5 (the worker's report
 // flags nothing) is the dispatcher's own check. Exit 0 = ok, 1 = needs the owner.
 
 /** Paths whose mistakes are expensive or silent: the FE↔BE contract, schema, auth, the guards themselves, dependencies. */

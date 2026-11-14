@@ -5,7 +5,7 @@ import { RefreshTokens } from "../src/identity/application/ports.ts"
 import { at, makeIdentityRuntime, seedLearner } from "./identity.ts"
 import { resetDb } from "./setup.ts"
 
-// The refresh-token store (docs/08 "Tokens"): opaque 32-byte tokens, only their sha256 stored, 30-day expiry.
+// The refresh-token store: opaque 32-byte tokens, only their sha256 stored, 30-day expiry.
 const rt = makeIdentityRuntime()
 afterAll(() => rt.dispose())
 beforeEach(() => rt.runPromise(resetDb))

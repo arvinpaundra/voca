@@ -3,7 +3,7 @@ import { FetchHttpClient, HttpClientRequest } from "effect/http"
 import { HttpApiClient, HttpApiMiddleware } from "effect/http-api"
 import { Authorization, VocaApi } from "@voca/contract"
 
-// The reference for calling the API from the frontend (AGENTS.md "Frontend rules"): the typed client generated from
+// The reference for calling the API from the frontend: the typed client generated from
 // `VocaApi`, so a request or response that doesn't match the contract fails to compile. Copy its use from api.test.ts.
 
 export type ApiClient = HttpApiClient.ForApi<typeof VocaApi>
@@ -11,7 +11,7 @@ export type ApiClient = HttpApiClient.ForApi<typeof VocaApi>
 export interface ApiOptions {
   /** The current access token, or null. Sent as `Authorization: Bearer` on protected routes. */
   readonly getAccessToken: () => string | null
-  /** Defaults to the page's origin: the API is same-origin under `/api` (ADR 21). */
+  /** Defaults to the page's origin: the API is same-origin under `/api`. */
   readonly baseUrl?: string
   /** Defaults to the global `fetch`; tests pass a fake. */
   readonly fetch?: typeof globalThis.fetch

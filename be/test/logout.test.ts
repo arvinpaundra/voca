@@ -4,7 +4,7 @@ import { RefreshTokens } from "../src/identity/application/ports.ts"
 import { at, call, makeIdentityRuntime, seedLearner } from "./identity.ts"
 import { resetDb } from "./setup.ts"
 
-// POST /auth/logout (docs/08): revokes the token's family and answers 204. It never says whether the token existed,
+// POST /auth/logout: revokes the token's family and answers 204. It never says whether the token existed,
 // so it answers 204 for an unknown or already-revoked token too.
 
 const rt = makeIdentityRuntime()

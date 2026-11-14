@@ -1,4 +1,4 @@
-// UI evidence for the Definition of done (docs/agents/loop.md): screenshots of the fe dev server, straight to files.
+// UI evidence for the definition of done: screenshots of the fe dev server, straight to files.
 // No model reads them; the owner looks at them. Each spec is `route[:width][:dark]`:
 //
 //   bun scripts/shots.ts /login /login:390 /:1280:dark      → .shots/<route>-<width>[-dark].png

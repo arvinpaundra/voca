@@ -13,7 +13,7 @@ import { TokenSignerLive } from "../src/identity/infrastructure/tokenSigner.ts"
 import { TestLayer } from "./layers.ts"
 import { resetDb } from "./setup.ts"
 
-// PATCH /me/settings (docs/07-api.md "Identity"): every field optional, an absent key leaves the setting unchanged,
+// PATCH /me/settings: every field optional, an absent key leaves the setting unchanged,
 // the response is the whole Learner. Invariants live in the contract's Schemas, so the database has no CHECKs.
 // Same harness as me.test.ts, the reference slice.
 
@@ -31,7 +31,7 @@ const withBearer = (token: string | null) =>
     next(token === null ? request : HttpClientRequest.bearerToken(request, token))
   )
 
-// Defaults of a new Learner (ADR 28), timezone Asia/Jakarta.
+// Defaults of a new Learner, timezone Asia/Jakarta.
 const DEFAULTS = {
   timezone: "Asia/Jakarta", dayStartHour: 4, desiredRetention: 0.9, newPerDay: 20, defaultSessionSize: 10, defaultMode: "easy"
 } as const

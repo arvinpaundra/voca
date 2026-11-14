@@ -2,7 +2,7 @@ import { Clock, Effect, Layer, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
 import { RefreshTokens } from "../application/ports.ts"
 
-const LIFETIME_MS = 30 * 24 * 60 * 60 * 1000 // 30 days, renewed on every rotation (docs/08)
+const LIFETIME_MS = 30 * 24 * 60 * 60 * 1000 // 30 days, renewed on every rotation
 
 const RefreshTokenRow = Schema.Struct({
   id: Schema.BigIntFromString, // selected as `id::text`, like every bigint
