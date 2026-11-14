@@ -2,13 +2,15 @@ import { PgClient } from "@effect/sql-pg"
 import { Config, Effect, Layer, Redacted } from "effect"
 import { Reactivity } from "effect/reactivity"
 import { SqlClient } from "effect/sql"
-import { migrate } from "../migrations/index.ts"
+
+/** Migrated once by preload.ts; every test database is a copy of it. */
+export const TEMPLATE_DB = "voca_template"
 
 let counter = 0
 
 /**
- * A fresh, fully migrated database inside the shared container, dropped when the layer is released.
- * One per test file: `const rt = ManagedRuntime.make(TestDb); afterAll(() => rt.dispose())`.
+ * A fresh, fully migrated database inside the shared container (a copy of the template), dropped when the layer is
+ * released. One per test file: `const rt = ManagedRuntime.make(TestDb); afterAll(() => rt.dispose())`.
  */
 export const makeTestDb = () =>
   Layer.unwrap(
@@ -16,15 +18,13 @@ export const makeTestDb = () =>
       const adminUrl = yield* Config.String("TEST_PG_ADMIN_URL")
       const name = `voca_test_${process.pid}_${counter++}`
       const admin = yield* PgClient.make({ url: Redacted.make(adminUrl) }).pipe(Effect.provide(Reactivity.layer))
-      yield* admin`CREATE DATABASE ${admin(name)}`
+      yield* admin`CREATE DATABASE ${admin(name)} TEMPLATE ${admin(TEMPLATE_DB)}`
       yield* Effect.addFinalizer(() =>
         admin`DROP DATABASE IF EXISTS ${admin(name)} WITH (FORCE)`.pipe(Effect.ignore)
       )
       const url = new URL(adminUrl)
       url.pathname = `/${name}`
-      const pg = PgClient.layer({ url: Redacted.make(url.toString()), maxConnections: 5 })
-      // migrate needs the pool, and the pool must also reach the tests: provide it and keep its outputs.
-      return Layer.effectDiscard(migrate).pipe(Layer.provideMerge(pg))
+      return PgClient.layer({ url: Redacted.make(url.toString()), maxConnections: 5 })
     })
   )
 

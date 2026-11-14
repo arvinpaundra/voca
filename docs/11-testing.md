@@ -13,8 +13,8 @@ There are no mocks for the database. In-memory layers are used only for Google, 
 be/bunfig.toml        # [test] preload = ["./test/preload.ts"]
 be/test/
   runtime.ts          # picks Podman, else Docker, for Testcontainers; turns Ryuk off
-  preload.ts          # once per run: start the Postgres container, export TEST_PG_ADMIN_URL, stop it after the run
-  setup.ts            # makeTestDb(): per file, creates database voca_test_<n>, runs the migrations, drops it on release; resetDb
+  preload.ts          # once per run: start the Postgres container, migrate a template database, export TEST_PG_ADMIN_URL, stop it after the run
+  setup.ts            # makeTestDb(): per file, copies the template into database voca_test_<n>, drops it on release; resetDb
   layers.ts           # TestLayer = Db(real) (+ GoogleStub + TestClock + seeded Random as those contexts arrive)
   db.test.ts          # smoke test of the above
   fixtures/fsrs-golden.json
@@ -37,12 +37,12 @@ If neither runtime answers, the run fails at preload with one message naming bot
 - **Two Bun workarounds** (the same ones the `bean` repo uses; Bun 1.3.10):
   - **Ryuk is off** (`TESTCONTAINERS_RYUK_DISABLED=true`). Its startup check waits on a container log stream that never completes under Bun. The container is stopped in an `afterAll`. A killed run leaves its container behind, so each one carries a `voca-test=<pid>` label and `preload.ts` removes those whose owner process is gone.
   - **A custom wait strategy** replaces the log-based default, which hangs for the same reason. It polls `SELECT 1` over TCP. `pg_isready` and an open port are not enough: Postgres's image runs a temporary server during `initdb`, and Podman's port forwarding accepts connections before the final server listens.
-- **Speed:** the container takes about 5–7 s to be ready, once per run. The first test in each file builds its database (create + migrate, about 3 s), so `bunfig.toml` raises the test timeout to 30 s.
+- **Speed:** the container takes about 5–7 s to be ready, once per run. Preload migrates one template database (`voca_template`), then each file copies it (`CREATE DATABASE … TEMPLATE`), which is fast. The slow work sits in preload, outside the per-test timeout: after the Mac has idled, the Podman VM's first round trips can be slow, and when the per-file migration ran inside the first test that occasionally hit the 30 s timeout in `bunfig.toml`.
 - `preload.ts` uses top-level `await`, which `lint/functional.yml` exempts for that one file.
 
 Isolation:
 - One Postgres container per `bun test` run, shared by all files.
-- Each test file gets a fresh, migrated database inside it (`makeTestDb()`), dropped when the file's runtime is disposed.
+- Each test file gets a fresh, migrated database inside it, copied from the template (`makeTestDb()`), dropped when the file's runtime is disposed.
 - Each test starts from empty tables: `beforeEach(() => rt.runPromise(resetDb))` runs `TRUNCATE … RESTART IDENTITY CASCADE`. A transaction rolled back per test was the first plan, but HTTP-level tests call handlers on their own fibers, outside a test-level transaction, so it would not cover them.
 - Files run one after another, each against its own database.
 
