@@ -19,7 +19,7 @@ export interface SessionDeps {
 
 export interface Session {
   /**
-   * One API call with the session's access token (docs/08 "Frontend handling"): refreshes first when fewer than 60 s
+   * One API call with the session's access token: refreshes first when fewer than 60 s
    * remain; on 401 Unauthorized refreshes once and retries once. Resolves to a `Result`, like `callApi`.
    */
   readonly call: <A, E>(f: (client: ApiClient) => Effect.Effect<A, E>) => Promise<Result.Result<A, E | unknown>>
