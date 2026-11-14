@@ -11,6 +11,7 @@ import { CommunityHandlers } from "./library/http/community.ts"
 import { LibraryHandlers } from "./library/http/library.ts"
 import { InsightHandlers } from "./insight/http/index.ts"
 import { StudyHandlers } from "./study/http/index.ts"
+import { StudyLive } from "./study/infrastructure/index.ts"
 import { SystemHandlers } from "./shared/http/system.ts"
 import { TransactionLive } from "./shared/transaction.ts"
 import { DeckRepoLive } from "./library/infrastructure/deckRepo.ts"
@@ -36,7 +37,8 @@ export const makeApiLayer = (options: { readonly jwtSecret: Redacted.Redacted<st
     TransactionLive,
     TokenSignerLive(options.jwtSecret),
     DeckRepoLive,
-    WordRepoLive
+    WordRepoLive,
+    StudyLive
   )
   return HttpApiBuilder.layer(VocaApi).pipe(
     Layer.provide(groups),

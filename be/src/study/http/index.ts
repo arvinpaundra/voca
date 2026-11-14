@@ -8,6 +8,7 @@ export const StudyHandlers = HttpApiBuilder.group(
   "study",
   Effect.fn(function* (handlers) {
     return handlers.handleAll({
+      deckDrills: () => Effect.die("not implemented"),
       start: () => Effect.die("not implemented"),
       active: () => Effect.die("not implemented"),
       answer: () => Effect.die("not implemented"),

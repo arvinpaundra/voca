@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Button } from "../../components/Button";
-import type { WordLabels } from "../../lib/wordLabels";
+import type { WordLabels } from "@voca/contract";
 import styles from "./deck.module.css";
 import { isComplete, type WordDraft } from "./wordModel";
 

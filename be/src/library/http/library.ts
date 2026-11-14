@@ -16,7 +16,7 @@ const termLangLocked = () =>
   Effect.fail(new Forbidden({ message: "The term language can't change once the deck has words" }))
 
 // Each endpoint calls its use case and maps the domain errors to the contract's.
-// Publishing, drills and CSV import/export belong to later features and still answer 500.
+// Publishing and CSV import/export belong to later features and still answer 500.
 export const LibraryHandlers = HttpApiBuilder.group(
   VocaApi,
   "library",
@@ -73,7 +73,6 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("WordNotFound", notFound("Word"))
         ),
 
-      deckDrills: () => Effect.die("not implemented"),
       publishDeck: () => Effect.die("not implemented"),
       unpublishDeck: () => Effect.die("not implemented"),
       importCsv: () => Effect.die("not implemented"),

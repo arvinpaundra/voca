@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { wordLabels } from "./wordLabels.ts"
+import { drillLabel, wordLabels } from "../src/drills.ts"
 
 // The Language Profile: field labels follow the primary subtag of the deck's term language. Data, not logic.
 
@@ -14,4 +14,14 @@ test.each([
   ["ko", { term: "Word", reading: "Reading" }]
 ])("%s", (termLang, labels) => {
   expect(wordLabels(termLang)).toEqual(labels)
+})
+
+test.each([
+  ["ja", "term_meaning", "Word → Meaning"],
+  ["ja", "meaning_term", "Meaning → Word"],
+  ["ja", "term_reading", "Word → Hiragana"],
+  ["zh-Hans", "reading_term", "Pinyin → Hanzi"],
+  ["en", "term_reading", "Word → Reading"]
+] as const)("%s %s is labelled %s", (termLang, drill, label) => {
+  expect(drillLabel(termLang, drill)).toBe(label)
 })

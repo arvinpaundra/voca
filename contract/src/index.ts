@@ -1,5 +1,6 @@
 export * from "./api.ts"
 export * from "./community.ts"
+export * from "./drills.ts"
 export * from "./errors.ts"
 export * from "./identity.ts"
 export * from "./insight.ts"

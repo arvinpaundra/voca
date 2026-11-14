@@ -100,11 +100,6 @@ export class LibraryGroup extends HttpApiGroup.make("library").add(
   HttpApiEndpoint.get("listDecks", "/decks", { success: Schema.Array(DeckSummary) }),
   HttpApiEndpoint.post("createDeck", "/decks", { payload: CreateDeck, success: Deck }),
   HttpApiEndpoint.get("getDeck", "/decks/:deckSlug", { params: deckParams, success: Deck, error: NotFound }),
-  HttpApiEndpoint.get("deckDrills", "/decks/:deckSlug/drills", {
-    params: deckParams,
-    success: Schema.Array(DeckDrill),
-    error: NotFound
-  }),
   HttpApiEndpoint.patch("updateDeck", "/decks/:deckSlug", {
     params: deckParams,
     payload: UpdateDeck,
