@@ -11,3 +11,6 @@ export class DuplicateWordError extends Data.TaggedError("DuplicateWordError")<{
 
 /** A deck's term language can't change once it has words. */
 export class TermLangLocked extends Data.TaggedError("TermLangLocked")<{}> {}
+
+/** Only a public deck can be forked. Over HTTP it answers 404 like a missing deck, so a private one does not reveal itself. */
+export class DeckNotPublic extends Data.TaggedError("DeckNotPublic")<{}> {}

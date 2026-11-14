@@ -1,9 +1,16 @@
-import { DateTime, Effect, Layer, Option, Schema } from "effect"
+import { Array as Arr, DateTime, Effect, Layer, Option, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
 import { Example, Meaning, Notes, Reading, Term, WordCard, WordSlug } from "@voca/contract"
 import type { Word, WordWithCards } from "@voca/contract"
 import { WordRepo } from "../application/wordRepo.ts"
-import type { NewWord, OwnedWord, WordChanges, WordPage, WordQuery } from "../application/wordRepo.ts"
+import type {
+  NewWord,
+  OwnedWord,
+  WordChanges,
+  WordCopy,
+  WordPage,
+  WordQuery
+} from "../application/wordRepo.ts"
 
 /** A `words` row as selected below: `id::text`, columns aliased to camelCase. */
 const WordRow = Schema.Struct({
@@ -197,6 +204,38 @@ export const WordRepoLive = Layer.effect(
         RETURNING id::text AS id, slug, term, reading, meaning, example, notes, created_at AS "createdAt"`
     })
 
+    const previewRows = SqlSchema.findAll({
+      Request: Schema.Struct({ deckId: Schema.BigInt, limit: Schema.Number }),
+      Result: WordRow,
+      execute: ({ deckId, limit }) => sql`
+        SELECT w.id::text AS id, w.slug, w.term, w.reading, w.meaning, w.example, w.notes,
+               w.created_at AS "createdAt"
+        FROM words w
+        WHERE w.deck_id = ${deckId} AND w.deleted_at IS NULL
+        ORDER BY w.created_at ASC, w.id ASC
+        LIMIT ${limit}`
+    })
+
+    const liveRows = SqlSchema.findAll({
+      Request: Schema.BigInt,
+      Result: Schema.Struct({
+        term: Schema.String,
+        reading: Schema.NullOr(Schema.String),
+        meaning: Schema.String,
+        example: Schema.NullOr(Schema.String),
+        notes: Schema.NullOr(Schema.String),
+        termKey: Schema.String,
+        readingKey: Schema.String,
+        meaningKey: Schema.String
+      }),
+      execute: (deckId) => sql`
+        SELECT term, reading, meaning, example, notes, term_key AS "termKey", reading_key AS "readingKey",
+               meaning_key AS "meaningKey"
+        FROM words
+        WHERE deck_id = ${deckId} AND deleted_at IS NULL
+        ORDER BY created_at ASC, id ASC`
+    })
+
     return WordRepo.of({
       findOwnedDeckId: (learnerId, deckSlug) =>
         findDeckId({ learnerId, deckSlug }).pipe(
@@ -259,7 +298,42 @@ export const WordRepoLive = Layer.effect(
             WHERE deleted_at IS NULL
               AND word_id IN (SELECT id FROM words WHERE deck_id = ${deckId} AND deleted_at IS NULL)`
           yield* sql`UPDATE words SET deleted_at = ${new Date(at)} WHERE deck_id = ${deckId} AND deleted_at IS NULL`
-        }).pipe(Effect.orDie)
+        }).pipe(Effect.orDie),
+
+      preview: (deckId, limit) =>
+        previewRows({ deckId, limit }).pipe(
+          Effect.map((rows) => rows.map(toWord)),
+          Effect.orDie
+        ),
+
+      listLive: (deckId) =>
+        liveRows(deckId).pipe(
+          Effect.map((rows): ReadonlyArray<WordCopy> => rows),
+          Effect.orDie
+        ),
+
+      insertMany: (deckId, words) => {
+        const rows = words.map((word): Record<string, unknown> => ({
+          slug: word.slug,
+          deck_id: deckId,
+          term: word.term,
+          reading: word.reading,
+          meaning: word.meaning,
+          example: word.example,
+          notes: word.notes,
+          term_key: word.termKey,
+          reading_key: word.readingKey,
+          meaning_key: word.meaningKey,
+          created_at: new Date(word.createdAt)
+        }))
+
+        // A `sql.insert` needs at least one row; a deck with no live words copies nothing.
+        if (!Arr.isReadonlyArrayNonEmpty(rows)) {
+          return Effect.void
+        }
+
+        return sql`INSERT INTO words ${sql.insert(rows)}`.pipe(Effect.asVoid, Effect.orDie)
+      }
     })
   })
 )

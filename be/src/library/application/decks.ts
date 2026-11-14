@@ -36,14 +36,38 @@ export const createDeck = (input: typeof CreateDeck.Type): Effect.Effect<Deck, n
     const slug = yield* newSlug(SLUG_LENGTH.deck)
     const createdAt = yield* Clock.currentTimeMillis
 
-    return yield* decks.insert(id, {
+    const created = yield* decks.insert(id, {
       slug,
       title: input.title,
       description: input.description ?? "",
       termLang: input.termLang,
       meaningLang: input.meaningLang,
-      createdAt
+      createdAt,
+      forkedFromId: null
     })
+
+    return created.deck
+  })
+
+/** Publishing puts the deck in the community now; it stays in the owner's library either way. */
+export const publishDeck = (slug: string): Effect.Effect<Deck, DeckNotFound, Needs> =>
+  Effect.gen(function* () {
+    const { id } = yield* CurrentLearner
+    const decks = yield* DeckRepo
+    const owned = yield* findOwnedDeck(id, slug)
+    const at = yield* Clock.currentTimeMillis
+
+    return yield* decks.publish(owned.id, at)
+  })
+
+export const unpublishDeck = (slug: string): Effect.Effect<Deck, DeckNotFound, Needs> =>
+  Effect.gen(function* () {
+    const { id } = yield* CurrentLearner
+    const decks = yield* DeckRepo
+    const owned = yield* findOwnedDeck(id, slug)
+    const at = yield* Clock.currentTimeMillis
+
+    return yield* decks.unpublish(owned.id, at)
   })
 
 export const getDeck = (slug: string): Effect.Effect<Deck, DeckNotFound, Needs> =>
