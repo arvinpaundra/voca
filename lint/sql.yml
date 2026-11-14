@@ -1,0 +1,10 @@
+# Every value in a query is a bound placeholder: queries go through the `sql` tagged template only.
+id: sql-placeholders-only
+language: TypeScript
+files: ["be/**/*.ts", "contract/**/*.ts", "scripts/**/*.ts"]
+severity: error
+message: "Raw SQL string. Write the query as a `sql`-tagged template: each `${value}` becomes a bound placeholder ($1, $2…). For a table or column name use `sql(name)`, which escapes it. Never `.unsafe(…)` or `.literal(…)`."
+rule:
+  any:
+    - pattern: $DB.unsafe($$$)
+    - pattern: $DB.literal($$$)

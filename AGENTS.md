@@ -53,6 +53,7 @@ Never guess a name; `bun run verify` will reject it at typecheck.
   - `application/`: use cases as `Effect.gen`, plus ports as `Context.Service`.
   - `infrastructure/`: implements the ports (`SqlClient`, Google, JWT).
   - `http/`: `HttpApiBuilder.group` handlers that call use cases.
+- SQL only as a `sql`-tagged template, so every value is a bound placeholder; identifiers through `sql(name)`. Never `.unsafe(…)`, `.literal(…)` or a query string built by concatenation (lint fails them).
 - Invariants live in Schemas, not DB CHECKs. Slugs leave the server; bigint IDs never do.
 - Tests are integration tests against real Postgres (Testcontainers; start Podman first with `podman machine start`).
 

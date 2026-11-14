@@ -30,7 +30,7 @@ class QueryWait implements WaitStrategy {
     const deadline = Date.now() + TIMEOUT_MS
     while (Date.now() < deadline) {
       const probe = new SQL(url)
-      const ok = await probe.unsafe("SELECT 1").then(() => true, () => false)
+      const ok = await probe`SELECT 1`.then(() => true, () => false)
       await probe.close()
       if (ok) return
       await Bun.sleep(250)
@@ -67,7 +67,7 @@ afterAll(() => container.stop())
 // Migrate once, into a template; each test file then copies it (setup.ts). The slow part (migrations, and the first
 // round trips to a just-woken Podman VM) happens here, outside the per-test timeout.
 const admin = new SQL(`${server}/postgres`)
-await admin.unsafe(`CREATE DATABASE ${TEMPLATE_DB}`)
+await admin`CREATE DATABASE ${admin(TEMPLATE_DB)}`
 await admin.close()
 await Effect.runPromise(
   migrate.pipe(Effect.provide(PgClient.layer({ url: Redacted.make(`${server}/${TEMPLATE_DB}`), maxConnections: 1 })))
