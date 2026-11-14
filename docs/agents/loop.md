@@ -26,7 +26,8 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
                  then escalate the model tier on the same worktree
 7. review      → reviewer reads diff + task + cited docs (never the implementer's summary);
                  blocking findings go back to the implementer, max 1 round
-8. merge       → CI green → the user merges; `Closes #N` closes the issue, so nothing accumulates
+8. merge       → CI green → `bun scripts/merge-gate.ts <pr>`: `merge: ok` and the worker's report flags nothing → the decision thread
+                 squash-merges and tells the owner; otherwise the owner merges. `Closes #N` closes the issue
 ```
 
 **Stop and ask the user when:**
@@ -66,6 +67,17 @@ A task is done when all of these hold. The evidence comes from tools, never from
 5. **UI tasks:** the issue's DONE line names the screenshots. At re-check the dispatcher runs `bun scripts/shots.ts <specs>` on the worker's branch and gives the image paths to the owner, who judges the visuals. No model views them. Default: one desktop shot per changed state; add `:390` for layout changes and `:dark` for style changes.
 
 Backend tasks need no screenshots or captured responses: the integration tests assert status, shape and values against real Postgres. Put an example response in the PR only when it helps review, printed by a test run, never typed.
+
+## Merging
+
+The decision thread may merge a PR itself only when `bun scripts/merge-gate.ts <pr>` prints `merge: ok` **and** the worker's report flags nothing (no "couldn't do", no deviation, no gap). The gate checks:
+
+1. CI `verify` green on the current head, and the branch not behind master.
+2. A task PR is linked to its task issue, so CI ran the path guard (the dispatcher checks this at re-check).
+3. No critical path: `contract/`, `be/migrations/`, `be/src/identity/` (auth), `be/src/shared/`, `lint/`, `scripts/`, `.github/`, `.githooks/`, `.claude/`, `AGENTS.md`, `docs/13-decisions.md`, any `package.json`, `bun.lock`.
+4. Small: at most 8 files and 300 changed lines, the task's locked tests not counted.
+
+Then: `gh pr merge <pr> --squash --delete-branch`, clean up the worktree, and tell the owner which PR was merged and why it qualified. Anything else waits for the owner, with the gate's reasons in a PR comment. Workers never merge.
 
 ## Task sizing
 
