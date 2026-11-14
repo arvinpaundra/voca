@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as StudyRouteImport } from './routes/study'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as DecksDeckSlugRouteImport } from './routes/decks/$deckSlug'
+import { Route as DecksDeckSlugStudyRouteImport } from './routes/decks/$deckSlug_.study'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,6 +32,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudyRoute = StudyRouteImport.update({
+  id: '/study',
+  path: '/study',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -40,50 +47,78 @@ const DecksDeckSlugRoute = DecksDeckSlugRouteImport.update({
   path: '/decks/$deckSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DecksDeckSlugStudyRoute = DecksDeckSlugStudyRouteImport.update({
+  id: '/decks/$deckSlug_/study',
+  path: '/decks/$deckSlug/study',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/study': typeof StudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/decks/$deckSlug': typeof DecksDeckSlugRoute
+  '/decks/$deckSlug/study': typeof DecksDeckSlugStudyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/study': typeof StudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/decks/$deckSlug': typeof DecksDeckSlugRoute
+  '/decks/$deckSlug/study': typeof DecksDeckSlugStudyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/study': typeof StudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/decks/$deckSlug': typeof DecksDeckSlugRoute
+  '/decks/$deckSlug_/study': typeof DecksDeckSlugStudyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/dashboard' | '/login' | '/auth/callback' | '/decks/$deckSlug'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/study'
+    | '/auth/callback'
+    | '/decks/$deckSlug'
+    | '/decks/$deckSlug/study'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/auth/callback' | '/decks/$deckSlug'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/study'
+    | '/auth/callback'
+    | '/decks/$deckSlug'
+    | '/decks/$deckSlug/study'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/login'
+    | '/study'
     | '/auth/callback'
     | '/decks/$deckSlug'
+    | '/decks/$deckSlug_/study'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  StudyRoute: typeof StudyRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   DecksDeckSlugRoute: typeof DecksDeckSlugRoute
+  DecksDeckSlugStudyRoute: typeof DecksDeckSlugStudyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/study': {
+      id: '/study'
+      path: '/study'
+      fullPath: '/study'
+      preLoaderRoute: typeof StudyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -123,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecksDeckSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/decks/$deckSlug_/study': {
+      id: '/decks/$deckSlug_/study'
+      path: '/decks/$deckSlug/study'
+      fullPath: '/decks/$deckSlug/study'
+      preLoaderRoute: typeof DecksDeckSlugStudyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -130,8 +179,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  StudyRoute: StudyRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   DecksDeckSlugRoute: DecksDeckSlugRoute,
+  DecksDeckSlugStudyRoute: DecksDeckSlugStudyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
