@@ -6,6 +6,8 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "verify": "bun scripts/verify.ts",
+    "dev:be": "bun run --cwd be dev",
+    "dev:fe": "bun run --cwd fe dev",
     "lint": "ast-grep scan",
     "test": "bun run --filter '*' test",
     "typecheck": "tsc -p contract && tsc -p be && tsc -p fe"
