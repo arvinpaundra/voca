@@ -6,3 +6,4 @@ dist/
 .verify-last.log
 .shots/
 *.log
+.claude/worktrees/
