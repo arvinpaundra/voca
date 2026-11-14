@@ -32,10 +32,11 @@
 | 26 | Integration tests start Postgres with **Testcontainers**: Podman by default, Docker as the fallback | `podman compose` started by hand; an in-memory database | `bun test` needs no setup step, uses the production image (`postgres:18.3-alpine`), and cleans up after itself. Works on either runtime through `DOCKER_HOST` |
 | 27 | Domain code may import Schemas from `@voca/contract` (primitives such as `Timezone`, `SessionSize`, `LearnerSettings`); rows are decoded with those same Schemas | Duplicating every primitive in `be/*/domain` | One definition per rule. `contract` depends only on `effect`, so the domain stays free of IO |
 | 28 | A new Learner starts with `dayStartHour 4`, `desiredRetention 0.90`, `newPerDay 20`, `defaultSessionSize 10`, `defaultMode easy`; `timezone` comes from the sign-in request. Every later sign-in refreshes `email`, `name`, `avatarUrl` from Google and leaves settings alone | Asking on first sign-in | No onboarding form. 10 is the middle choice; easy mode is the gentler start |
+| 29 | A failed token refresh signs the Learner out only when the server rejects the refresh token (`RefreshTokenInvalid`). A network error or a server error keeps the tokens and fails only that call; the next call tries again | Signing out on any refresh failure | Losing Wi-Fi for a moment shouldn't log anyone out. A rejected token is the only failure that a retry can't fix |
 
 ## Open questions for you
 
 Resolved on 2026-11-08: beanstalkd is dropped (ADR 7), the domain and `/api` routing are set (ADR 21), Postgres is 18.3 (ADR 22), and meaning → term is in the MVP through drills (ADR 20, all 4 drills).
 
 1. **Cluster cleanup (deferred):** the project is a local PoC, so nothing in kube-oci is touched. Before the first real deploy, the old `voca` namespace has to go (the new deploy reuses that name) and the old database needs a backup decision. See [12](12-deployment.md).
-2. **Google OAuth client (pending, you'll provide it):** a client ID and secret with the redirect URIs `https://voca.arvinpaundra.dev/auth/callback` and `http://localhost:5173/auth/callback`. Local development can start with a stubbed `GoogleOAuth` layer until then.
+2. **Google OAuth client (provided 2026-11-14, kept in the gitignored `fe/.env` and `be/.env`):** a client ID and secret with the redirect URIs `https://voca.arvinpaundra.dev/auth/callback` and `http://localhost:5173/auth/callback`. Local development can start with a stubbed `GoogleOAuth` layer until then.
