@@ -7,7 +7,7 @@ export interface WordPage {
   readonly nextCursor: string | null
 }
 
-/** Words, always scoped to the deck owner. Deleted words are invisible. Infrastructure failures are defects. Task LW may reshape it. */
+/** Words, always scoped to the deck owner. Deleted words are invisible. Infrastructure failures are defects. Task LB may reshape it. */
 export class WordRepo extends Context.Service<WordRepo, {
   /** The id of a deck the Learner owns, for the word use cases. */
   findOwnedDeckId(learnerId: bigint, deckSlug: string): Effect.Effect<Option.Option<bigint>>

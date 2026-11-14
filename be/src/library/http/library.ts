@@ -5,6 +5,7 @@ import { createDeck, deleteDeck, getDeck, listDecks, updateDeck } from "../appli
 import type { DeckRepo } from "../application/deckRepo.ts"
 import { createWord, deleteWord, listWords, updateWord } from "../application/words.ts"
 import type { WordRepo } from "../application/wordRepo.ts"
+import type { Transaction } from "../../shared/transaction.ts"
 
 const notFound = (what: string) => () => Effect.fail(new NotFound({ message: `${what} not found` }))
 
@@ -20,7 +21,7 @@ export const LibraryHandlers = HttpApiBuilder.group(
   VocaApi,
   "library",
   Effect.fn(function* (handlers) {
-    const ports = yield* Effect.context<DeckRepo | WordRepo>()
+    const ports = yield* Effect.context<DeckRepo | WordRepo | Transaction>()
 
     return handlers.handleAll({
       listDecks: () => listDecks.pipe(Effect.provideContext(ports)),

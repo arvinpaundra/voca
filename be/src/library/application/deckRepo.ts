@@ -8,7 +8,7 @@ export interface OwnedDeck {
   readonly deck: Deck
 }
 
-/** Decks, always scoped to their owner. Deleted decks are invisible. Infrastructure failures are defects. Task LD may reshape it. */
+/** Decks, always scoped to their owner. Deleted decks are invisible. Infrastructure failures are defects. Task LB may reshape it. */
 export class DeckRepo extends Context.Service<DeckRepo, {
   listOwned(learnerId: bigint): Effect.Effect<ReadonlyArray<DeckSummary>>
   findOwned(learnerId: bigint, slug: string): Effect.Effect<Option.Option<OwnedDeck>>
