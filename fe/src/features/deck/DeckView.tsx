@@ -50,6 +50,8 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [visibilityBusy, setVisibilityBusy] = useState(false);
+  const [visibilityError, setVisibilityError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -149,6 +151,26 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     setDeleteError("Could not delete the deck. Try again.");
   };
 
+  const toggleVisibility = async () => {
+    const isPublic = deck.visibility === "public";
+
+    setVisibilityBusy(true);
+    setVisibilityError(null);
+
+    const result = await session.call((client) =>
+      isPublic
+        ? client.library.unpublishDeck({ params: { deckSlug: deck.slug } })
+        : client.library.publishDeck({ params: { deckSlug: deck.slug } })
+    );
+
+    setVisibilityBusy(false);
+    if (Result.isSuccess(result)) {
+      onDeckChanged(result.success);
+      return;
+    }
+    setVisibilityError(isPublic ? "Could not unpublish the deck. Try again." : "Could not publish the deck. Try again.");
+  };
+
   const now = DateTime.nowUnsafe();
   const shown = words?.filter((word) => matchesWordFilter(word, filter, now)) ?? null;
 
@@ -165,9 +187,28 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
           {deck.termLang} → {deck.meaningLang}
         </p>
         {deck.description !== "" && <p className={styles.body} dir="auto">{deck.description}</p>}
+        {deck.visibility === "public" && (
+          <p className={styles.note}>
+            <span className={styles.badge}>Public</span> {deck.forkCount} forks
+          </p>
+        )}
+        {deck.forkedFrom !== null &&
+          (deck.forkedFrom.deleted ? (
+            <p className={styles.note}>Forked from {deck.forkedFrom.title} (deleted)</p>
+          ) : (
+            <p className={styles.note}>
+              Forked from{" "}
+              <a className={styles.link} href={`/app/discover/${deck.forkedFrom.slug}`} dir="auto">
+                {deck.forkedFrom.title}
+              </a>
+            </p>
+          ))}
         <div className={styles.actions}>
           <Button variant="accent" href={`/app/decks/${deck.slug}/study`}>
             Study
+          </Button>
+          <Button variant="ghost" disabled={visibilityBusy} onClick={() => void toggleVisibility()}>
+            {deck.visibility === "public" ? "Unpublish" : "Publish"}
           </Button>
           <Button variant="ghost" onClick={() => setEditingDeck(true)}>
             Edit
@@ -176,6 +217,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
             Delete
           </Button>
         </div>
+        {visibilityError !== null && <p className={styles.error} role="alert">{visibilityError}</p>}
       </header>
 
       {stats !== null && (
