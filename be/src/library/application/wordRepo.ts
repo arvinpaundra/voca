@@ -28,6 +28,9 @@ export interface NewWord {
   readonly createdAt: number
 }
 
+/** A live word as a fork copies it: everything but the new slug and the fork's clock time. */
+export type WordCopy = Omit<NewWord, "slug" | "createdAt">
+
 /** The fields a word edit changes; an absent field is unchanged, `null` clears an optional one. */
 export interface WordChanges {
   term?: string
@@ -62,4 +65,10 @@ export class WordRepo extends Context.Service<WordRepo, {
   softDelete(wordId: bigint, at: number): Effect.Effect<void>
   /** Soft-deletes every live word of the deck and their cards. */
   softDeleteInDeck(deckId: bigint, at: number): Effect.Effect<void>
+  /** The first `limit` live words of a deck, oldest first. */
+  preview(deckId: bigint, limit: number): Effect.Effect<ReadonlyArray<Word>>
+  /** The live words of a deck, oldest first, as a fork copies them: the keys come along, the ids and cards do not. */
+  listLive(deckId: bigint): Effect.Effect<ReadonlyArray<WordCopy>>
+  /** Inserts words with no cards; a fork's words, which cannot collide with each other. */
+  insertMany(deckId: bigint, words: ReadonlyArray<NewWord>): Effect.Effect<void>
 }>()("voca/library/WordRepo") {}

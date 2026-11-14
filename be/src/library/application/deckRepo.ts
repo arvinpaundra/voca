@@ -1,6 +1,6 @@
 import type { Effect, Option } from "effect"
 import { Context } from "effect"
-import type { Deck, DeckSummary, UpdateDeck } from "@voca/contract"
+import type { Deck, DeckSummary, PublicDeck, UpdateDeck } from "@voca/contract"
 
 /** A deck the Learner owns, with its internal id for later calls. */
 export interface OwnedDeck {
@@ -8,7 +8,7 @@ export interface OwnedDeck {
   readonly deck: Deck
 }
 
-/** A deck to insert: the slug, trimmed text and clock time are already decided. */
+/** A deck to insert: the slug, trimmed text and clock time are already decided. `forkedFromId` is set for a fork. */
 export interface NewDeck {
   readonly slug: string
   readonly title: string
@@ -16,16 +16,60 @@ export interface NewDeck {
   readonly termLang: string
   readonly meaningLang: string
   readonly createdAt: number
+  readonly forkedFromId: bigint | null
 }
 
-/** Decks, always scoped to their owner. Deleted decks are invisible. Infrastructure failures are defects. */
+/** A live deck of any Learner, public or not, with its internal id: what a fork starts from. */
+export type LiveDeck = { readonly id: bigint } & Pick<
+  Deck,
+  "visibility" | "title" | "description" | "termLang" | "meaningLang"
+>
+
+/** A public deck with its internal id, for the detail page. */
+export interface PublicDeckFound {
+  readonly id: bigint
+  readonly deck: PublicDeck
+}
+
+/**
+ * `q` is already normalized and `termLang` is an exact tag. `sort` is "new" (published most recently) or "forks"
+ * (most forked). `limit` is the page size, without the extra row used to find the next cursor.
+ */
+export interface PublicDeckQuery {
+  readonly q: string | null
+  readonly termLang: string | null
+  readonly sort: "new" | "forks"
+  readonly cursor: string | null
+  readonly limit: number
+}
+
+export interface PublicDeckPage {
+  readonly items: ReadonlyArray<PublicDeck>
+  readonly nextCursor: string | null
+}
+
+/**
+ * Decks. The owner-scoped calls see only the owner's live decks; the community reads see every Learner's live decks.
+ * Deleted decks are invisible everywhere. Infrastructure failures are defects.
+ */
 export class DeckRepo extends Context.Service<DeckRepo, {
   /** The owner's live decks, newest first; counts are taken at `now` (epoch millis). */
   listOwned(learnerId: bigint, now: number): Effect.Effect<ReadonlyArray<DeckSummary>>
   findOwned(learnerId: bigint, slug: string): Effect.Effect<Option.Option<OwnedDeck>>
-  insert(learnerId: bigint, deck: NewDeck): Effect.Effect<Deck>
+  insert(learnerId: bigint, deck: NewDeck): Effect.Effect<OwnedDeck>
   /** Changes only the fields `patch` sends, and sets `updatedAt` (epoch millis). */
   update(deckId: bigint, patch: typeof UpdateDeck.Type, updatedAt: number): Effect.Effect<Deck>
+  /** Makes the deck public, with `published_at` set to `at` (epoch millis). */
+  publish(deckId: bigint, at: number): Effect.Effect<Deck>
+  /** Makes the deck private and clears `published_at`. */
+  unpublish(deckId: bigint, at: number): Effect.Effect<Deck>
+  incrementForkCount(deckId: bigint): Effect.Effect<void>
   hasWords(deckId: bigint): Effect.Effect<boolean>
   softDelete(deckId: bigint, at: number): Effect.Effect<void>
+  /** Live public decks of every Learner, in the query's sort order, one page at a time. */
+  listPublic(query: PublicDeckQuery): Effect.Effect<PublicDeckPage>
+  /** A live public deck by slug; None when it is private, deleted or missing. */
+  findPublic(deckSlug: string): Effect.Effect<Option.Option<PublicDeckFound>>
+  /** A live deck by slug, public or private; None when it is deleted or missing. */
+  findLive(deckSlug: string): Effect.Effect<Option.Option<LiveDeck>>
 }>()("voca/library/DeckRepo") {}

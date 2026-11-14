@@ -1,7 +1,7 @@
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { DuplicateWord, Forbidden, NotFound, VocaApi } from "@voca/contract"
-import { createDeck, deleteDeck, getDeck, listDecks, updateDeck } from "../application/decks.ts"
+import { createDeck, deleteDeck, getDeck, listDecks, publishDeck, unpublishDeck, updateDeck } from "../application/decks.ts"
 import type { DeckRepo } from "../application/deckRepo.ts"
 import { createWord, deleteWord, listWords, updateWord } from "../application/words.ts"
 import type { WordRepo } from "../application/wordRepo.ts"
@@ -16,7 +16,7 @@ const termLangLocked = () =>
   Effect.fail(new Forbidden({ message: "The term language can't change once the deck has words" }))
 
 // Each endpoint calls its use case and maps the domain errors to the contract's.
-// Publishing and CSV import/export belong to later features and still answer 500.
+// CSV import/export belongs to a later feature and still answers 500.
 export const LibraryHandlers = HttpApiBuilder.group(
   VocaApi,
   "library",
@@ -73,8 +73,18 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("WordNotFound", notFound("Word"))
         ),
 
-      publishDeck: () => Effect.die("not implemented: CB"),
-      unpublishDeck: () => Effect.die("not implemented: CB"),
+      publishDeck: ({ params }) =>
+        publishDeck(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
+      unpublishDeck: ({ params }) =>
+        unpublishDeck(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
       importCsv: () => Effect.die("not implemented"),
       exportCsv: () => Effect.die("not implemented")
     })
