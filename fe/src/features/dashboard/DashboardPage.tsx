@@ -1,11 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Result } from "effect";
-import type { DeckSummary, Learner } from "@voca/contract";
+import type { DeckSummary } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Container } from "../../components/Container";
-import { Wordmark } from "../../components/Wordmark";
-import { session, tokenStore } from "../../lib/appSession";
-import { loadCurrentLearner } from "../../lib/signIn";
+import { session } from "../../lib/appSession";
 import styles from "./dashboard.module.css";
 
 type DeckListState =
@@ -21,7 +19,6 @@ async function fetchDecks(): Promise<DeckListState> {
 }
 
 export function DashboardPage() {
-  const [learner, setLearner] = useState<Learner | null>(null);
   const [decks, setDecks] = useState<DeckListState>({ kind: "loading" });
 
   const reloadDecks = async () => {
@@ -29,45 +26,17 @@ export function DashboardPage() {
   };
 
   useEffect(() => {
-    let active = true;
-
-    loadCurrentLearner(session, tokenStore).then((found) => {
-      if (active) setLearner(found);
-    });
     void reloadDecks();
-
-    return () => {
-      active = false;
-    };
   }, []);
-
-  if (learner === null) return null;
 
   return (
     <div className={styles.page}>
       <Container>
         <div className={styles.inner}>
-          <Header learner={learner} />
           <DeckList state={decks} />
           <NewDeckForm onCreated={reloadDecks} />
         </div>
       </Container>
-    </div>
-  );
-}
-
-function Header({ learner }: { learner: Learner }) {
-  return (
-    <div className={styles.header}>
-      <Wordmark />
-      {learner.avatarUrl !== null && (
-        <img className={styles.avatar} src={learner.avatarUrl} alt="" />
-      )}
-      <h1 className={styles.title}>Signed in as {learner.name}</h1>
-      <p className={styles.body}>{learner.email}</p>
-      <Button variant="ghost" onClick={() => void session.signOut()}>
-        Sign out
-      </Button>
     </div>
   );
 }
