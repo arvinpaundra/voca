@@ -17,7 +17,7 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 ```
 1. decision    → ADR / contract change committed to master
 2. spec        → locked tests written red on a local dispatch branch (never master, so master stays green);
-                 its HEAD is the limits block's `base`; task issue created (limits block + DO);
+                 `bun run verify --print-locked <paths>` gives the `locked` lines; task issue created (limits block + DO);
                  `bun run verify --issue N --print-hash` gives the limits hash
 3. dispatch    → `delegate_task` with `isolation: worktree` from the dispatch branch; implementer gets the message below (AGENTS.md is loaded automatically)
 4. self-check  → implementer loops on `bun run verify --issue N --hash H` until green, opens a PR
@@ -38,8 +38,8 @@ Each task runs in a fresh child (`delegate_task`) in its own worktree, so the wo
 
 Before sending, from the dispatch branch:
 
-1. **The branch holds everything the worker needs**: the current `scripts/verify.ts` (with `base` support), the reference code, the locked tests. Anything missing here fails the worker's gate for reasons it cannot fix. (Pilot 2 lost a round to this.)
-2. The issue's `base` is the full sha of the dispatch branch's HEAD, the commit with the locked tests.
+1. **The branch holds everything the worker needs**: the current `scripts/verify.ts`, the reference code, the locked tests. Anything missing here fails the worker's gate for reasons it cannot fix. (Pilot 2 lost a round to this.)
+2. Each `locked` entry is `path: hash` from `bun run verify --print-locked`, so a rebase never invalidates it.
 3. `bun run verify --issue N --print-hash` works from that branch, and `bun run verify --issue N --hash H` gets past `✓ path guard` (it fails later, on the red tests, which is expected).
 4. The red tests are satisfiable: they pass against a throwaway implementation that you then discard.
 5. Every fact the task depends on is in the issue (pilot 2: the contract declares no not-found error for the endpoint, so the task said to use `Effect.orDie`).

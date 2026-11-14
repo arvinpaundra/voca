@@ -3,13 +3,14 @@
 //   bun run verify                      scope = workspaces touched since origin/master
 //   bun run verify --issue 12 --hash 3fa9c1d2  + path guard: only the issue's `allow` globs may change, `locked` files never
 //   bun run verify --issue 12 --print-hash     prints the hash of the issue's limits block (the dispatcher puts it in the task message)
+//   bun run verify --print-locked a.test.ts    prints `path: hash` lines for the issue's `locked` map
 //   bun run verify --scope all          or a list: --scope be,fe
 //   bun run verify --fast               skip Testcontainers tests and the fe build (pre-push)
 import { Glob } from "bun"
 import { parseArgs } from "node:util"
 
 const { values: opt } = parseArgs({
-  options: { issue: { type: "string" }, hash: { type: "string" }, "print-hash": { type: "boolean", default: false }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
+  options: { "print-locked": { type: "string", multiple: true }, issue: { type: "string" }, hash: { type: "string" }, "print-hash": { type: "boolean", default: false }, scope: { type: "string" }, fast: { type: "boolean", default: false } }
 })
 const WORKSPACES = ["contract", "be", "fe"] as const
 type Ws = (typeof WORKSPACES)[number]
@@ -28,6 +29,15 @@ const fail = (step: string, out: string): never => {
   process.exit(1)
 }
 
+const fileHash = (path: string) => {
+  const r = run(["git", "hash-object", path])
+  return r.ok ? r.out.slice(0, 8) : "missing"
+}
+if (opt["print-locked"]) {
+  for (const path of opt["print-locked"]) console.log(`  ${path}: ${fileHash(path)}`)
+  process.exit(0)
+}
+
 const step = (name: string, cmd: string[], cwd = ".") => {
   const r = run(cmd, cwd)
   if (!r.ok) fail(name, r.out)
@@ -36,7 +46,9 @@ const step = (name: string, cmd: string[], cwd = ".") => {
 
 // Task = a GitHub issue whose body has one ```yaml block with scope, allow, locked (see .github/ISSUE_TEMPLATE/task.md).
 // The dispatcher passes the block's hash; an edited block (a worker widening its own limits) fails the check.
-type Task = { scope?: string; base?: string; allow?: string[]; locked?: string[] }
+// `locked` maps each test the decision thread wrote to the hash of its content (`--print-locked`), so the check
+// holds across rebases and in CI, where no particular commit has to exist.
+type Task = { scope?: string; allow?: string[]; locked?: Record<string, string> }
 const loadTask = async (n: string): Promise<Task> => {
   const r = run(["gh", "issue", "view", n, "--json", "body", "-q", ".body"])
   if (!r.ok) fail("task issue", `cannot read issue #${n} (needs network and \`gh auth login\`):\n${r.out}`)
@@ -53,8 +65,7 @@ const loadTask = async (n: string): Promise<Task> => {
 const task: Task | undefined = opt.issue ? await loadTask(opt.issue) : undefined
 
 // Files changed since the branch left master: committed, staged, unstaged, untracked.
-// `base`: the dispatch commit that already holds the locked tests, so they don't count as the worker's changes.
-const base = task?.base ? { ok: true, out: task.base } : run(["git", "merge-base", "HEAD", "origin/master"])
+const base = run(["git", "merge-base", "HEAD", "origin/master"])
 const changed = base.ok
   ? [...new Set([
       ...run(["git", "diff", "--name-only", base.out]).out.split("\n"),
@@ -65,12 +76,16 @@ const changed = base.ok
 if (task) {
   if (!changed) fail("path guard", "cannot find merge-base with origin/master; run `git fetch origin master`")
   const allow = (task.allow ?? []).map((g) => new Glob(g))
-  const locked = new Set(task.locked ?? [])
-  const bad = (changed ?? []).flatMap((f) =>
-    locked.has(f) ? [`${f}  locked: written by the decision thread, restore it with \`git checkout ${base.out} -- ${f}\``]
-    : allow.some((g) => g.match(f)) ? []
-    : [`${f}  outside the task's allow list; revert it, or report why the task needs it`]
-  )
+  const locked = task.locked ?? {}
+  if (Array.isArray(locked)) fail("path guard", "`locked` must map each path to its content hash (`bun run verify --print-locked <path>`); report it")
+  const bad = [
+    ...Object.entries(locked).flatMap(([f, want]) =>
+      fileHash(f) === String(want) ? [] : [`${f}  locked: its content differs from what the decision thread wrote; restore it, never edit it`]
+    ),
+    ...(changed ?? []).flatMap((f) =>
+      f in locked || allow.some((g) => g.match(f)) ? [] : [`${f}  outside the task's allow list; revert it, or report why the task needs it`]
+    )
+  ]
   if (bad.length) fail("path guard", bad.join("\n"))
   console.log("✓ path guard")
 }
