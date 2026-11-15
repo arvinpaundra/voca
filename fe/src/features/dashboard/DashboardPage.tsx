@@ -1,12 +1,16 @@
 import { session } from "../../lib/appSession";
-import { Container } from "../../components/Container";
 import { ActivitySection } from "./ActivitySection";
 import { DecksSection } from "./DecksSection";
 import { ProgressSection } from "./ProgressSection";
 import { StreakSection } from "./StreakSection";
 import { TodaySection } from "./TodaySection";
 import { useLoadable } from "./useLoadable";
-import styles from "./dashboard.module.css";
+
+const greetingFor = (hour: number) => {
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+};
 
 export function DashboardPage() {
   // Every section loads its own data: a failed call shows its own message and the rest of the page still renders.
@@ -16,31 +20,34 @@ export function DashboardPage() {
   const decks = useLoadable(() => session.call((client) => client.library.listDecks()), []);
 
   return (
-    <div className={styles.page}>
-      <Container>
-        <div className={styles.inner}>
-          {learner.kind === "loading" && <p className={styles.muted}>Loading…</p>}
-          {learner.kind === "failed" && <p className={styles.muted}>Couldn't load your dashboard.</p>}
+    <div className="mx-auto w-full max-w-[1180px] px-4 pt-10 pb-24">
+      {learner.kind === "loading" && <p className="text-sm text-stone-500">Loading…</p>}
+      {learner.kind === "failed" && <p className="text-sm text-stone-500">Couldn't load your dashboard.</p>}
 
-          {learner.kind === "loaded" && (
-            <>
-              <h1 className={styles.greeting}>Hello, {learner.value.name.trim().split(/\s+/)[0]}</h1>
+      {learner.kind === "loaded" && (
+        <div className="grid gap-8">
+          <header className="grid gap-1">
+            <p className="text-sm text-stone-500">{greetingFor(new Date().getHours())}</p>
+            <h1 className="font-montserrat text-3xl font-semibold text-stone-900">
+              {learner.value.name.trim().split(/\s+/)[0]}
+            </h1>
+          </header>
 
-              <div className={styles.pair}>
-                <StreakSection state={stats} />
-                <TodaySection state={notifications} />
-              </div>
+          <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+            <TodaySection state={notifications} stats={stats} learner={learner.value} />
+            <StreakSection state={stats} />
+          </div>
 
-              <div className={styles.pair}>
-                <ActivitySection learner={learner.value} />
-                <ProgressSection state={stats} />
-              </div>
+          <div className="grid items-start gap-6 lg:grid-cols-[65%_1fr]">
+            <DecksSection state={decks} />
 
-              <DecksSection state={decks} />
-            </>
-          )}
+            <div className="grid min-w-0 gap-6">
+              <ActivitySection learner={learner.value} />
+              <ProgressSection state={stats} />
+            </div>
+          </div>
         </div>
-      </Container>
+      )}
     </div>
   );
 }

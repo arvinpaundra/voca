@@ -5,7 +5,6 @@ import { Heatmap } from "../../components/Heatmap";
 import { session } from "../../lib/appSession";
 import { shiftMonth, studyDate } from "./dashboardModel";
 import { useLoadable } from "./useLoadable";
-import styles from "./dashboard.module.css";
 
 export function ActivitySection({ learner }: { learner: Learner }) {
   const { timezone, dayStartHour } = learner.settings;
@@ -24,11 +23,14 @@ export function ActivitySection({ learner }: { learner: Learner }) {
   const canGoBack = month > signUpMonth;
   const canGoForward = month < currentMonth;
 
+  const navButton =
+    "rounded-lg border border-stone-200 bg-white px-2.5 py-0.5 text-stone-700 hover:bg-stone-100 disabled:cursor-default disabled:opacity-40";
+
   return (
-    <section className={styles.card} aria-label="Activity">
-      <div className={styles.monthNav}>
+    <section aria-label="Activity" className="grid min-w-0 gap-4 rounded-2xl border border-stone-200 bg-white p-5">
+      <div className="flex justify-end gap-2">
         <button
-          className={styles.navButton}
+          className={navButton}
           type="button"
           aria-label="Previous month"
           disabled={!canGoBack}
@@ -37,7 +39,7 @@ export function ActivitySection({ learner }: { learner: Learner }) {
           ‹
         </button>
         <button
-          className={styles.navButton}
+          className={navButton}
           type="button"
           aria-label="Next month"
           disabled={!canGoForward}
@@ -47,8 +49,8 @@ export function ActivitySection({ learner }: { learner: Learner }) {
         </button>
       </div>
 
-      {activity.kind === "loading" && <p className={styles.muted}>Loading activity…</p>}
-      {activity.kind === "failed" && <p className={styles.muted}>Couldn't load activity.</p>}
+      {activity.kind === "loading" && <p className="text-sm text-stone-500">Loading activity…</p>}
+      {activity.kind === "failed" && <p className="text-sm text-stone-500">Couldn't load activity.</p>}
       {activity.kind === "loaded" && <Heatmap month={month} days={activity.value.days} today={today} />}
     </section>
   );
