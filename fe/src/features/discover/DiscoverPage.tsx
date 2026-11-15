@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Result } from "effect";
 import type { PublicDeck } from "@voca/contract";
+import { Compass, Search, SearchX } from "lucide-react";
+import { Avatar } from "../../components/Avatar";
 import { Button } from "../../components/Button";
-import { Container } from "../../components/Container";
-import { Wordmark } from "../../components/Wordmark";
 import { session } from "../../lib/appSession";
 import { communityQuery, mergeTermLangs, type CommunitySort, type DiscoverFilter } from "./discoverModel";
 import { forkDeck, forkMessage } from "./fork";
-import styles from "./discover.module.css";
 
 const SEARCH_DELAY_MS = 300;
 
@@ -125,101 +124,134 @@ export function DiscoverPage() {
   const decks = listing?.decks ?? [];
 
   return (
-    <div className={styles.page}>
-      <Container>
-        <div className={styles.inner}>
-          <Wordmark />
-
-          <header className={styles.headerText}>
-            <h1 className={styles.title}>Discover</h1>
-            <p className={styles.note}>Browse and fork community decks.</p>
-          </header>
-
-          <div className={styles.toolbar}>
-            <form className={styles.searchForm} role="search" onSubmit={search}>
-              <input
-                className={styles.input}
-                type="search"
-                dir="auto"
-                aria-label="Search community decks"
-                placeholder="Search decks"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-              />
-            </form>
-            <select
-              className={styles.select}
-              aria-label="Term language"
-              value={filter.termLang ?? ""}
-              onChange={changeLang}
-            >
-              <option value="">All languages</option>
-              {knownLangs.map((lang) => (
-                <option key={lang} value={lang}>
-                  {lang}
-                </option>
-              ))}
-            </select>
-            <select className={styles.select} aria-label="Sort" value={filter.sort} onChange={changeSort}>
-              {sortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {forkError !== null && <p className={styles.error} role="alert">{forkError}</p>}
-          {loadError !== null && <p className={styles.error} role="alert">{loadError}</p>}
-          {listing === null && loadError === null && <p className={styles.note}>Loading decks…</p>}
-
-          {listing !== null && decks.length === 0 && (
-            <div className={styles.empty}>
-              <p className={styles.note}>No decks found</p>
-              <Button variant="ghost" onClick={clearFilters}>
-                Clear filters
-              </Button>
-            </div>
-          )}
-
-          {decks.length > 0 && (
-            <ul className={styles.grid}>
-              {decks.map((deck) => (
-                <li key={deck.slug}>
-                  <article className={styles.card}>
-                    <a className={styles.cardTitle} href={`/app/discover/${deck.slug}`} dir="auto">
-                      {deck.title}
-                    </a>
-                    <p className={styles.owner}>
-                      {deck.owner.avatarUrl !== null && (
-                        <img className={styles.avatar} src={deck.owner.avatarUrl} alt="" />
-                      )}
-                      <span dir="auto">{deck.owner.name}</span>
-                    </p>
-                    <p className={styles.note}>
-                      {deck.termLang} → {deck.meaningLang}
-                    </p>
-                    <p className={styles.note}>
-                      {deck.wordCount} words · {deck.forkCount} forks
-                    </p>
-                    <div className={styles.cardActions}>
-                      <Button variant="ghost" disabled={forking !== null} onClick={() => void fork(deck)}>
-                        {forking === deck.slug ? "Forking…" : "Fork"}
-                      </Button>
-                    </div>
-                  </article>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {listing !== null && listing.nextCursor !== null && (
-            <Button variant="ghost" disabled={loadingMore} onClick={() => void loadMore()}>
-              {loadingMore ? "Loading…" : "Load more"}
-            </Button>
-          )}
+    <div className="space-y-6">
+      <header className="flex items-center gap-4">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lime/20">
+          <Compass className="size-5 text-stone-900" aria-hidden="true" />
         </div>
-      </Container>
+        <div>
+          <h1 className="font-montserrat text-2xl font-semibold text-stone-900">Discover</h1>
+          <p className="mt-0.5 text-sm text-stone-500">Browse and fork community decks.</p>
+        </div>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3">
+        <form role="search" onSubmit={search} className="flex min-w-0 flex-1 items-center gap-2">
+          <Search className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
+          <input
+            type="search"
+            dir="auto"
+            aria-label="Search community decks"
+            placeholder="Search decks or creators…"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            className="w-full min-w-0 bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400"
+          />
+        </form>
+        <div className="hidden h-4 w-px bg-stone-200 sm:block" aria-hidden="true" />
+        <select
+          aria-label="Term language"
+          value={filter.termLang ?? ""}
+          onChange={changeLang}
+          className="cursor-pointer bg-transparent text-sm text-stone-600 outline-none"
+        >
+          <option value="">All languages</option>
+          {knownLangs.map((lang) => (
+            <option key={lang} value={lang}>
+              {lang}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Sort"
+          value={filter.sort}
+          onChange={changeSort}
+          className="cursor-pointer bg-transparent text-sm text-stone-600 outline-none"
+        >
+          {sortOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {forkError !== null && (
+        <p role="alert" className="text-sm text-red-600">
+          {forkError}
+        </p>
+      )}
+      {loadError !== null && (
+        <p role="alert" className="text-sm text-red-600">
+          {loadError}
+        </p>
+      )}
+      {listing === null && loadError === null && <p className="text-sm text-stone-500">Loading decks…</p>}
+
+      {listing !== null && decks.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <SearchX className="size-10 text-stone-300" aria-hidden="true" />
+          <p className="text-lg font-semibold text-stone-900">No decks found</p>
+          <p className="text-sm text-stone-400">Try a different search or clear your filters.</p>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-sm text-stone-900 underline underline-offset-2 hover:opacity-60"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {decks.length > 0 && (
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {decks.map((deck) => (
+            <li key={deck.slug}>
+              <article className="flex h-full flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                <a
+                  href={`/app/discover/${deck.slug}`}
+                  dir="auto"
+                  className="line-clamp-2 break-words font-semibold text-stone-900 hover:underline"
+                >
+                  {deck.title}
+                </a>
+                <div className="flex min-w-0 items-center gap-2 text-sm text-stone-500">
+                  <Avatar name={deck.owner.name} src={deck.owner.avatarUrl} size="sm" />
+                  <span dir="auto" className="truncate">
+                    {deck.owner.name}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 text-xs text-stone-500">
+                  <span>
+                    {deck.termLang} → {deck.meaningLang}
+                  </span>
+                  <span className="text-stone-400">
+                    {deck.wordCount} words · {deck.forkCount} forks
+                  </span>
+                </div>
+                <div className="mt-auto flex justify-end">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={forking !== null}
+                    onClick={() => void fork(deck)}
+                  >
+                    {forking === deck.slug ? "Forking…" : "Fork"}
+                  </Button>
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {listing !== null && listing.nextCursor !== null && (
+        <div className="flex justify-center">
+          <Button variant="ghost" disabled={loadingMore} onClick={() => void loadMore()}>
+            {loadingMore ? "Loading…" : "Load more"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
