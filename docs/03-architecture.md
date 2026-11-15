@@ -85,11 +85,12 @@ That is **5 runtime dependencies**. Not included: an ORM, Zod, express or hono, 
 | `@tanstack/react-router` (+ `@tanstack/router-plugin` dev) | Type-safe, file-based routing |
 | `@tanstack/react-query` | Server state cache, refetch-on-focus for notifications |
 | `effect` | `HttpApiClient` generated from `@voca/contract`, plus Schema decoding |
-| `vite`, `@vitejs/plugin-react` (dev) | Build |
+| `lucide-react` | Icons |
+| `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite` (dev) | Build and styling |
 
-**Design system: Washi Minimal.** The tokens and components are in [design-system.html](design-system.html). They become `fe/src/styles/tokens.css` (CSS custom properties) plus one CSS module per component. On hover, only a button's background changes, over 150 ms. Filled buttons fade to 60% (`color-mix(in srgb, <bg> 60%, transparent)`), and outlined buttons get a faint tint of their own color (ink 8%, danger 10%). Text and borders stay solid, other components keep their own hover, and nothing has a press animation.
+**Design system:** the voca-bak prototype's look (ADR 34). Tailwind v4 utilities with the theme tokens in `fe/src/styles/globals.css` (lime and navy brand, neutral/stone greys, Inter body, Montserrat headings, 2rem card radius) and `lucide-react` icons.
 
-Not included: a UI kit, Tailwind, a state manager, a form library, an audio library, or an ID or slug library. Styling uses plain CSS modules (built into Vite) and native `<dialog>`, `<details>`, and `<input type=file>` elements. Sound effects use the native Web Audio API ([05](05-study-sessions.md)). The slug generator (~15 lines) lives in `contract/` so both sides share it.
+Not included: a UI kit, a state manager, a form library, an audio library, or an ID or slug library. Styling uses Tailwind utilities and native `<dialog>`, `<details>`, and `<input type=file>` elements. Sound effects use the native Web Audio API ([05](05-study-sessions.md)). The slug generator (~15 lines) lives in `contract/` so both sides share it.
 
 **Why not Foldkit:** it is still v0.x with breaking minor releases, a small community, and no React interop. Revisit it when it reaches 1.0. The TEA (Elm architecture) mindset can still be applied with React by keeping a `useReducer` per feature where state is non-trivial, such as the study session screen.
 

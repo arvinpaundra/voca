@@ -57,4 +57,4 @@ bun run typecheck
 
 ## Documentation
 
-The design docs are in [`docs/`](docs/), starting with the [functional requirements](docs/01-functional-requirements.md). The UI is defined in the [design system](docs/design-system.html).
+The design docs are in [`docs/`](docs/), starting with the [functional requirements](docs/01-functional-requirements.md). The UI follows the voca-bak prototype's look (ADR 34).

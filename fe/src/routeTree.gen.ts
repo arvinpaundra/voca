@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppStudyRouteImport } from './routes/app/study'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AppDecksIndexRouteImport } from './routes/app/decks/index'
@@ -33,6 +34,11 @@ const LoginRoute = LoginRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/app/settings',
+  path: '/app/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppStudyRoute = AppStudyRouteImport.update({
@@ -74,6 +80,7 @@ const AppDecksDeckSlugStudyRoute = AppDecksDeckSlugStudyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/study': typeof AppStudyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/app/settings'
     | '/app/study'
     | '/auth/callback'
     | '/app/'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/app/settings'
     | '/app/study'
     | '/auth/callback'
     | '/app'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/app/settings'
     | '/app/study'
     | '/auth/callback'
     | '/app/'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppStudyRoute: typeof AppStudyRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/app/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/study': {
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppStudyRoute: AppStudyRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AppIndexRoute: AppIndexRoute,

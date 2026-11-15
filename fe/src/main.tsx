@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import "./styles/tokens.css";
 import "./styles/base.css";
+import "./styles/globals.css";
 
 const router = createRouter({ routeTree });
 
