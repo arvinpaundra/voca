@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Button } from "../../components/Button";
+import { Input } from "../../components/Input";
 import type { WordLabels } from "@voca/contract";
-import styles from "./deck.module.css";
 import { isComplete, type WordDraft } from "./wordModel";
 
 type WordFormProps = {
@@ -13,6 +13,9 @@ type WordFormProps = {
   onSubmit: (draft: WordDraft) => void;
   onCancel: () => void;
 };
+
+const textareaClass =
+  "w-full resize-y rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-stone-900 placeholder:text-stone-400 hover:border-stone-400 focus:outline-none focus:ring-2 focus:ring-lime/60";
 
 export function WordForm({ labels, initial, submitLabel, busy, error, onSubmit, onCancel }: WordFormProps) {
   const [draft, setDraft] = useState(initial);
@@ -28,40 +31,53 @@ export function WordForm({ labels, initial, submitLabel, busy, error, onSubmit, 
   };
 
   return (
-    <form className={styles.form} onSubmit={submit}>
-      <label className={styles.field}>
-        <span>{labels.term}</span>
-        <input className={styles.input} dir="auto" required value={draft.term} onChange={change("term")} />
-      </label>
+    <form className="flex flex-col gap-4 p-6" onSubmit={submit}>
+      <Input label={labels.term} dir="auto" required value={draft.term} onChange={change("term")} />
 
-      <label className={styles.field}>
-        <span>{labels.reading}</span>
-        <input className={styles.input} dir="auto" value={draft.reading} onChange={change("reading")} />
-      </label>
+      <Input label={labels.reading} dir="auto" value={draft.reading} onChange={change("reading")} />
 
-      <label className={styles.field}>
-        <span>Meaning</span>
-        <input className={styles.input} dir="auto" required value={draft.meaning} onChange={change("meaning")} />
-      </label>
+      <Input label="Meaning" dir="auto" required value={draft.meaning} onChange={change("meaning")} />
 
-      <label className={styles.field}>
-        <span>Example</span>
-        <textarea className={styles.input} dir="auto" rows={2} value={draft.example} onChange={change("example")} />
-      </label>
+      <div className="grid gap-1.5">
+        <label htmlFor="word-example" className="text-sm font-medium text-stone-700">
+          Example
+        </label>
+        <textarea
+          id="word-example"
+          className={textareaClass}
+          dir="auto"
+          rows={2}
+          value={draft.example}
+          onChange={change("example")}
+        />
+      </div>
 
-      <label className={styles.field}>
-        <span>Notes</span>
-        <textarea className={styles.input} dir="auto" rows={2} value={draft.notes} onChange={change("notes")} />
-      </label>
+      <div className="grid gap-1.5">
+        <label htmlFor="word-notes" className="text-sm font-medium text-stone-700">
+          Notes
+        </label>
+        <textarea
+          id="word-notes"
+          className={textareaClass}
+          dir="auto"
+          rows={2}
+          value={draft.notes}
+          onChange={change("notes")}
+        />
+      </div>
 
-      {error !== null && <p className={styles.error} role="alert">{error}</p>}
+      {error !== null && (
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      )}
 
-      <div className={styles.actions}>
-        <Button type="submit" variant="primary" disabled={busy || !isComplete(draft)}>
-          {busy ? "Saving…" : submitLabel}
-        </Button>
+      <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onCancel}>
           Cancel
+        </Button>
+        <Button type="submit" variant="primary" disabled={busy || !isComplete(draft)}>
+          {busy ? "Saving…" : submitLabel}
         </Button>
       </div>
     </form>

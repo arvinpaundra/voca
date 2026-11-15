@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { Option, Result, Schema } from "effect";
 import { DeckSlug, type Deck } from "@voca/contract";
-import { Container } from "../../components/Container";
-import { Wordmark } from "../../components/Wordmark";
 import { session } from "../../lib/appSession";
-import styles from "./deck.module.css";
 import { DeckView } from "./DeckView";
 
 export function DeckPage({ deckSlug }: { deckSlug: string }) {
@@ -35,15 +32,14 @@ export function DeckPage({ deckSlug }: { deckSlug: string }) {
   }, [deckSlug]);
 
   return (
-    <div className={styles.page}>
-      <Container>
-        <div className={styles.inner}>
-          <Wordmark />
-          {deck !== null && <DeckView deck={deck} onDeckChanged={setDeck} />}
-          {deck === null && failed && <p className={styles.note}>This deck could not be loaded.</p>}
-          {deck === null && !failed && <p className={styles.note}>Loading…</p>}
-        </div>
-      </Container>
+    <div className="mx-auto w-full max-w-3xl">
+      {deck !== null && <DeckView deck={deck} onDeckChanged={setDeck} />}
+      {deck === null && failed && (
+        <p className="text-sm text-red-600" role="alert">
+          This deck could not be loaded.
+        </p>
+      )}
+      {deck === null && !failed && <p className="text-sm text-stone-500">Loading…</p>}
     </div>
   );
 }
