@@ -1,5 +1,5 @@
 import type { Activity } from "@voca/contract";
-import styles from "./heatmap.module.css";
+import { cx } from "./cx";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"] as const;
 
@@ -23,6 +23,15 @@ const monthFormat = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   timeZone: "UTC",
 });
+
+// Level 0 is a day without reviews; 1 to 4 scale with the review count, from light lime to full lime.
+function levelClass(level: number): string {
+  if (level === 1) return "bg-lime/30 text-stone-900";
+  if (level === 2) return "bg-lime/55 text-stone-900";
+  if (level === 3) return "bg-lime/80 text-stone-900";
+  if (level === 4) return "bg-lime text-stone-900";
+  return "bg-stone-200 text-stone-500";
+}
 
 export function Heatmap({ month, days, today }: HeatmapProps) {
   const year = Number(month.slice(0, 4));
@@ -51,8 +60,10 @@ export function Heatmap({ month, days, today }: HeatmapProps) {
     return (
       <span
         key={day}
-        className={isFuture ? `${styles.cell} ${styles.future}` : styles.cell}
-        data-l={isFuture ? undefined : level(reviews)}
+        className={cx(
+          "flex aspect-square items-center justify-center rounded-[3px] text-[11px] leading-none",
+          isFuture ? "border border-dashed border-stone-300 text-stone-400" : levelClass(level(reviews)),
+        )}
         title={isFuture ? dayLabel : `${countLabel} · ${dayLabel}`}
       >
         {day}
@@ -61,33 +72,33 @@ export function Heatmap({ month, days, today }: HeatmapProps) {
   });
 
   return (
-    <div className={styles.activity}>
-      <div className={styles.header}>
-        <strong className={styles.month}>{monthName}</strong>
+    <div className="grid gap-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <strong className="text-lg font-medium">{monthName}</strong>
         <span className="label">{total} reviews</span>
       </div>
       <div
-        className={styles.heat}
+        className="grid grid-cols-7 gap-1 text-[11px]"
         role="img"
         aria-label={`Study activity for ${monthName}: ${total} reviews`}
       >
         {WEEKDAYS.map((d, i) => (
-          <span key={`w${i}`} className={styles.wd}>
+          <span key={`w${i}`} className="text-center text-stone-500">
             {d}
           </span>
         ))}
         {Array.from({ length: leading }, (_, i) => (
-          <span key={`p${i}`} className={styles.pad} aria-hidden="true" />
+          <span key={`p${i}`} className="invisible" aria-hidden="true" />
         ))}
         {cells}
       </div>
-      <div className={styles.legend} aria-hidden="true">
+      <div className="flex items-center justify-end gap-[3px] text-[11px] text-stone-500" aria-hidden="true">
         <span>Less</span>
-        <span className={styles.legendCell} />
-        <span className={styles.legendCell} data-l="1" />
-        <span className={styles.legendCell} data-l="2" />
-        <span className={styles.legendCell} data-l="3" />
-        <span className={styles.legendCell} data-l="4" />
+        <span className={cx("size-[11px] rounded-[2px]", levelClass(0))} />
+        <span className={cx("size-[11px] rounded-[2px]", levelClass(1))} />
+        <span className={cx("size-[11px] rounded-[2px]", levelClass(2))} />
+        <span className={cx("size-[11px] rounded-[2px]", levelClass(3))} />
+        <span className={cx("size-[11px] rounded-[2px]", levelClass(4))} />
         <span>More</span>
       </div>
     </div>

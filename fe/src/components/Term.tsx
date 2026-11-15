@@ -1,4 +1,4 @@
-import styles from "./term.module.css";
+import { cx } from "./cx";
 
 type TermProps = {
   term: string;
@@ -10,9 +10,16 @@ type TermProps = {
 };
 
 export function Term({ term, reading, lang, dir, size = "md", className }: TermProps) {
-  const classes = [styles.term, size === "lg" && styles.lg, className].filter(Boolean).join(" ");
   return (
-    <span className={classes} lang={lang} dir={dir}>
+    <span
+      className={cx(
+        "font-term font-medium leading-[1.2]",
+        size === "lg" ? "text-[76px]" : "text-[48px]",
+        className,
+      )}
+      lang={lang}
+      dir={dir}
+    >
       {reading ? (
         <ruby>
           {term}

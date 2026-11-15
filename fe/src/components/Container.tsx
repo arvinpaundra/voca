@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import styles from "./container.module.css";
+import { cx } from "./cx";
 
 export function Container({
   children,
@@ -8,5 +8,5 @@ export function Container({
   children: ReactNode;
   className?: string | undefined;
 }) {
-  return <div className={[styles.container, className].filter(Boolean).join(" ")}>{children}</div>;
+  return <div className={cx("mx-auto w-full max-w-[1180px] px-4", className)}>{children}</div>;
 }
