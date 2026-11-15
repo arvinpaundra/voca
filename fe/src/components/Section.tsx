@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Container } from "./Container";
-import styles from "./section.module.css";
 
 export function Section({
   id,
@@ -14,10 +13,10 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <section className={styles.section} id={id}>
+    <section className="pt-14" id={id}>
       <Container>
-        <header className={styles.head}>
-          <h2 className={styles.title}>{title}</h2>
+        <header className="mb-5 flex items-baseline gap-3 border-b border-stone-200 pb-2">
+          <h2 className="text-[28px]">{title}</h2>
           <span className="label">{eyebrow}</span>
         </header>
         {children}

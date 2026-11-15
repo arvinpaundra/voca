@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import styles from "./modal.module.css";
+import { X } from "lucide-react";
 
 type ModalProps = {
   open: boolean;
@@ -23,10 +23,24 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
   }, [open]);
 
   return (
-    <dialog ref={ref} className={styles.dialog} aria-labelledby={titleId} onClose={onClose}>
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      onClose={onClose}
+      className="m-auto max-h-[calc(100vh_-_4rem)] w-[min(520px,calc(100vw_-_2rem))] overflow-y-auto rounded-card bg-white p-0 text-stone-900 shadow-2xl backdrop:bg-stone-900/40 backdrop:backdrop-blur-sm"
+    >
       {open && (
-        <div className={styles.body}>
-          <h2 id={titleId} className={styles.title}>
+        <div className="relative grid gap-4 p-6">
+          <button
+            type="button"
+            aria-label="Close"
+            title="Close"
+            className="absolute right-4 top-4 inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition-colors hover:bg-stone-200 hover:text-stone-900"
+            onClick={() => ref.current?.close()}
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+          <h2 id={titleId} className="pr-10 text-xl font-semibold">
             {title}
           </h2>
           {children}
