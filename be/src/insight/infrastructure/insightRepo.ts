@@ -1,13 +1,18 @@
 import { Effect, Layer, Option, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
-import { DeckSlug, Drill } from "@voca/contract"
+import { DeckSlug, Drill, Example, Meaning, Mode, Notes, Rating, Reading, Term, WordSlug } from "@voca/contract"
 import {
   InsightRepo,
   type Clock,
   type DayCount,
   type DeckDue,
   type LearnerSettings,
-  type Scope
+  type OwnedWord,
+  type PickedWord,
+  type Scope,
+  type WordAttemptRow,
+  type WordCardRow,
+  type WordReviewRow
 } from "../application/insightRepo.ts"
 
 const Id = Schema.BigIntFromString
@@ -42,6 +47,49 @@ const DeckDueRow = Schema.Struct({
   overdue: Count,
   hard: Count
 })
+
+const OwnedWordRow = Schema.Struct({
+  id: Id,
+  termLang: Schema.String,
+  slug: WordSlug,
+  term: Term,
+  reading: Schema.NullOr(Reading),
+  meaning: Meaning,
+  example: Schema.NullOr(Example),
+  notes: Schema.NullOr(Notes),
+  createdAt: Schema.DateTimeUtcFromDate
+})
+
+const WordCardDbRow = Schema.Struct({
+  drill: Drill,
+  stability: Schema.Number,
+  difficulty: Schema.Number,
+  due: Schema.DateTimeUtcFromDate,
+  lastReview: Schema.DateTimeUtcFromDate,
+  reps: Count,
+  lapses: Count,
+  isHard: Schema.Boolean
+})
+
+const WordReviewDbRow = Schema.Struct({
+  drill: Drill,
+  reviewedAt: Schema.DateTimeUtcFromDate,
+  rating: Rating,
+  correct: Schema.Boolean,
+  mode: Mode,
+  latencyMs: Count,
+  predictedRecall: Schema.NullOr(Schema.Number),
+  scheduledDays: Count
+})
+
+const WordAttemptDbRow = Schema.Struct({
+  sessionId: Id,
+  drill: Drill,
+  correct: Schema.Boolean,
+  chosenWordId: Schema.NullOr(Id)
+})
+
+const PickedWordRow = Schema.Struct({ id: Id, slug: WordSlug, term: Schema.String })
 
 /**
  * Study dates are computed in SQL as the wall-clock time less the day start hour, then the calendar date:
@@ -202,6 +250,57 @@ export const InsightRepoLive = Layer.effect(
         WHERE learner_id = ${learnerId} AND state_before = 'new' AND reviewed_at >= ${from} AND reviewed_at < ${to}`
     })
 
+    const ownedWordOf = SqlSchema.findOneOption({
+      Request: Schema.Struct({ learnerId: Schema.BigInt, wordSlug: Schema.String }),
+      Result: OwnedWordRow,
+      execute: ({ learnerId, wordSlug }) => sql`
+        SELECT w.id::text AS id, d.term_lang AS "termLang", w.slug, w.term, w.reading, w.meaning, w.example,
+          w.notes, w.created_at AS "createdAt"
+        FROM words w
+        JOIN decks d ON d.id = w.deck_id AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL
+        WHERE w.slug = ${wordSlug} AND w.deleted_at IS NULL`
+    })
+
+    const wordCardsOf = SqlSchema.findAll({
+      Request: Schema.Struct({ learnerId: Schema.BigInt, wordId: Schema.BigInt }),
+      Result: WordCardDbRow,
+      execute: ({ learnerId, wordId }) => sql`
+        SELECT c.drill, c.stability, c.difficulty, c.due, c.last_review AS "lastReview", c.reps, c.lapses,
+          c.is_hard AS "isHard"
+        FROM cards c
+        WHERE c.word_id = ${wordId} AND c.learner_id = ${learnerId} AND c.deleted_at IS NULL
+        ORDER BY c.drill`
+    })
+
+    const wordReviewsOf = SqlSchema.findAll({
+      Request: Schema.Struct({ learnerId: Schema.BigInt, wordId: Schema.BigInt }),
+      Result: WordReviewDbRow,
+      execute: ({ learnerId, wordId }) => sql`
+        SELECT r.drill, r.reviewed_at AS "reviewedAt", r.rating, r.correct, r.mode, r.latency_ms AS "latencyMs",
+          r.retrievability::float8 AS "predictedRecall", r.scheduled_days AS "scheduledDays"
+        FROM reviews r
+        WHERE r.word_id = ${wordId} AND r.learner_id = ${learnerId}
+        ORDER BY r.reviewed_at DESC, r.id DESC`
+    })
+
+    const wordAttemptsOf = SqlSchema.findAll({
+      Request: Schema.Struct({ learnerId: Schema.BigInt, wordId: Schema.BigInt }),
+      Result: WordAttemptDbRow,
+      execute: ({ learnerId, wordId }) => sql`
+        SELECT q.session_id::text AS "sessionId", q.drill, q.correct, q.chosen_word_id::text AS "chosenWordId"
+        FROM session_questions q
+        JOIN study_sessions s ON s.id = q.session_id AND s.learner_id = ${learnerId}
+        WHERE q.word_id = ${wordId} AND q.answered_at IS NOT NULL AND q.correct IS NOT NULL
+        ORDER BY s.created_at DESC, s.id DESC, q.attempt ASC`
+    })
+
+    const pickedWordsOf = SqlSchema.findAll({
+      Request: Schema.Array(Schema.BigInt),
+      Result: PickedWordRow,
+      execute: (ids) => sql`
+        SELECT w.id::text AS id, w.slug, w.term FROM words w WHERE w.id = ANY(${ids}::bigint[])`
+    })
+
     const dueByDeckOf = SqlSchema.findAll({
       Request: Schema.Struct({
         learnerId: Schema.BigInt,
@@ -256,6 +355,40 @@ export const InsightRepoLive = Layer.effect(
           Effect.map((row) => row.count),
           Effect.orDie
         ),
+
+      findOwnedWord: (learnerId, wordSlug) =>
+        ownedWordOf({ learnerId, wordSlug }).pipe(
+          Effect.map(
+            Option.map(
+              (row): OwnedWord => ({
+                id: row.id,
+                termLang: row.termLang,
+                word: {
+                  slug: row.slug,
+                  term: row.term,
+                  reading: row.reading,
+                  meaning: row.meaning,
+                  example: row.example,
+                  notes: row.notes,
+                  createdAt: row.createdAt
+                }
+              })
+            )
+          ),
+          Effect.orDie
+        ),
+
+      wordCards: (learnerId, wordId): Effect.Effect<ReadonlyArray<WordCardRow>> =>
+        wordCardsOf({ learnerId, wordId }).pipe(Effect.orDie),
+
+      wordReviews: (learnerId, wordId): Effect.Effect<ReadonlyArray<WordReviewRow>> =>
+        wordReviewsOf({ learnerId, wordId }).pipe(Effect.orDie),
+
+      wordAttempts: (learnerId, wordId): Effect.Effect<ReadonlyArray<WordAttemptRow>> =>
+        wordAttemptsOf({ learnerId, wordId }).pipe(Effect.orDie),
+
+      pickedWords: (ids): Effect.Effect<ReadonlyArray<PickedWord>> =>
+        ids.length === 0 ? Effect.succeed([]) : pickedWordsOf(ids).pipe(Effect.orDie),
 
       dueByDeck: (learnerId, start, end): Effect.Effect<ReadonlyArray<DeckDue>> =>
         dueByDeckOf({ learnerId, start, end }).pipe(Effect.orDie)
