@@ -14,7 +14,7 @@ export function Input({ label, error, id, className, ...props }: InputProps) {
   return (
     <div className="grid gap-1.5">
       {label !== undefined && (
-        <label htmlFor={inputId} className="text-sm font-medium text-stone-700">
+        <label htmlFor={inputId} className="text-xs font-medium text-stone-700">
           {label}
         </label>
       )}
@@ -23,7 +23,7 @@ export function Input({ label, error, id, className, ...props }: InputProps) {
         aria-invalid={error !== undefined ? true : undefined}
         aria-describedby={error !== undefined ? errorId : undefined}
         className={cx(
-          "w-full rounded-xl border bg-white px-3.5 py-2.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-lime/60",
+          "h-8 w-full rounded-lg border bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy",
           error !== undefined ? "border-red-400" : "border-stone-300 hover:border-stone-400",
           className,
         )}

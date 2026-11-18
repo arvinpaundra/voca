@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cx } from "./cx";
 
-type Variant = "primary" | "accent" | "ghost" | "danger";
+type Variant = "primary" | "accent" | "secondary" | "ghost" | "danger";
 
 type ButtonProps = {
   variant?: Variant;
@@ -13,19 +13,22 @@ type ButtonProps = {
   className?: string | undefined;
   "aria-label"?: string;
   title?: string;
+  busy?: boolean;
   children: ReactNode;
 };
 
 const variantClasses: Record<Variant, string> = {
-  primary: "bg-lime text-stone-900 hover:bg-lime-hover",
-  accent: "bg-navy text-white hover:bg-navy/85",
+  primary: "bg-navy text-white hover:bg-[#0a3d54]",
+  // Kept so pages written against the old palette compile; it is the same as primary.
+  accent: "bg-navy text-white hover:bg-[#0a3d54]",
+  secondary: "border border-stone-300 bg-white text-stone-900 hover:bg-stone-50",
   ghost: "bg-transparent text-stone-700 hover:bg-stone-200/70",
   danger: "bg-red-600 text-white hover:bg-red-700",
 };
 
 const sizeClasses = {
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-5 py-2.5 text-sm",
+  sm: "h-7 rounded-[5px] px-2.5",
+  md: "h-8 rounded-md px-3",
 };
 
 export function Button({
@@ -38,10 +41,11 @@ export function Button({
   className,
   "aria-label": ariaLabel,
   title,
+  busy,
   children,
 }: ButtonProps) {
   const classes = cx(
-    "inline-flex cursor-pointer select-none items-center justify-center gap-2 rounded-lg font-semibold no-underline transition-colors duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex cursor-pointer select-none items-center justify-center gap-2 text-sm font-semibold no-underline transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy disabled:cursor-not-allowed disabled:opacity-50",
     variantClasses[variant],
     sizeClasses[size],
     className,
@@ -60,10 +64,17 @@ export function Button({
       className={classes}
       type={type}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled === true || busy === true}
+      aria-busy={busy === true ? true : undefined}
       aria-label={ariaLabel}
       title={title}
     >
+      {busy === true && (
+        <span
+          aria-hidden="true"
+          className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+      )}
       {children}
     </button>
   );

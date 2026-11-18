@@ -6,7 +6,7 @@ import { session, tokenStore } from "../lib/appSession";
 import { loadCurrentLearner } from "../lib/signIn";
 import { Avatar } from "./Avatar";
 import { cx } from "./cx";
-import { Wordmark } from "./Wordmark";
+import { Logo } from "./Logo";
 
 const COLLAPSED_KEY = "voca.sidebarCollapsed";
 
@@ -50,9 +50,9 @@ function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
           {({ isActive }) => (
             <div
               className={cx(
-                "relative flex items-center py-2.5 transition-colors duration-150",
+                "relative flex h-8 items-center transition-colors duration-150",
                 collapsed ? "justify-center px-2" : "gap-3 px-3",
-                isActive ? "rounded-xl bg-lime/10 text-white" : "rounded-xl text-stone-400 hover:bg-stone-800 hover:text-stone-100",
+                isActive ? "rounded-md bg-lime/10 text-white" : "rounded-md text-stone-400 hover:bg-stone-800 hover:text-stone-100",
               )}
             >
               {isActive && (
@@ -60,7 +60,7 @@ function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
               )}
               <Icon className={cx("size-5 shrink-0", isActive ? "text-lime" : "text-stone-500")} aria-hidden="true" />
               {!collapsed && (
-                <span className={cx("truncate text-sm", isActive ? "font-semibold" : "font-medium")}>{label}</span>
+                <span className={cx("truncate text-[13px]", isActive ? "font-semibold" : "font-medium")}>{label}</span>
               )}
             </div>
           )}
@@ -184,7 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Menu className="size-5" aria-hidden="true" />
         </button>
         <Link to="/app" activeOptions={{ exact: true }} className="rounded outline-none focus-visible:ring-2 focus-visible:ring-lime">
-          <Wordmark variant="dark" className="text-xl" />
+          <Logo tone="dark" className="h-7" />
         </Link>
         {learner !== null && <Avatar name={learner.name} src={learner.avatarUrl} size="sm" tone="dark" />}
       </header>
@@ -200,7 +200,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex h-14 items-center justify-between border-b border-stone-800 px-4">
-          <Wordmark variant="dark" className="text-xl" />
+          <Logo tone="dark" className="h-7" />
           <button
             type="button"
             aria-label="Close menu"
@@ -218,7 +218,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Sidebar"
         className={cx(
           "sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-stone-800 bg-stone-900 transition-[width] duration-200 ease-in-out md:flex",
-          collapsed ? "w-16" : "w-56",
+          collapsed ? "w-16" : "w-[200px]",
         )}
       >
         <div
@@ -227,11 +227,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             collapsed ? "justify-center" : "justify-between px-4",
           )}
         >
-          {!collapsed && (
-            <Link to="/app" activeOptions={{ exact: true }} className="shrink-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-lime">
-              <Wordmark variant="dark" className="text-xl" />
-            </Link>
-          )}
+          <Link to="/app" activeOptions={{ exact: true }} className="shrink-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-lime">
+            <Logo tone="dark" withName={!collapsed} className={collapsed ? "h-6" : "h-7"} />
+          </Link>
           <button
             type="button"
             onClick={toggleCollapsed}
