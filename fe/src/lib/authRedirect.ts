@@ -4,8 +4,11 @@ export const isAppPath = (path: string): boolean => {
 }
 
 /** App pages framed by the sidebar. Study setup and the session take the whole screen. */
-export const hasShell = (_path: string): boolean => {
-  throw new Error("not implemented: F-0")
+export const hasShell = (path: string): boolean => {
+  if (!isAppPath(path)) return false
+  if (path === "/app/study") return false
+
+  return !/^\/app\/decks\/[^/]+\/study\/?$/.test(path)
 }
 
 /**

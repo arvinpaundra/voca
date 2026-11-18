@@ -18,11 +18,9 @@ export function IconButton({
   className?: string | undefined;
   children: ReactNode;
 }) {
-  if (round) return <p>not implemented: F-0</p>;
-
   if (href !== undefined) {
     return (
-      <a className={cx("btn-icon", className)} href={href} aria-label={label} title={label}>
+      <a className={cx("btn-icon", round && "round", className)} href={href} aria-label={label} title={label}>
         {children}
       </a>
     );
@@ -31,7 +29,7 @@ export function IconButton({
   return (
     <button
       type="button"
-      className={cx("btn-icon", className)}
+      className={cx("btn-icon", round && "round", className)}
       aria-label={label}
       title={label}
       onClick={onClick}
