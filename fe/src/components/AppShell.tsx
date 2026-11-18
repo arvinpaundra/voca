@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Result } from "effect";
 import type { Learner } from "@voca/contract";
-import { Compass, Layers, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Settings, X } from "lucide-react";
+import { Compass, Layers, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, Settings, X } from "lucide-react";
 import { session, tokenStore } from "../lib/appSession";
 import { loadCurrentLearner } from "../lib/signIn";
 import { Avatar } from "./Avatar";
 import { cx } from "./cx";
+import { IconButton } from "./IconButton";
 import { Logo } from "./Logo";
 
 const COLLAPSED_KEY = "voca.sidebarCollapsed";
@@ -28,49 +30,59 @@ function writeCollapsed(collapsed: boolean): void {
 }
 
 const NAV = [
-  { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/app/decks", label: "Decks", icon: Layers, exact: false },
-  { to: "/app/discover", label: "Discover", icon: Compass, exact: false },
-  { to: "/app/settings", label: "Settings", icon: Settings, exact: false },
+  { to: "/app", key: "dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/app/decks", key: "decks", icon: Layers, exact: false },
+  { to: "/app/discover", key: "discover", icon: Compass, exact: false },
+  { to: "/app/settings", key: "settings", icon: Settings, exact: false },
 ] as const;
 
-function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+const LABELS: Record<(typeof NAV)[number]["key"], string> = {
+  dashboard: "Dashboard",
+  decks: "Decks",
+  discover: "Discover",
+  settings: "Settings",
+};
+
+// The design's collapsed sidebar: 64px, icons only. The labels stay in the DOM for screen readers.
+const COLLAPSED_NAV: CSSProperties = { justifyContent: "center", padding: 0 };
+const BARE_BUTTON: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  flex: 1,
+  minWidth: 0,
+  padding: 0,
+  border: 0,
+  background: "transparent",
+  color: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
+};
+
+function NavLinks({ collapsed, due, onNavigate }: { collapsed: boolean; due: number; onNavigate?: () => void }) {
   return (
-    <nav aria-label="Main" className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-2 py-3">
-      {NAV.map(({ to, label, icon: Icon, exact }) => (
+    <nav aria-label="Main">
+      {NAV.map(({ to, key, icon: Icon, exact }) => (
         <Link
           key={to}
           to={to}
           activeOptions={{ exact }}
-          title={collapsed ? label : undefined}
-          aria-label={collapsed ? label : undefined}
+          className="nav"
+          activeProps={{ className: "on" }}
+          style={collapsed ? COLLAPSED_NAV : undefined}
+          title={collapsed ? LABELS[key] : undefined}
           onClick={onNavigate}
-          className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-lime"
         >
-          {({ isActive }) => (
-            <div
-              className={cx(
-                "relative flex h-8 items-center transition-colors duration-150",
-                collapsed ? "justify-center px-2" : "gap-3 px-3",
-                isActive ? "rounded-md bg-lime/10 text-white" : "rounded-md text-stone-400 hover:bg-stone-800 hover:text-stone-100",
-              )}
-            >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-lime" aria-hidden="true" />
-              )}
-              <Icon className={cx("size-5 shrink-0", isActive ? "text-lime" : "text-stone-500")} aria-hidden="true" />
-              {!collapsed && (
-                <span className={cx("truncate text-[13px]", isActive ? "font-semibold" : "font-medium")}>{label}</span>
-              )}
-            </div>
-          )}
+          <Icon className="i i-lg" aria-hidden="true" />
+          <span className={cx(collapsed && "sr")}>{LABELS[key]}</span>
+          {key === "decks" && due > 0 && !collapsed && <span className="cnt">{due}</span>}
         </Link>
       ))}
     </nav>
   );
 }
 
-function UserMenu({
+function SideUser({
   learner,
   collapsed,
   onNavigate,
@@ -80,67 +92,81 @@ function UserMenu({
   onNavigate?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open) return;
 
-    const closeOnOutsideClick = (event: MouseEvent) => {
-      if (ref.current !== null && !ref.current.contains(event.target as Node)) setOpen(false);
+    const onClick = (event: MouseEvent) => {
+      if (root.current !== null && !root.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      setOpen(false);
+      trigger.current?.focus();
     };
 
-    document.addEventListener("click", closeOnOutsideClick);
-    return () => document.removeEventListener("click", closeOnOutsideClick);
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
+  const popup: CSSProperties = collapsed
+    ? { position: "absolute", left: "100%", bottom: 8, marginLeft: 8, zIndex: 60 }
+    : { position: "absolute", left: 8, right: 8, bottom: "100%", marginBottom: 4, zIndex: 60 };
+
   return (
-    <div ref={ref} className="relative border-t border-stone-800 p-3">
+    <div ref={root} className="side-user" style={{ position: "relative", justifyContent: collapsed ? "center" : undefined }}>
       {open && (
-        <div
-          className={cx(
-            "absolute z-20 rounded-lg border border-stone-700 bg-stone-800 py-1 shadow-xl",
-            collapsed ? "bottom-0 left-full ml-2 w-40" : "bottom-full left-3 right-3 mb-1",
-          )}
-        >
-          <Link
-            to="/app/settings"
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-stone-200 hover:bg-stone-700"
+        <div role="menu" aria-label="Account" className="menu" style={popup}>
+          <button
+            type="button"
+            role="menuitem"
             onClick={() => {
               setOpen(false);
               onNavigate?.();
+              void navigate({ to: "/app/settings" });
             }}
           >
-            <Settings className="size-4 shrink-0" aria-hidden="true" />
+            <Settings className="i" aria-hidden="true" />
             Settings
-          </Link>
+          </button>
           <button
             type="button"
-            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-stone-200 hover:bg-stone-700 hover:text-red-300"
+            role="menuitem"
+            className="bad"
             onClick={() => {
               setOpen(false);
               void session.signOut();
             }}
           >
-            <LogOut className="size-4 shrink-0" aria-hidden="true" />
             Sign out
           </button>
         </div>
       )}
       <button
+        ref={trigger}
         type="button"
-        className={cx(
-          "flex w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-stone-800",
-          collapsed && "justify-center",
-        )}
-        onClick={() => setOpen((value) => !value)}
-        title={collapsed ? learner.name : undefined}
-        aria-label={collapsed ? learner.name : undefined}
-        aria-expanded={open}
         aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={collapsed ? learner.name : undefined}
+        title={collapsed ? learner.name : undefined}
+        style={collapsed ? { ...BARE_BUTTON, flex: "none" } : BARE_BUTTON}
+        onClick={() => setOpen((value) => !value)}
       >
-        <Avatar name={learner.name} src={learner.avatarUrl} size="md" tone="dark" />
+        <Avatar name={learner.name} src={learner.avatarUrl} tone="dark" />
         {!collapsed && (
-          <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-200">{learner.name}</span>
+          <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+            {learner.name}
+            <small>{learner.email}</small>
+          </div>
         )}
       </button>
     </div>
@@ -149,6 +175,7 @@ function UserMenu({
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [learner, setLearner] = useState<Learner | null>(null);
+  const [due, setDue] = useState(0);
   const [collapsed, setCollapsed] = useState<boolean>(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -157,6 +184,21 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     loadCurrentLearner(session, tokenStore).then((found) => {
       if (active) setLearner(found);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // The Decks badge is a hint: when the call fails it just stays hidden.
+  useEffect(() => {
+    let active = true;
+
+    void session.call((client) => client.insight.notifications()).then((result) => {
+      if (!active || !Result.isSuccess(result)) return;
+
+      setDue(result.success.decks.reduce((sum, deck) => sum + deck.due, 0));
     });
 
     return () => {
@@ -173,78 +215,59 @@ export function AppShell({ children }: { children: ReactNode }) {
   const closeDrawer = () => setDrawerOpen(false);
 
   return (
-    <div className="min-h-screen bg-neutral-100 md:flex">
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-stone-900 px-4 md:hidden">
-        <button
-          type="button"
-          aria-label="Open menu"
-          className="inline-flex size-9 cursor-pointer items-center justify-center rounded-full bg-stone-800 text-stone-300 hover:bg-stone-700"
-          onClick={() => setDrawerOpen(true)}
-        >
-          <Menu className="size-5" aria-hidden="true" />
-        </button>
-        <Link to="/app" activeOptions={{ exact: true }} className="rounded outline-none focus-visible:ring-2 focus-visible:ring-lime">
-          <Logo tone="dark" className="h-7" />
-        </Link>
-        {learner !== null && <Avatar name={learner.name} src={learner.avatarUrl} size="sm" tone="dark" />}
-      </header>
-
-      {drawerOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" aria-hidden="true" onClick={closeDrawer} />}
-
-      <aside
-        aria-label="Sidebar"
-        inert={!drawerOpen}
-        className={cx(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-stone-900 transition-transform duration-300 ease-in-out md:hidden",
-          drawerOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex h-14 items-center justify-between border-b border-stone-800 px-4">
-          <Logo tone="dark" className="h-7" />
-          <button
-            type="button"
-            aria-label="Close menu"
-            className="inline-flex size-9 cursor-pointer items-center justify-center rounded-full bg-stone-800 text-stone-300 hover:bg-stone-700"
-            onClick={closeDrawer}
-          >
-            <X className="size-5" aria-hidden="true" />
-          </button>
-        </div>
-        <NavLinks collapsed={false} onNavigate={closeDrawer} />
-        {learner !== null && <UserMenu learner={learner} collapsed={false} onNavigate={closeDrawer} />}
-      </aside>
-
-      <aside
-        aria-label="Sidebar"
-        className={cx(
-          "sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-stone-800 bg-stone-900 transition-[width] duration-200 ease-in-out md:flex",
-          collapsed ? "w-16" : "w-[200px]",
-        )}
-      >
+    <div className="app" style={{ gridTemplateColumns: collapsed ? "64px 1fr" : undefined }}>
+      <aside className="side" aria-label="Sidebar">
         <div
-          className={cx(
-            "flex h-14 items-center border-b border-stone-800",
-            collapsed ? "justify-center" : "justify-between px-4",
-          )}
+          className="side-top"
+          style={collapsed ? { flexDirection: "column", justifyContent: "center", gap: 4, height: "auto", padding: "8px 0" } : undefined}
         >
-          <Link to="/app" activeOptions={{ exact: true }} className="shrink-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-lime">
-            <Logo tone="dark" withName={!collapsed} className={collapsed ? "h-6" : "h-7"} />
+          <Link to="/app" activeOptions={{ exact: true }} aria-label="Voca home">
+            <Logo tone="dark" withName={!collapsed} className="h-7" />
           </Link>
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-stone-500 hover:bg-stone-800 hover:text-stone-300"
-          >
-            {collapsed ? <PanelLeftOpen className="size-4" aria-hidden="true" /> : <PanelLeftClose className="size-4" aria-hidden="true" />}
-          </button>
+          <IconButton label={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={toggleCollapsed}>
+            {collapsed ? <PanelLeftOpen className="i" aria-hidden="true" /> : <PanelLeftClose className="i" aria-hidden="true" />}
+          </IconButton>
         </div>
-        <NavLinks collapsed={collapsed} />
-        {learner !== null && <UserMenu learner={learner} collapsed={collapsed} />}
+        <NavLinks collapsed={collapsed} due={due} />
+        {learner !== null && <SideUser learner={learner} collapsed={collapsed} />}
       </aside>
 
-      <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+      {drawerOpen && (
+        <>
+          <div
+            aria-hidden="true"
+            onClick={closeDrawer}
+            style={{ position: "fixed", inset: 0, zIndex: 40, background: "rgba(28,25,23,.5)" }}
+          />
+          <aside
+            className="side"
+            aria-label="Menu"
+            style={{ display: "flex", position: "fixed", top: 0, bottom: 0, left: 0, width: 240, height: "auto", zIndex: 50 }}
+          >
+            <div className="side-top">
+              <Logo tone="dark" className="h-7" />
+              <IconButton label="Close menu" onClick={closeDrawer}>
+                <X className="i" aria-hidden="true" />
+              </IconButton>
+            </div>
+            <NavLinks collapsed={false} due={due} onNavigate={closeDrawer} />
+            {learner !== null && <SideUser learner={learner} collapsed={false} onNavigate={closeDrawer} />}
+          </aside>
+        </>
+      )}
+
+      <div style={{ minWidth: 0 }}>
+        <div className="mobile-bar">
+          <IconButton label="Open menu" onClick={() => setDrawerOpen(true)}>
+            <Menu className="i i-lg" aria-hidden="true" />
+          </IconButton>
+          <Logo tone="dark" className="h-7" />
+          {learner !== null ? <Avatar name={learner.name} src={learner.avatarUrl} size="sm" tone="dark" /> : <span />}
+        </div>
+        <main className="main">
+          <div className="content">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

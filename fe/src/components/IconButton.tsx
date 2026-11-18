@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
+import { cx } from "./cx";
 
-export function IconButton(_props: {
+export function IconButton({
+  label,
+  onClick,
+  href,
+  disabled,
+  className,
+  children,
+}: {
   label: string;
   onClick?: () => void;
   href?: string;
@@ -8,5 +16,24 @@ export function IconButton(_props: {
   className?: string | undefined;
   children: ReactNode;
 }) {
-  return <p>not implemented: UI-K2</p>;
+  if (href !== undefined) {
+    return (
+      <a className={cx("btn-icon", className)} href={href} aria-label={label} title={label}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={cx("btn-icon", className)}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  );
 }
