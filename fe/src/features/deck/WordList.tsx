@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { Deck, WordWithCards } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { IconButton } from "../../components/IconButton";
+import { wordHref } from "../word/wordHref";
 
 const MATURE_DAYS = 21;
 
@@ -65,14 +66,16 @@ export function WordList({
         <li key={word.slug}>
           <article className="word">
             <span className="w-term" lang={deck.termLang} dir="auto">
-              {word.reading === null ? (
-                word.term
-              ) : (
-                <ruby>
-                  {word.term}
-                  <rt>{word.reading}</rt>
-                </ruby>
-              )}
+              <a href={wordHref(String(deck.slug), String(word.slug))}>
+                {word.reading === null ? (
+                  word.term
+                ) : (
+                  <ruby>
+                    {word.term}
+                    <rt>{word.reading}</rt>
+                  </ruby>
+                )}
+              </a>
             </span>
 
             <div className="w-body">
