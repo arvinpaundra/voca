@@ -2,8 +2,12 @@ import { useEffect, useState } from "react";
 import { DateTime, Option, Result, Schema } from "effect";
 import { DeckSlug, type PublicDeckDetail } from "@voca/contract";
 import { ArrowLeft } from "lucide-react";
-import { Avatar } from "../../components/Avatar";
 import { Button } from "../../components/Button";
+import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { PageHeader } from "../../components/PageHeader";
+import { Skeleton } from "../../components/Skeleton";
+import { StatStrip } from "../../components/StatStrip";
 import { Term } from "../../components/Term";
 import { session } from "../../lib/appSession";
 import { forkDeck, forkMessage } from "./fork";
@@ -16,7 +20,7 @@ type PreviewState =
 
 const publishedLabel = (publishedAt: DateTime.Utc) =>
   new Intl.DateTimeFormat("en", { month: "short", year: "numeric", timeZone: "UTC" }).format(
-    new Date(DateTime.toEpochMillis(publishedAt))
+    new Date(DateTime.toEpochMillis(publishedAt)),
   );
 
 export function DeckPreviewPage({ deckSlug }: { deckSlug: string }) {
@@ -42,7 +46,8 @@ export function DeckPreviewPage({ deckSlug }: { deckSlug: string }) {
         setState({ kind: "loaded", deck: result.success });
       } else {
         const failure = result.failure;
-        const notFound = typeof failure === "object" && failure !== null && "_tag" in failure && failure._tag === "NotFound";
+        const notFound =
+          typeof failure === "object" && failure !== null && "_tag" in failure && failure._tag === "NotFound";
 
         setState({ kind: notFound ? "missing" : "failed" });
       }
@@ -69,22 +74,25 @@ export function DeckPreviewPage({ deckSlug }: { deckSlug: string }) {
   };
 
   return (
-    <div className="space-y-6">
-      {state.kind === "loading" && <p className="text-sm text-stone-500">Loading…</p>}
-      {state.kind === "failed" && (
-        <p role="alert" className="text-sm text-red-600">
-          This deck could not be loaded.
-        </p>
-      )}
+    <div className="w-full py-6 sm:py-8">
+      <Button variant="ghost" size="sm" href="/app/discover" className="-ml-3 mb-6">
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Discover
+      </Button>
+
+      {state.kind === "loading" && <Skeleton label="Loading deck" rows={4} />}
+
+      {state.kind === "failed" && <ErrorState message="This deck could not be loaded." />}
 
       {state.kind === "missing" && (
-        <div className="flex flex-col items-center gap-4 py-24 text-center">
-          <p className="text-lg font-semibold text-stone-900">Deck not found</p>
-          <a href="/app/discover" className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900">
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            Discover
-          </a>
-        </div>
+        <EmptyState
+          title="Deck not found"
+          action={
+            <Button variant="secondary" size="sm" href="/app/discover">
+              Back to Discover
+            </Button>
+          }
+        />
       )}
 
       {state.kind === "loaded" && (
@@ -107,69 +115,80 @@ type PreviewBodyProps = {
 };
 
 function PreviewBody({ deck, forking, forkError, onFork }: PreviewBodyProps) {
+  const languages = `${deck.termLang} → ${deck.meaningLang}`;
+
   return (
-    <section className="space-y-6">
-      <a href="/app/discover" className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900">
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Discover
-      </a>
-
-      <header className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <h1 dir="auto" className="min-w-0 flex-1 break-words font-montserrat text-2xl font-semibold leading-snug text-stone-900">
-            {deck.title}
-          </h1>
-          <Button variant="primary" disabled={forking} onClick={onFork}>
-            {forking ? "Forking…" : "Fork deck"}
+    <div>
+      <PageHeader
+        title={deck.title}
+        description={`${deck.owner.name} · ${languages} · Published ${publishedLabel(deck.publishedAt)}`}
+        actions={
+          <Button variant="primary" busy={forking} onClick={onFork}>
+            {forking ? "Forking…" : "Fork"}
           </Button>
-        </div>
+        }
+      />
 
-        <div className="flex min-w-0 items-center gap-2 text-sm text-stone-500">
-          <Avatar name={deck.owner.name} src={deck.owner.avatarUrl} size="sm" />
-          <span dir="auto" className="truncate">
-            {deck.owner.name}
-          </span>
-        </div>
-
-        <p className="text-sm text-stone-500">
-          {deck.termLang} → {deck.meaningLang}
-        </p>
-
+      <div className="grid gap-8">
         {deck.description !== "" && (
-          <p dir="auto" className="whitespace-pre-line text-stone-700">
+          <p dir="auto" className="whitespace-pre-line text-sm text-stone-700">
             {deck.description}
           </p>
         )}
 
-        <p className="text-sm text-stone-400">
-          {deck.wordCount} words · {deck.forkCount} forks · Published {publishedLabel(deck.publishedAt)}
-        </p>
+        <StatStrip
+          stats={[
+            { label: "Words", value: String(deck.wordCount) },
+            { label: "Forks", value: String(deck.forkCount) },
+          ]}
+        />
 
         {forkError !== null && (
           <p role="alert" className="text-sm text-red-600">
             {forkError}
           </p>
         )}
-      </header>
 
-      <ul className="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200 bg-white">
-        {deck.preview.map((word) => (
-          <li key={word.slug} className="grid grid-cols-[minmax(120px,1fr)_2fr] items-baseline gap-4 px-5 py-3">
-            <span>
-              <Term term={word.term} reading={word.reading ?? ""} lang={deck.termLang} dir="auto" />
-            </span>
-            <span className="text-stone-700" lang={deck.meaningLang} dir="auto">
-              {word.meaning}
-            </span>
-          </li>
-        ))}
-      </ul>
+        <section className="grid gap-3">
+        <h2 className="text-xs font-semibold tracking-[0.06em] text-stone-500 uppercase">Preview</h2>
 
-      {deck.wordCount > deck.preview.length && (
-        <p className="text-center text-xs text-stone-400">
-          Showing {deck.preview.length} of {deck.wordCount} words
-        </p>
-      )}
-    </section>
+        <div className="overflow-hidden rounded-card border border-stone-200 bg-white">
+          <table className="w-full border-collapse text-sm">
+            <caption className="sr-only">Preview words</caption>
+
+            <thead>
+              <tr className="h-8 border-b border-stone-200 text-[11px] font-semibold tracking-[0.06em] text-stone-500 uppercase">
+                <th scope="col" className="px-4 text-left font-semibold">
+                  Term
+                </th>
+                <th scope="col" className="px-4 text-left font-semibold">
+                  Meaning
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {deck.preview.map((word) => (
+                <tr key={word.slug} className="border-b border-stone-100 last:border-b-0">
+                  <td className="px-4 py-3" lang={deck.termLang}>
+                    <Term term={word.term} reading={word.reading ?? ""} lang={deck.termLang} dir="auto" size="md" />
+                  </td>
+                  <td className="px-4 py-3 text-stone-700" lang={deck.meaningLang} dir="auto">
+                    {word.meaning}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+          {deck.wordCount > deck.preview.length && (
+            <p className="text-center text-xs text-stone-400">
+              Showing {deck.preview.length} of {deck.wordCount} words
+            </p>
+          )}
+        </section>
+      </div>
+    </div>
   );
 }
