@@ -15,7 +15,7 @@ export const InsightHandlers = HttpApiBuilder.group(
     const ports = yield* Effect.context<InsightRepo>()
 
     return handlers.handleAll({
-      wordStats: () => Effect.die("not implemented"),
+      wordStats: () => Effect.die("not implemented: B-W"),
 
       deckStats: ({ params }) =>
         deckStats(params.deckSlug).pipe(
