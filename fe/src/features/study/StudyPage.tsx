@@ -24,6 +24,8 @@ import { advance } from "./queue";
 import { segments, tally } from "./progress";
 import { isHardStudy, studyReturnHref } from "./returnTo";
 import { SessionWords, type SessionWordItem } from "./SessionWords";
+import { SfxToggle } from "./SfxToggle";
+import { sfx, unlock } from "./sfx";
 
 // Marks and the tally count only first attempts, so a retry never adds a mark. The first word still to come is `cur`.
 const markClasses = (size: number, firstAttempts: readonly boolean[]): string[] => {
@@ -152,8 +154,16 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     startedAt.current = performance.now();
   }, [head?.position, head?.attempt]);
 
+  // Only a session that has not started yet opens with a sound: a resumed one stays quiet.
+  useEffect(() => {
+    if (!finished && cleared === 0 && firstAttempts.length === 0) sfx.start();
+  }, []);
+
   const choose = async (question: Question, wordSlug: WordSlug) => {
     if (feedback !== null || busy) return;
+
+    unlock();
+    sfx.select();
 
     const elapsed = Math.round(performance.now() - startedAt.current);
     const latencyMs = Math.min(Math.max(0, elapsed), MAX_LATENCY_MS);
@@ -172,6 +182,10 @@ function StudyFlow({ studySession }: { studySession: Session }) {
 
     if (Result.isSuccess(result)) {
       setFeedback({ chosen: wordSlug, result: result.success });
+
+      if (result.success.correct) sfx.correct();
+      else sfx.wrong();
+
       if (result.success.correct) setCleared((count) => count + 1);
       if (question.attempt === 1) {
         setFirstAttempts((previous) => [...previous, result.success.correct]);
@@ -191,7 +205,12 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     setQueue(remaining);
     setFeedback(null);
 
-    if (feedback.result.completed || remaining.length === 0) setFinished(true);
+    if (feedback.result.retry) sfx.retry();
+
+    if (feedback.result.completed || remaining.length === 0) {
+      setFinished(true);
+      sfx.complete();
+    }
   };
 
   const endSession = async () => {
@@ -274,6 +293,8 @@ function StudyFlow({ studySession }: { studySession: Session }) {
           </div>
 
           <span className="num muted" style={{ fontSize: 13 }}>{`${cleared} / ${studySession.size}`}</span>
+
+          <SfxToggle />
         </div>
 
         <section className="prompt">
