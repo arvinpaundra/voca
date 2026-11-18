@@ -1,3 +1,6 @@
+import { PageHeader } from "../../components/PageHeader";
+import { ErrorState } from "../../components/ErrorState";
+import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { ActivitySection } from "./ActivitySection";
 import { DecksSection } from "./DecksSection";
@@ -20,33 +23,33 @@ export function DashboardPage() {
   const decks = useLoadable(() => session.call((client) => client.library.listDecks()), []);
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 pt-10 pb-24">
-      {learner.kind === "loading" && <p className="text-sm text-stone-500">Loading…</p>}
-      {learner.kind === "failed" && <p className="text-sm text-stone-500">Couldn't load your dashboard.</p>}
+    <div className="mx-auto w-full max-w-[1180px] px-4 pt-8 pb-24">
+      {learner.kind === "loading" && <Skeleton label="Loading dashboard" rows={4} />}
+      {learner.kind === "failed" && <ErrorState message="Couldn't load your dashboard." />}
 
       {learner.kind === "loaded" && (
-        <div className="grid gap-8">
-          <header className="grid gap-1">
-            <p className="text-sm text-stone-500">{greetingFor(new Date().getHours())}</p>
-            <h1 className="font-montserrat text-3xl font-semibold text-stone-900">
-              {learner.value.name.trim().split(/\s+/)[0]}
-            </h1>
-          </header>
+        <>
+          <PageHeader
+            title={learner.value.name.trim().split(/\s+/)[0] ?? learner.value.name}
+            description={greetingFor(new Date().getHours())}
+          />
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-            <TodaySection state={notifications} stats={stats} learner={learner.value} />
-            <StreakSection state={stats} />
-          </div>
+          <div className="grid gap-8">
+            <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+              <TodaySection state={notifications} stats={stats} learner={learner.value} />
+              <StreakSection state={stats} />
+            </div>
 
-          <div className="grid items-start gap-6 lg:grid-cols-[65%_1fr]">
-            <DecksSection state={decks} />
+            <div className="grid items-start gap-6 lg:grid-cols-[65%_1fr]">
+              <DecksSection state={decks} />
 
-            <div className="grid min-w-0 gap-6">
-              <ActivitySection learner={learner.value} />
-              <ProgressSection state={stats} />
+              <div className="grid min-w-0 gap-6">
+                <ActivitySection learner={learner.value} />
+                <ProgressSection state={stats} />
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

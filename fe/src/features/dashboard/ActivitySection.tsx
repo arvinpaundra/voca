@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { DateTime } from "effect";
 import type { Learner } from "@voca/contract";
+import { Button } from "../../components/Button";
+import { ErrorState } from "../../components/ErrorState";
 import { Heatmap } from "../../components/Heatmap";
+import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { shiftMonth, studyDate } from "./dashboardModel";
 import { useLoadable } from "./useLoadable";
@@ -23,34 +26,34 @@ export function ActivitySection({ learner }: { learner: Learner }) {
   const canGoBack = month > signUpMonth;
   const canGoForward = month < currentMonth;
 
-  const navButton =
-    "rounded-lg border border-stone-200 bg-white px-2.5 py-0.5 text-stone-700 hover:bg-stone-100 disabled:cursor-default disabled:opacity-40";
-
   return (
-    <section aria-label="Activity" className="grid min-w-0 gap-4 rounded-2xl border border-stone-200 bg-white p-5">
-      <div className="flex justify-end gap-2">
-        <button
-          className={navButton}
-          type="button"
-          aria-label="Previous month"
-          disabled={!canGoBack}
-          onClick={() => setMonth(shiftMonth(month, -1))}
-        >
-          ‹
-        </button>
-        <button
-          className={navButton}
-          type="button"
-          aria-label="Next month"
-          disabled={!canGoForward}
-          onClick={() => setMonth(shiftMonth(month, 1))}
-        >
-          ›
-        </button>
+    <section aria-label="Activity" className="grid min-w-0 gap-4 rounded-card border border-stone-200 bg-white p-6">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold tracking-[0.06em] text-stone-500 uppercase">Activity</h2>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            aria-label="Previous month"
+            disabled={!canGoBack}
+            onClick={() => setMonth(shiftMonth(month, -1))}
+          >
+            ‹
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            aria-label="Next month"
+            disabled={!canGoForward}
+            onClick={() => setMonth(shiftMonth(month, 1))}
+          >
+            ›
+          </Button>
+        </div>
       </div>
 
-      {activity.kind === "loading" && <p className="text-sm text-stone-500">Loading activity…</p>}
-      {activity.kind === "failed" && <p className="text-sm text-stone-500">Couldn't load activity.</p>}
+      {activity.kind === "loading" && <Skeleton label="Loading activity" rows={3} />}
+      {activity.kind === "failed" && <ErrorState message="Couldn't load activity." />}
       {activity.kind === "loaded" && <Heatmap month={month} days={activity.value.days} today={today} />}
     </section>
   );

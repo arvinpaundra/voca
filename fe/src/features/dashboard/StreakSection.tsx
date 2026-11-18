@@ -1,39 +1,40 @@
 import { Flame } from "lucide-react";
 import type { LearnerStats } from "@voca/contract";
+import { Badge } from "../../components/Badge";
+import { ErrorState } from "../../components/ErrorState";
+import { Skeleton } from "../../components/Skeleton";
 import { streakMessage } from "./dashboardModel";
 import type { Loadable } from "./useLoadable";
 
 export function StreakSection({ state }: { state: Loadable<LearnerStats> }) {
-  if (state.kind === "loading") return <p className="text-sm text-stone-500">Loading your streak…</p>;
-  if (state.kind === "failed") return <p className="text-sm text-stone-500">Couldn't load your streak.</p>;
+  if (state.kind === "loading") {
+    return <Skeleton label="Loading streak" rows={2} />;
+  }
+
+  if (state.kind === "failed") {
+    return <ErrorState message="Couldn't load your streak." />;
+  }
 
   const { streak } = state.value;
-  const isZero = streak.days === 0;
   const isOnRoll = streak.days >= 7;
 
   return (
     <section
       aria-label="Streak"
-      className="relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl bg-stone-900 p-6 text-center"
+      className="flex flex-col gap-3 rounded-card border border-stone-200 bg-white p-6"
     >
-      <div className="pointer-events-none absolute bottom-0 left-1/2 h-32 w-32 -translate-x-1/2 rounded-full bg-lime opacity-10 blur-[40px]" />
-      <Flame className="relative z-10 size-7 shrink-0 text-orange-400" aria-hidden />
-      <span
-        className={`relative z-10 font-montserrat text-6xl leading-none font-bold ${
-          isZero ? "text-stone-500" : "text-lime"
-        }`}
-      >
-        {streak.days}
-      </span>
-      <span className="relative z-10 text-xs tracking-wide text-stone-400 uppercase">
-        {isZero ? "Start your streak today" : "day streak"}
-      </span>
-      {isOnRoll && (
-        <span className="relative z-10 rounded-full bg-lime px-2 py-0.5 text-xs font-medium text-stone-900">
-          On a roll!
-        </span>
-      )}
-      <p className="relative z-10 text-xs text-stone-400">{streakMessage(streak)}</p>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold tracking-[0.06em] text-stone-500 uppercase">Streak</h2>
+        <Flame className="size-4 shrink-0 text-stone-500" aria-hidden />
+      </div>
+
+      <div className="flex flex-wrap items-baseline gap-2">
+        <span className="font-mono text-4xl leading-none font-semibold tabular-nums text-stone-900">{streak.days}</span>
+        <span className="text-sm text-stone-500">{streak.days === 1 ? "day" : "days"}</span>
+        {isOnRoll && <Badge variant="lime">On a roll!</Badge>}
+      </div>
+
+      <p className="text-sm text-stone-500">{streakMessage(streak)}</p>
     </section>
   );
 }
