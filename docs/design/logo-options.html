@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Voca Logo Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&family=Shippori+Mincho:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --surface: #ffffff;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e5e5e5;
+    --lime: #c1ff72;
+    --navy: #002f43;
+    --side: #1c1917;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 14px/1.5 Inter, sans-serif;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1, h2, h3 { font-family: Montserrat, sans-serif; margin: 0; letter-spacing: -0.02em; }
+  h1 { font-size: 32px; font-weight: 700; }
+  h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  h3 { font-size: 16px; font-weight: 700; }
+  .lede { color: var(--muted); max-width: 640px; margin: 8px 0 0; font-size: 15px; }
+  .eyebrow { font: 600 11px/1 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  section { margin-top: 48px; }
+  .sec-head { margin-bottom: 16px; }
+  .sec-head p { margin: 0; color: var(--muted); }
+
+  /* picker */
+  .picker {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .picker .in {
+    max-width: 1200px; margin: 0 auto; padding: 12px 24px;
+    display: flex; gap: 8px; align-items: center; overflow-x: auto;
+  }
+  .picker .lab { font-weight: 600; margin-right: 8px; white-space: nowrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line); background: var(--surface);
+    border-radius: 999px; padding: 4px 12px 4px 4px;
+    font: 500 13px Inter, sans-serif; color: var(--ink);
+    cursor: pointer; white-space: nowrap;
+  }
+  .chip svg { width: 24px; height: 24px; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* option cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .opt {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+    overflow: hidden; display: grid; grid-template-rows: auto auto 1fr;
+    cursor: pointer; transition: border-color .15s, box-shadow .15s;
+  }
+  .opt:hover { border-color: #d6d3d1; }
+  .opt.sel { border-color: var(--navy); box-shadow: 0 0 0 3px color-mix(in srgb, var(--navy) 18%, transparent); }
+  .stage { display: grid; grid-template-columns: 1fr 1fr; }
+  .stage > div { display: grid; place-items: center; padding: 32px 16px; }
+  .stage .light { background: var(--bg); }
+  .stage .dark { background: var(--side); }
+  .stage svg.mark { width: 88px; height: 88px; }
+  .lockups { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+  .lockups > div { display: flex; align-items: center; justify-content: center; padding: 16px; min-height: 64px; }
+  .lockups .dark { background: var(--side); }
+  .lockups svg { height: 32px; width: auto; }
+  .body { padding: 16px 20px 20px; display: grid; gap: 12px; align-content: start; }
+  .title { display: flex; align-items: baseline; gap: 8px; }
+  .num { font: 600 12px Inter, sans-serif; color: var(--muted); }
+  .idea { margin: 0; color: #44403c; }
+  .sizes { display: flex; align-items: end; gap: 16px; padding-top: 4px; }
+  .sizes figure { margin: 0; display: grid; justify-items: center; gap: 4px; }
+  .sizes figcaption { font: 500 11px Inter, sans-serif; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .appicon { border-radius: 22%; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; }
+  .notes b { display: block; font: 600 11px Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; }
+  .notes .pro b { color: #4d7c0f; }
+  .notes .con b { color: #b91c1c; }
+  .notes p { margin: 0; color: #44403c; }
+
+  /* in context */
+  .ctx { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  .side { background: var(--side); color: #a8a29e; padding: 20px 12px; display: grid; gap: 4px; align-content: start; min-height: 360px; }
+  .side .brand { display: flex; align-items: center; padding: 0 8px 20px; }
+  .side .brand svg { height: 30px; width: auto; }
+  .nav { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: var(--r-md); font-size: 14px; position: relative; }
+  .nav i { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid currentColor; opacity: .8; }
+  .nav.on { background: color-mix(in srgb, var(--lime) 10%, transparent); color: #fff; }
+  .nav.on::before { content: ""; position: absolute; left: 0; top: 50%; width: 2px; height: 20px; transform: translateY(-50%); background: var(--lime); border-radius: 0 2px 2px 0; }
+  .right { display: grid; gap: 16px; }
+  .browser { background: #e7e5e4; padding: 8px 8px 0; }
+  .tabs { display: flex; gap: 2px; }
+  .tab { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 12px; color: #57534e; width: 220px; }
+  .tab.on { background: var(--surface); color: var(--ink); }
+  .tab svg { width: 16px; height: 16px; flex: none; }
+  .tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .addr { background: var(--surface); padding: 8px 12px 12px; }
+  .addr div { background: var(--bg); border-radius: 999px; padding: 6px 14px; font-size: 12px; color: var(--muted); }
+  .row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .landing { padding: 24px; display: grid; gap: 16px; align-content: start; }
+  .landing .top { display: flex; justify-content: space-between; align-items: center; }
+  .landing .top svg { height: 28px; width: auto; }
+  .landing .cta { background: var(--lime); color: var(--ink); font: 600 13px Inter, sans-serif; padding: 8px 14px; border-radius: 10px; }
+  .landing h3 { font-size: 26px; line-height: 1.15; letter-spacing: -0.03em; max-width: 320px; }
+  .phone { background: linear-gradient(160deg, #0f3a4d, #1c1917); padding: 24px; display: grid; grid-template-columns: repeat(4, 56px); gap: 18px 16px; justify-content: center; align-content: center; }
+  .phone figure { margin: 0; display: grid; justify-items: center; gap: 6px; }
+  .phone figcaption { font-size: 11px; color: #e7e5e4; }
+  .phone .ghost { width: 56px; height: 56px; border-radius: 22%; background: rgba(255,255,255,.14); }
+  .signin { padding: 32px 24px; display: grid; justify-items: center; gap: 12px; text-align: center; }
+  .signin .ms svg { width: 48px; height: 48px; }
+  .signin p { margin: 0; color: var(--muted); }
+  .btn { border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font: 500 13px Inter, sans-serif; background: var(--surface); width: 240px; }
+
+  .foot { margin-top: 48px; color: var(--muted); font-size: 13px; }
+  .foot ul { margin: 8px 0 0; padding-left: 18px; }
+
+  @media (max-width: 860px) {
+    .ctx { grid-template-columns: 1fr; }
+    .side { min-height: 0; }
+    .row2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 420px) {
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .notes { grid-template-columns: 1fr; }
+    .tab { width: 160px; }
+  }
+</style>
+</head>
+<body>
+<div class="picker"><div class="in" id="picker"><span class="lab">Pick a logo</span></div></div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Voca · brand</div>
+    <h1>Logo options</h1>
+    <p class="lede">Seven marks in the current palette: navy <code>#002f43</code>, lime <code>#c1ff72</code>, ink <code>#1c1917</code>, and Montserrat for the wordmark. Each one is shown on the light page background and on the dark sidebar, as a wordmark lockup, at favicon sizes, and as an app icon. Click a card (or a chip above) to see it in the app below.</p>
+  </header>
+
+  <section>
+    <div class="sec-head"><h2>The options</h2><p>Lime only ever appears as a filled shape or on dark, because lime lines on white fail contrast.</p></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>In the app</h2><p id="ctx-name"></p></div>
+    <div class="ctx">
+      <div class="panel side" id="side">
+        <div class="brand" id="side-brand"></div>
+        <div class="nav on"><i></i>Dashboard</div>
+        <div class="nav"><i></i>Decks</div>
+        <div class="nav"><i></i>Discover</div>
+        <div class="nav"><i></i>Settings</div>
+      </div>
+      <div class="right">
+        <div class="panel">
+          <div class="browser">
+            <div class="tabs">
+              <div class="tab on" id="tab-on"></div>
+              <div class="tab"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#a8a29e"/></svg><span>Inbox</span></div>
+            </div>
+          </div>
+          <div class="addr"><div>voca.app/dashboard</div></div>
+        </div>
+        <div class="row2">
+          <div class="panel landing" id="landing"></div>
+          <div class="panel signin" id="signin"></div>
+        </div>
+        <div class="panel phone" id="phone"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    After you pick one, the next step is a short design for shipping it: an SVG <code>Logo</code> component replacing <code>fe/src/components/Wordmark.tsx</code>, a favicon set and app icons in <code>fe/public</code>, and the <code>&lt;link rel="icon"&gt;</code> tags in <code>fe/index.html</code>.
+  </div>
+</div>
+
+<script>
+const NAVY = "#002f43";
+const LIME = "#c1ff72";
+const INK = "#1c1917";
+const SIDE = "#1c1917";
+
+// Each mark draws in a 64×64 box. `dark` = sitting on the dark sidebar, so navy parts flip to white.
+const LOGOS = [
+  {
+    id: "echo",
+    name: "Echo",
+    idea: "A V on a lime tile with a fainter V behind it: a word coming back for its next review.",
+    pro: "Reads as “V” at 16px; the ghost V shows repetition without needing explanation.",
+    con: "The ghost V disappears below 16px, leaving a plain letter tile.",
+    mark: (d) => `
+      <rect x="2" y="2" width="60" height="60" rx="16" fill="${LIME}"/>
+      <path d="M19 15 L32 37 L45 15" fill="none" stroke="${NAVY}" stroke-opacity=".28" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M17 22 L32 48 L47 22" fill="none" stroke="${NAVY}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "deck",
+    name: "Deck",
+    idea: "Two flashcards fanned out, a lowercase v on the front card. The app is built around decks.",
+    pro: "Says “flashcards” at a glance; uses both brand colours.",
+    con: "Card-stack icons are common in study apps, so it's the least distinctive.",
+    mark: (d) => `
+      <rect x="10" y="9" width="36" height="46" rx="8" fill="${d ? "#fff" : NAVY}" transform="rotate(-12 28 32)"/>
+      <rect x="20" y="10" width="36" height="46" rx="8" fill="${LIME}" stroke="${d ? SIDE : "#fff"}" stroke-width="2" transform="rotate(6 38 33)"/>
+      <path d="M30 27 L38 43 L46 27" fill="none" stroke="${NAVY}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(6 38 33)"/>`,
+  },
+  {
+    id: "interval",
+    name: "Interval",
+    idea: "Four dots that grow and spread out as they rise: the spaced-repetition curve, ending on a lime dot for a word you've remembered.",
+    pro: "The most “about the method”; no letter, so it works in any language.",
+    con: "Abstract: people need the wordmark next to it at first. The small dots blur at 16px.",
+    mark: (d) => {
+      const c = d ? "#fff" : NAVY;
+      return `
+      <circle cx="9" cy="53" r="4" fill="${c}"/>
+      <circle cx="19" cy="45" r="5" fill="${c}"/>
+      <circle cx="32" cy="34" r="6.5" fill="${c}"/>
+      <circle cx="49" cy="17" r="11" fill="${LIME}" ${d ? "" : `stroke="${NAVY}" stroke-width="3"`}/>`;
+    },
+  },
+  {
+    id: "speak",
+    name: "Speak",
+    idea: "A lime speech bubble holding a v. Voca comes from “vocabulary” and “voice”: words you say.",
+    pro: "Friendly and very legible at every size; the tail makes it more than a letter tile.",
+    con: "Speech bubbles suggest chat apps; it says “language” more than “remembering”.",
+    mark: (d) => `
+      <path d="M14 4 H50 A12 12 0 0 1 62 16 V40 A12 12 0 0 1 50 52 H26 L13 61 V52 A11 11 0 0 1 2 41 V16 A12 12 0 0 1 14 4 Z" fill="${LIME}"/>
+      <path d="M21 19 L32 40 L43 19" fill="none" stroke="${NAVY}" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "seal",
+    name: "Seal",
+    idea: "A hanko-style seal: a serif V in Shippori Mincho (the font the app uses for terms) inside a navy square with a lime inner rule.",
+    pro: "Has the most character; ties the brand to the terms you study, especially Japanese and Chinese.",
+    con: "The serif needs the font loaded, so it must ship as outlined paths. Heavier and more formal than the UI.",
+    mark: (d) => `
+      <rect x="2" y="2" width="60" height="60" rx="10" fill="${d ? LIME : NAVY}"/>
+      <rect x="7" y="7" width="50" height="50" rx="6" fill="none" stroke="${d ? NAVY : LIME}" stroke-width="1.5" stroke-opacity=".7"/>
+      <text x="32" y="47" text-anchor="middle" font-family="Shippori Mincho, serif" font-weight="800" font-size="42" fill="${d ? NAVY : LIME}">V</text>`,
+  },
+  {
+    id: "tick",
+    name: "Tick",
+    idea: "The V is drawn as a check mark on a lime disc, like the moment you get a word right.",
+    pro: "Positive and memorable; one bold shape that holds up at 16px.",
+    con: "Check marks are often read as “task done” (to-do apps) rather than “learned”.",
+    mark: (d) => `
+      <circle cx="32" cy="32" r="30" fill="${LIME}"/>
+      <path d="M17 31 L28 45 L48 17" fill="none" stroke="${NAVY}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "ring",
+    name: "Ring",
+    idea: "The o in “voca” becomes a navy ring around a lime dot: a word held in memory. The ring alone is the icon.",
+    pro: "Lightest touch: keeps today's wordmark idea and just brands one letter. Calm, like the Paper option.",
+    con: "The icon alone (ring + dot) is generic until people know the wordmark.",
+    ringWord: true,
+    mark: (d) => `
+      <circle cx="32" cy="32" r="23" fill="none" stroke="${d ? "#fff" : NAVY}" stroke-width="12"/>
+      <circle cx="32" cy="32" r="8" fill="${LIME}"/>`,
+  },
+];
+
+function markSvg(logo, dark, size, extra = "") {
+  return `<svg class="mark" ${extra} viewBox="0 0 64 64" width="${size}" height="${size}" role="img" aria-label="Voca">${logo.mark(dark)}</svg>`;
+}
+
+// Wordmark lockup. Montserrat 700, tight tracking.
+function lockupSvg(logo, dark) {
+  const text = dark ? "#fff" : INK;
+
+  if (logo.ringWord) {
+    const ring = dark ? "#fff" : NAVY;
+    return `<svg viewBox="0 0 132 40" role="img" aria-label="Voca">
+      <text x="0" y="30" font-family="Montserrat, sans-serif" font-weight="700" font-size="34" letter-spacing="-1.5" fill="${text}">v</text>
+      <circle cx="35" cy="18.5" r="9" fill="none" stroke="${ring}" stroke-width="5"/>
+      <circle cx="35" cy="18.5" r="3.2" fill="${LIME}"/>
+      <text x="48" y="30" font-family="Montserrat, sans-serif" font-weight="700" font-size="34" letter-spacing="-1.5" fill="${text}">ca</text>
+    </svg>`;
+  }
+
+  return `<svg viewBox="0 0 150 40" role="img" aria-label="Voca">
+    <svg x="0" y="2" width="36" height="36" viewBox="0 0 64 64">${logo.mark(dark)}</svg>
+    <text x="46" y="30" font-family="Montserrat, sans-serif" font-weight="700" font-size="30" letter-spacing="-1.2" fill="${text}">voca</text>
+  </svg>`;
+}
+
+// App icon: the mark on a navy squircle (lime tiles keep their own shape inside it).
+function appIconSvg(logo, size) {
+  return `<svg class="appicon" viewBox="0 0 64 64" width="${size}" height="${size}" role="img" aria-label="Voca app icon">
+    <rect width="64" height="64" fill="${NAVY}"/>
+    <svg x="12" y="12" width="40" height="40" viewBox="0 0 64 64">${logo.mark(true)}</svg>
+  </svg>`;
+}
+
+const grid = document.getElementById("grid");
+const picker = document.getElementById("picker");
+
+LOGOS.forEach((logo, i) => {
+  const card = document.createElement("article");
+  card.className = "opt";
+  card.dataset.id = logo.id;
+  card.innerHTML = `
+    <div class="stage">
+      <div class="light">${markSvg(logo, false, 88)}</div>
+      <div class="dark">${markSvg(logo, true, 88)}</div>
+    </div>
+    <div class="lockups">
+      <div>${lockupSvg(logo, false)}</div>
+      <div class="dark">${lockupSvg(logo, true)}</div>
+    </div>
+    <div class="body">
+      <div class="title"><span class="num">${String(i + 1).padStart(2, "0")}</span><h3>${logo.name}</h3></div>
+      <p class="idea">${logo.idea}</p>
+      <div class="sizes">
+        <figure>${markSvg(logo, false, 48)}<figcaption>48</figcaption></figure>
+        <figure>${markSvg(logo, false, 32)}<figcaption>32</figcaption></figure>
+        <figure>${markSvg(logo, false, 16)}<figcaption>16</figcaption></figure>
+        <figure>${appIconSvg(logo, 56)}<figcaption>app</figcaption></figure>
+      </div>
+      <div class="notes">
+        <div class="pro"><b>Good</b><p>${logo.pro}</p></div>
+        <div class="con"><b>Watch</b><p>${logo.con}</p></div>
+      </div>
+    </div>`;
+  card.addEventListener("click", () => select(logo.id));
+  grid.appendChild(card);
+
+  const chip = document.createElement("button");
+  chip.className = "chip";
+  chip.dataset.id = logo.id;
+  chip.innerHTML = `${markSvg(logo, false, 24)}${logo.name}`;
+  chip.addEventListener("click", () => select(logo.id));
+  picker.appendChild(chip);
+});
+
+function select(id) {
+  const logo = LOGOS.find((l) => l.id === id) ?? LOGOS[0];
+
+  document.querySelectorAll(".opt").forEach((el) => el.classList.toggle("sel", el.dataset.id === logo.id));
+  document.querySelectorAll(".chip").forEach((el) => el.setAttribute("aria-pressed", String(el.dataset.id === logo.id)));
+
+  document.getElementById("ctx-name").textContent = `Showing ${String(LOGOS.indexOf(logo) + 1).padStart(2, "0")} · ${logo.name} in the sidebar, a browser tab, the landing page, sign-in and a phone home screen.`;
+  document.getElementById("side-brand").innerHTML = lockupSvg(logo, true);
+  document.getElementById("tab-on").innerHTML = `${markSvg(logo, false, 16)}<span>Voca · Remember every word</span>`;
+  document.getElementById("landing").innerHTML = `
+    <div class="top">${lockupSvg(logo, false)}<span class="cta">Get started</span></div>
+    <h3>Remember every word you learn.</h3>
+    <p style="margin:0;color:var(--muted)">Spaced repetition for any language.</p>`;
+  document.getElementById("signin").innerHTML = `
+    <div class="ms">${markSvg(logo, false, 48)}</div>
+    <h3>Sign in to Voca</h3>
+    <p>Pick up where you left off.</p>
+    <div class="btn">Continue with Google</div>`;
+  document.getElementById("phone").innerHTML = `
+    <figure><div class="ghost"></div><figcaption>Photos</figcaption></figure>
+    <figure>${appIconSvg(logo, 56)}<figcaption>Voca</figcaption></figure>
+    <figure><div class="ghost"></div><figcaption>Maps</figcaption></figure>
+    <figure><div class="ghost"></div><figcaption>Notes</figcaption></figure>`;
+
+  history.replaceState(null, "", `#${logo.id}`);
+}
+
+select(location.hash.slice(1));
+</script>
+</body>
+</html>
