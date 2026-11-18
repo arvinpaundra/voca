@@ -38,6 +38,33 @@ export const shiftMonth = (month: string, delta: number): string => {
   return `${String(shiftedYear).padStart(4, "0")}-${String(shiftedMonth).padStart(2, "0")}`;
 };
 
+/** The single weekday letter of a "YYYY-MM-DD" date. */
+export const weekdayLetter = (date: string): string =>
+  ["S", "M", "T", "W", "T", "F", "S"][new Date(`${date}T00:00:00.000Z`).getUTCDay()] ?? "";
+
+/** "Wednesday, 18 November" for a "YYYY-MM-DD" date. */
+export const longDate = (date: string): string => {
+  const at = new Date(`${date}T00:00:00.000Z`);
+  const weekday = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: "UTC" }).format(at);
+  const dayAndMonth = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(at);
+
+  return `${weekday}, ${dayAndMonth}`;
+};
+
+/** "Oct 20" for a "YYYY-MM-DD" date. */
+export const shortDate = (date: string): string =>
+  new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(
+    new Date(`${date}T00:00:00.000Z`),
+  );
+
+/** The local hour (0-23) of `now` in `timezone`. */
+export const localHour = (now: DateTime.Utc, timezone: string): number =>
+  Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: timezone, hour: "2-digit", hourCycle: "h23" })
+      .formatToParts(DateTime.toEpochMillis(now))
+      .find((part) => part.type === "hour")?.value,
+  );
+
 /** The line under the streak count. */
 export const streakMessage = (streak: LearnerStats["streak"]): string => {
   if (streak.days === 0) return "Study today to start a streak";

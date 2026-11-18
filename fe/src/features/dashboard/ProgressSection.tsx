@@ -1,98 +1,104 @@
+import type { CSSProperties } from "react";
 import type { LearnerStats } from "@voca/contract";
+import { Card } from "../../components/Card";
+import { cx } from "../../components/cx";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
-import { StatStrip } from "../../components/StatStrip";
+import { shortDate, weekdayLetter } from "./dashboardModel";
 import type { Loadable } from "./useLoadable";
 
-const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"] as const;
-
-const percent = (ratio: number | null | undefined) =>
-  ratio === null || ratio === undefined ? "—" : `${Math.round(ratio * 100)}%`;
-
-const weekdayOf = (date: string) => WEEKDAY_LETTERS[new Date(`${date}T00:00:00Z`).getUTCDay()];
-
 export function ProgressSection({ state }: { state: Loadable<LearnerStats> }) {
-  if (state.kind === "loading") {
-    return <Skeleton label="Loading progress" rows={3} />;
-  }
+  if (state.kind === "loading") return <Skeleton label="Loading progress" rows={4} />;
+  if (state.kind === "failed") return <ErrorState message="Couldn't load your progress." />;
 
-  if (state.kind === "failed") {
-    return <ErrorState message="Couldn't load progress." />;
-  }
-
-  const stats = state.value;
-  const { maturity, trueRetention, calibration, reviewsPerDay, forecast } = stats;
-  const cardCount = maturity.new + maturity.learning + maturity.mature;
-  const segments = [
-    { label: "New", count: maturity.new, className: "bg-m-new" },
-    { label: "Learning", count: maturity.learning, className: "bg-m-learning" },
-    { label: "Mature", count: maturity.mature, className: "bg-m-mature" },
-  ];
-  const busiest = Math.max(1, ...reviewsPerDay.map((day) => day.count));
+  const { maturity, trueRetention, calibration, reviewsPerDay, forecast } = state.value;
+  const retention = trueRetention === null ? undefined : Math.round(trueRetention * 100);
+  const peak = Math.max(...reviewsPerDay.map((day) => day.count), 0);
+  const peakIndex = peak > 0 ? reviewsPerDay.findIndex((day) => day.count === peak) : -1;
+  const first = reviewsPerDay[0];
 
   return (
-    <section aria-label="Progress" className="grid min-w-0 gap-6 rounded-card border border-stone-200 bg-white p-6">
-      <h2 className="text-xs font-semibold tracking-[0.06em] text-stone-500 uppercase">Progress</h2>
+    <Card aria-label="Progress">
+      <div className="card-head">
+        <h2 className="h2">Progress</h2>
+      </div>
 
-      <StatStrip
-        stats={[
-          { label: "Mastered", value: String(maturity.mature) },
-          { label: "True retention", value: percent(trueRetention) },
-          {
-            label: "Predicted vs. actual",
-            value: calibration === null ? "—" : `${percent(calibration.predicted)} / ${percent(calibration.actual)}`,
-          },
-        ]}
-      />
-
-      <div className="grid gap-2">
-        <div className="flex h-2 overflow-hidden rounded-[2px] bg-stone-200" role="img" aria-label={`${cardCount} cards`}>
-          {segments.map((segment) =>
-            segment.count > 0 ? (
-              <span key={segment.label} className={segment.className} style={{ flexGrow: segment.count }} />
-            ) : null,
-          )}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+        <div className="kpi">
+          <span className="v">{maturity.mature}</span>
+          <span className="l">words mastered</span>
         </div>
-        <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
-          {segments.map((segment) => (
-            <span key={segment.label} className="tabular-nums">
-              {segment.label} {segment.count}
-            </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span className="l muted" style={{ fontSize: 12, textAlign: "right" }}>
+            true
+            <br />
+            retention
+          </span>
+          <div
+            className="ring-meter"
+            style={{ "--p": retention ?? 0 } as CSSProperties}
+            data-label={retention === undefined ? "—" : `${retention}%`}
+          />
+        </div>
+      </div>
+
+      <div className="maturity">
+        <div className="mbar">
+          <span style={{ flex: maturity.new }}></span>
+          <span style={{ flex: maturity.learning }}></span>
+          <span style={{ flex: maturity.mature }}></span>
+        </div>
+        <div className="legend">
+          <span>
+            <i style={{ background: "var(--m-new)" }}></i>New <b>{maturity.new}</b>
+          </span>
+          <span>
+            <i style={{ background: "var(--m-learning)" }}></i>Learning <b>{maturity.learning}</b>
+          </span>
+          <span>
+            <i style={{ background: "var(--m-mature)" }}></i>Mature <b>{maturity.mature}</b>
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: 6 }}>
+        <span className="eyebrow">Reviews · 30 days</span>
+        <div className="bars">
+          {reviewsPerDay.map((day, index) => (
+            <span
+              key={day.date}
+              className={cx(index === peakIndex && "hi", index === reviewsPerDay.length - 1 && "is-today")}
+              style={{ height: `${peak === 0 ? 0 : Math.round((day.count / peak) * 100)}%` }}
+              title={`${day.count} reviews · ${shortDate(day.date)}`}
+            ></span>
           ))}
-        </p>
+        </div>
+        {first !== undefined && (
+          <div className="axis">
+            <span>{shortDate(first.date)}</span>
+            <span>Today</span>
+          </div>
+        )}
       </div>
 
-      <div className="grid gap-2">
-        <p className="text-xs text-stone-500">Reviews, last 30 days</p>
-        <svg
-          className="block h-16 w-full fill-stone-400"
-          viewBox="0 0 300 60"
-          preserveAspectRatio="none"
-          role="img"
-          aria-label="Reviews per day, last 30 days"
-        >
-          {reviewsPerDay.map((day, i) => {
-            const barHeight = (day.count / busiest) * 56;
-            return (
-              <rect key={day.date} x={i * 10 + 1} y={60 - barHeight} width={8} height={barHeight} rx={1}>
-                <title>{`${day.count} reviews · ${day.date}`}</title>
-              </rect>
-            );
-          })}
-        </svg>
-      </div>
-
-      <div className="grid gap-2">
-        <p className="text-xs text-stone-500">Next 7 days</p>
-        <ul className="grid grid-cols-7 gap-1.5 text-center">
+      <div style={{ display: "grid", gap: 6 }}>
+        <span className="eyebrow">Due · next 7 days</span>
+        <div className="forecast">
           {forecast.map((day) => (
-            <li key={day.date} className="grid gap-0.5">
-              <span className="text-xs text-stone-500">{weekdayOf(day.date)}</span>
-              <span className="font-mono text-sm tabular-nums text-stone-900">{day.count}</span>
-            </li>
+            <div key={day.date}>
+              <small>{weekdayLetter(day.date)}</small>
+              <b>{day.count}</b>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
-    </section>
+
+      {calibration !== null && (
+        <div className="legend" style={{ justifyContent: "space-between" }}>
+          <span>Predicted vs actual recall</span>
+          <b>{`${Math.round(calibration.predicted * 100)}% · ${Math.round(calibration.actual * 100)}%`}</b>
+        </div>
+      )}
+    </Card>
   );
 }

@@ -1,8 +1,10 @@
-import { PageHeader } from "../../components/PageHeader";
+import { DateTime } from "effect";
 import { ErrorState } from "../../components/ErrorState";
+import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { ActivitySection } from "./ActivitySection";
+import { localHour, longDate, studyDate } from "./dashboardModel";
 import { DecksSection } from "./DecksSection";
 import { ProgressSection } from "./ProgressSection";
 import { StreakSection } from "./StreakSection";
@@ -22,35 +24,32 @@ export function DashboardPage() {
   const notifications = useLoadable(() => session.call((client) => client.insight.notifications()), []);
   const decks = useLoadable(() => session.call((client) => client.library.listDecks()), []);
 
+  if (learner.kind === "loading") return <Skeleton label="Loading dashboard" rows={4} />;
+  if (learner.kind === "failed") return <ErrorState message="Couldn't load your dashboard." />;
+
+  const now = DateTime.nowUnsafe();
+  const { timezone, dayStartHour } = learner.value.settings;
+  const firstName = learner.value.name.trim().split(/\s+/)[0] ?? learner.value.name;
+
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 pt-8 pb-24">
-      {learner.kind === "loading" && <Skeleton label="Loading dashboard" rows={4} />}
-      {learner.kind === "failed" && <ErrorState message="Couldn't load your dashboard." />}
+    <>
+      <PageHeader
+        eyebrow={longDate(studyDate(now, timezone, dayStartHour))}
+        title={`${greetingFor(localHour(now, timezone))}, ${firstName}`}
+      />
 
-      {learner.kind === "loaded" && (
-        <>
-          <PageHeader
-            title={learner.value.name.trim().split(/\s+/)[0] ?? learner.value.name}
-            description={greetingFor(new Date().getHours())}
-          />
+      <div className="dash">
+        <div className="dash-main">
+          <TodaySection state={notifications} stats={stats} learner={learner.value} />
+          <DecksSection state={decks} />
+        </div>
 
-          <div className="grid gap-8">
-            <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-              <TodaySection state={notifications} stats={stats} learner={learner.value} />
-              <StreakSection state={stats} />
-            </div>
-
-            <div className="grid items-start gap-6 lg:grid-cols-[65%_1fr]">
-              <DecksSection state={decks} />
-
-              <div className="grid min-w-0 gap-6">
-                <ActivitySection learner={learner.value} />
-                <ProgressSection state={stats} />
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+        <div className="dash-side">
+          <StreakSection state={stats} />
+          <ActivitySection learner={learner.value} />
+          <ProgressSection state={stats} />
+        </div>
+      </div>
+    </>
   );
 }

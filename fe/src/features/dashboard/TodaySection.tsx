@@ -1,86 +1,107 @@
-import { DateTime } from "effect";
-import { useState } from "react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import type { Learner, LearnerStats, Notifications } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
 import { StatStrip } from "../../components/StatStrip";
-import { studyDate } from "./dashboardModel";
 import type { Loadable } from "./useLoadable";
+
+type QueueDeck = Notifications["decks"][number];
+
+const studyHref = (deck: QueueDeck) => `/app/decks/${deck.deckSlug}/study`;
+
+const queueMeta = (deck: QueueDeck): string => {
+  if (deck.byDrill.length >= 2) return deck.byDrill.map((drill) => `${drill.label} ${drill.due}`).join(" · ");
+
+  const [only] = deck.byDrill;
+
+  if (only !== undefined) return only.label;
+
+  return deck.overdue > 0 ? `${deck.overdue} overdue` : "";
+};
+
+function Headline({ due, fresh }: { due: number; fresh: number }) {
+  if (due > 0 && fresh > 0) {
+    return (
+      <h2>
+        You have <em>{due} cards</em> to review and {fresh} new words waiting.
+      </h2>
+    );
+  }
+
+  if (due > 0) {
+    return (
+      <h2>
+        You have <em>{due} cards</em> to review.
+      </h2>
+    );
+  }
+
+  if (fresh > 0) {
+    return (
+      <h2>
+        You have <em>{fresh} new words</em> waiting.
+      </h2>
+    );
+  }
+
+  return <h2>You're all caught up!</h2>;
+}
 
 export function TodaySection({
   state,
   stats,
-  learner,
 }: {
   state: Loadable<Notifications>;
   stats: Loadable<LearnerStats>;
   learner: Learner;
 }) {
-  // Frozen at mount so the "reviewed" count matches the study day the page opened on.
-  const [today] = useState(() =>
-    studyDate(DateTime.nowUnsafe(), learner.settings.timezone, learner.settings.dayStartHour),
-  );
-
-  if (state.kind === "loading") {
-    return <Skeleton label="Loading today" rows={2} />;
-  }
-
-  if (state.kind === "failed") {
-    return <ErrorState message="Couldn't load today." />;
-  }
+  if (state.kind === "loading") return <Skeleton label="Loading today" rows={4} />;
+  if (state.kind === "failed") return <ErrorState message="Couldn't load today." />;
 
   const { decks, hardDue, newAvailable } = state.value;
-  const [firstDeck] = decks;
-  const totalDue = decks.reduce((sum, deck) => sum + deck.due, 0);
-  const totalOverdue = decks.reduce((sum, deck) => sum + deck.overdue, 0);
-  const reviewedToday =
-    stats.kind === "loaded" ? String(stats.value.reviewsPerDay.find((day) => day.date === today)?.count ?? 0) : "—";
-  const hasWork = totalDue > 0 || newAvailable > 0;
-
-  let headline = "You're all caught up!";
-  if (totalDue > 0) headline = `You have ${totalDue} cards to review.`;
-  else if (newAvailable > 0) headline = `You have ${newAvailable} new cards to learn.`;
-
-  const numbers = [
-    { label: "Due", value: String(totalDue) },
-    { label: "New", value: String(newAvailable) },
-    { label: "Hard", value: String(hardDue) },
-    { label: "Overdue", value: String(totalOverdue) },
-    { label: "Reviewed", value: reviewedToday },
-  ];
+  const due = decks.reduce((sum, deck) => sum + deck.due, 0);
+  const overdue = decks.reduce((sum, deck) => sum + deck.overdue, 0);
+  const reviewedToday = stats.kind === "loaded" ? (stats.value.reviewsPerDay.at(-1)?.count ?? 0) : undefined;
+  const first = decks[0];
 
   return (
-    <section aria-label="Today" className="grid min-w-0 gap-4 rounded-card border border-stone-200 bg-white p-6">
-      <h2 className="font-montserrat text-lg font-semibold text-stone-900">{headline}</h2>
+    <section className="today" aria-label="Today">
+      <span className="eyebrow">Today</span>
+      <Headline due={due} fresh={newAvailable} />
 
-      <StatStrip stats={numbers} />
-
-      {firstDeck !== undefined && hasWork && (
-        <Button variant="primary" className="self-start" href={`/app/decks/${firstDeck.deckSlug}/study`}>
-          Start studying
-        </Button>
-      )}
+      <StatStrip
+        stats={[
+          { label: "due", value: String(due), highlight: true },
+          { label: "new", value: String(newAvailable) },
+          { label: "hard", value: String(hardDue) },
+          { label: "overdue", value: String(overdue) },
+          { label: "reviewed today", value: reviewedToday === undefined ? "—" : String(reviewedToday) },
+        ]}
+      />
 
       {decks.length > 0 && (
-        <ul className="grid divide-y divide-stone-200 border-t border-stone-200">
+        <ul className="queue">
           {decks.map((deck) => (
             <li key={deck.deckSlug}>
-              <a
-                className="flex min-h-10 flex-wrap items-center justify-between gap-2 py-2 text-sm text-stone-900 no-underline hover:bg-stone-50"
-                href={`/app/decks/${deck.deckSlug}/study`}
-              >
-                <span className="font-medium">{deck.title}</span>
-                <span className="font-mono text-xs tabular-nums text-stone-500">
-                  {deck.due} due
-                  {deck.overdue > 0 && ` · ${deck.overdue} overdue`}
-                  {deck.byDrill.length > 0 &&
-                    ` · ${deck.byDrill.map((drill) => `${drill.label} ${drill.due}`).join(" · ")}`}
-                </span>
+              <a href={studyHref(deck)}>
+                <span className="qt">{deck.title}</span>
+                <span className="qm">{queueMeta(deck)}</span>
+                <span className="qn">{deck.due}</span>
+                <ChevronRight className="i" aria-hidden="true" />
               </a>
             </li>
           ))}
         </ul>
+      )}
+
+      {first !== undefined && (
+        <div className="today-cta">
+          <Button variant="primary" href={studyHref(first)}>
+            Start studying
+            <ArrowRight className="i" aria-hidden="true" />
+          </Button>
+        </div>
       )}
     </section>
   );
