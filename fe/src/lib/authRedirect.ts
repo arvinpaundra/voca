@@ -3,9 +3,12 @@ export const isAppPath = (path: string): boolean => {
   return path === "/app" || path.startsWith("/app/");
 }
 
-/** App pages framed by the sidebar. A study session takes the whole screen. */
+/** App pages framed by the sidebar. Study setup and the session take the whole screen. */
 export const hasShell = (path: string): boolean => {
-  return isAppPath(path) && path !== "/app/study";
+  if (!isAppPath(path)) return false
+  if (path === "/app/study") return false
+
+  return !/^\/app\/decks\/[^/]+\/study\/?$/.test(path)
 }
 
 /**

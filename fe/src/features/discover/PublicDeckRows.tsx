@@ -30,11 +30,10 @@ export function PublicDeckRows({
         <span></span>
       </div>
 
-      {/* the card rules for .pub-grid and .pub come after the row rules for .deck-grid and .deck in console.css and win, but the Console design shows rows */}
-      <ul className="deck-grid pub-grid" aria-label="Community decks" style={{ gridTemplateColumns: "1fr" }}>
+      <ul className="deck-grid pub-grid" aria-label="Community decks">
         {decks.map((deck) => (
           <li key={deck.slug}>
-            <article className="deck pub" style={{ gap: 16, gridTemplateRows: "none" }}>
+            <article className="deck pub">
               <div className="deck-top">
                 <a className="deck-title" href={`/app/discover/${deck.slug}`} dir="auto">
                   {deck.title}

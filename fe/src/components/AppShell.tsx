@@ -2,13 +2,14 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Result } from "effect";
 import type { Learner } from "@voca/contract";
-import { Compass, Layers, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, Settings, X } from "lucide-react";
+import { Compass, Flame, Layers, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, Settings, X, type LucideIcon } from "lucide-react";
 import { session, tokenStore } from "../lib/appSession";
 import { loadCurrentLearner } from "../lib/signIn";
 import { Avatar } from "./Avatar";
 import { cx } from "./cx";
 import { IconButton } from "./IconButton";
 import { Logo } from "./Logo";
+import { navItems } from "./nav";
 
 const COLLAPSED_KEY = "voca.sidebarCollapsed";
 
@@ -29,18 +30,12 @@ function writeCollapsed(collapsed: boolean): void {
   }
 }
 
-const NAV = [
-  { to: "/app", key: "dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/app/decks", key: "decks", icon: Layers, exact: false },
-  { to: "/app/discover", key: "discover", icon: Compass, exact: false },
-  { to: "/app/settings", key: "settings", icon: Settings, exact: false },
-] as const;
-
-const LABELS: Record<(typeof NAV)[number]["key"], string> = {
-  dashboard: "Dashboard",
-  decks: "Decks",
-  discover: "Discover",
-  settings: "Settings",
+const ICONS: Record<string, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  decks: Layers,
+  hard: Flame,
+  discover: Compass,
+  settings: Settings,
 };
 
 // The design's collapsed sidebar: 64px, icons only. The labels stay in the DOM for screen readers.
@@ -62,7 +57,10 @@ const BARE_BUTTON: CSSProperties = {
 function NavLinks({ collapsed, due, onNavigate }: { collapsed: boolean; due: number; onNavigate?: () => void }) {
   return (
     <nav aria-label="Main">
-      {NAV.map(({ to, key, icon: Icon, exact }) => (
+      {navItems().map(({ to, key, label, exact }) => {
+        const Icon = ICONS[key] ?? Layers;
+
+        return (
         <Link
           key={to}
           to={to}
@@ -70,14 +68,15 @@ function NavLinks({ collapsed, due, onNavigate }: { collapsed: boolean; due: num
           className="nav"
           activeProps={{ className: "on" }}
           style={collapsed ? COLLAPSED_NAV : undefined}
-          title={collapsed ? LABELS[key] : undefined}
+          title={collapsed ? label : undefined}
           onClick={onNavigate}
         >
           <Icon className="i i-lg" aria-hidden="true" />
-          <span className={cx(collapsed && "sr")}>{LABELS[key]}</span>
+          <span className={cx(collapsed && "sr")}>{label}</span>
           {key === "decks" && due > 0 && !collapsed && <span className="cnt">{due}</span>}
         </Link>
-      ))}
+        );
+      })}
     </nav>
   );
 }

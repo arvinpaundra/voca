@@ -6,6 +6,7 @@ export function IconButton({
   onClick,
   href,
   disabled,
+  round,
   className,
   children,
 }: {
@@ -13,12 +14,13 @@ export function IconButton({
   onClick?: () => void;
   href?: string;
   disabled?: boolean;
+  round?: boolean;
   className?: string | undefined;
   children: ReactNode;
 }) {
   if (href !== undefined) {
     return (
-      <a className={cx("btn-icon", className)} href={href} aria-label={label} title={label}>
+      <a className={cx("btn-icon", round && "round", className)} href={href} aria-label={label} title={label}>
         {children}
       </a>
     );
@@ -27,7 +29,7 @@ export function IconButton({
   return (
     <button
       type="button"
-      className={cx("btn-icon", className)}
+      className={cx("btn-icon", round && "round", className)}
       aria-label={label}
       title={label}
       onClick={onClick}
