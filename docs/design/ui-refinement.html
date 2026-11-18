@@ -524,6 +524,22 @@ body[data-opt="studio"] .w-term { font-size: 26px; }
 .preview-list .t { font: 600 18px var(--f-term); }
 .preview-list .more { display: block; text-align: center; color: var(--muted); font-size: var(--small); background: var(--sunken); }
 
+.pub-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+/* Console: public decks become the same dense rows as Decks */
+body[data-opt="console"] .pub { grid-template-columns: minmax(0, 1fr) 160px 160px 96px 64px; }
+body[data-opt="console"] .pub .author { order: 1; }
+body[data-opt="console"] .pub .deck-tags { order: 2; }
+body[data-opt="console"] .pub .deck-tags .badge:not(.lang) { display: none; }
+body[data-opt="console"] .pub .deck-foot > span { order: 3; justify-self: end; }
+body[data-opt="console"] .pub .deck-foot > .btn { order: 4; }
+body[data-opt="console"] .pub-head { grid-template-columns: minmax(0, 1fr) 160px 160px 96px 64px; }
+body[data-opt="console"] .pub-head span:nth-child(3) { text-align: left; }
+body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
+@media (max-width: 760px) {
+  body[data-opt="console"] .pub { grid-template-columns: minmax(0, 1fr) 64px; }
+  body[data-opt="console"] .pub .author, body[data-opt="console"] .pub .deck-tags, body[data-opt="console"] .pub .deck-foot > span { display: none; }
+}
+
 /* ------------------------------------------------------------------ SETTINGS / AUTH / LANDING */
 .settings { display: grid; gap: var(--gap); max-width: 760px; }
 .set-row { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 8px 32px; padding: 20px 0; border-top: 1px solid var(--line); align-items: start; }
@@ -1085,7 +1101,8 @@ body[data-opt="studio"] .w-term { font-size: 26px; }
     <div class="screen-body"><div class="content">
       <div class="page-head"><div class="ph-text"><h1 class="h1">Discover</h1><p class="sub">Public decks from other learners. Fork one to study it as your own.</p></div></div>
       <div class="toolbar"><div class="search"><svg class="i"><use href="#i-search"/></svg><input class="input" placeholder="Search public decks"></div><select class="select"><option>All languages</option></select><select class="select"><option>Most forked</option></select></div>
-      <ul class="deck-grid" id="pubs" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"></ul>
+      <div><div class="list-head pub-head"><span>Deck</span><span>Author</span><span>Languages</span><span>Forks</span><span></span></div>
+      <ul class="deck-grid pub-grid" id="pubs"></ul></div>
     </div></div>
   </div>
   <div class="screen"><div class="screen-bar"><i></i><i></i><i></i><span>voca.app/app/discover/jlpt-core</span></div>
