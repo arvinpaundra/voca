@@ -451,6 +451,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .w-actions { grid-area: actions; }
   .sess .w-state,
   .sess .w-actions { width: auto; }
+  .sess .word {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "term actions"
+      "body state";
+  }
+  .sess .w-state { justify-content: flex-start; }
 }
 .study { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr) 260px; align-items: start; }
 @media (max-width: 960px) {
