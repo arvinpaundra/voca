@@ -1,6 +1,18 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
+import { Card } from "../../components/Card";
 
-// `description` is kept so the current page compiles; the design shows none.
-export function SettingsSection(_props: { title: string; description?: string; children: ReactNode }) {
-  return <p>not implemented: UI-X2</p>;
+export function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
+  const headingId = useId();
+
+  return (
+    <Card aria-labelledby={headingId}>
+      <div className="card-head">
+        <h2 id={headingId} className="h2">
+          {title}
+        </h2>
+      </div>
+
+      {children}
+    </Card>
+  );
 }

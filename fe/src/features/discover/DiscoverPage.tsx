@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Result } from "effect";
 import type { PublicDeck } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { PageHeader } from "../../components/PageHeader";
+import { SearchInput } from "../../components/SearchInput";
+import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { communityQuery, mergeTermLangs, type CommunitySort, type DiscoverFilter } from "./discoverModel";
-import { PublicDeckTable } from "./PublicDeckTable";
+import { PublicDeckRows } from "./PublicDeckRows";
 import { forkDeck, forkMessage } from "./fork";
 
 const SEARCH_DELAY_MS = 300;
-
-const controlClass =
-  "h-8 cursor-pointer rounded-lg border border-stone-300 bg-white px-2.5 text-sm text-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy";
 
 const sortOptions: readonly { value: CommunitySort; label: string }[] = [
   { value: "new", label: "Newest" },
@@ -72,14 +71,12 @@ export function DiscoverPage() {
     setFilter((previous) => ({ ...previous, q: searchInput.trim() }));
   };
 
-  const changeLang = (event: ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
+  const changeLang = (value: string) => {
     setFilter((previous) => ({ ...previous, termLang: value === "" ? null : value }));
   };
 
-  const changeSort = (event: ChangeEvent<HTMLSelectElement>) => {
-    const sort = event.target.value as CommunitySort;
-    setFilter((previous) => ({ ...previous, sort }));
+  const changeSort = (value: string) => {
+    setFilter((previous) => ({ ...previous, sort: value as CommunitySort }));
   };
 
   const clearFilters = () => {
@@ -135,73 +132,57 @@ export function DiscoverPage() {
   const decks = listing?.decks ?? [];
 
   return (
-    <div className="w-full py-6 sm:py-8">
-      <PageHeader title="Discover" description="Browse and fork community decks." />
+    <>
+      <PageHeader
+        title="Discover"
+        description="Public decks from other learners. Fork one to study it as your own."
+      />
 
-      <div className="grid gap-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <form role="search" onSubmit={search} className="min-w-[200px] flex-1">
-            <input
-              type="search"
-              dir="auto"
-              aria-label="Search community decks"
-              placeholder="Search decks or creators"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              className="h-8 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-            />
-          </form>
+      <form role="search" onSubmit={search} className="toolbar">
+        <SearchInput
+          label="Search public decks"
+          placeholder="Search public decks"
+          value={searchInput}
+          onChange={setSearchInput}
+        />
 
-          <select aria-label="Term language" value={filter.termLang ?? ""} onChange={changeLang} className={controlClass}>
-            <option value="">All languages</option>
-            {knownLangs.map((lang) => (
-              <option key={lang} value={lang}>
-                {lang}
-              </option>
-            ))}
-          </select>
+        <Select
+          label="Term language"
+          value={filter.termLang ?? ""}
+          options={[{ value: "", label: "All languages" }, ...knownLangs.map((lang) => ({ value: lang, label: lang }))]}
+          onChange={changeLang}
+        />
 
-          <select aria-label="Sort" value={filter.sort} onChange={changeSort} className={controlClass}>
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select label="Sort" value={filter.sort} options={sortOptions} onChange={changeSort} />
+      </form>
 
-        {forkError !== null && (
-          <p role="alert" className="text-sm text-red-600">
-            {forkError}
-          </p>
-        )}
+      {forkError !== null && <ErrorState message={forkError} />}
 
-        {listing === null && loadError === null && <Skeleton label="Loading community decks" rows={4} />}
+      {listing === null && loadError === null && <Skeleton label="Loading community decks" rows={4} />}
 
-        {loadError !== null && <ErrorState message={loadError} onRetry={retry} />}
+      {loadError !== null && <ErrorState message={loadError} onRetry={retry} />}
 
-        {listing !== null && decks.length === 0 && (
-          <EmptyState
-            title="No decks found"
-            body="Try a different search or clear your filters."
-            action={
-              <Button variant="secondary" size="sm" onClick={clearFilters}>
-                Clear filters
-              </Button>
-            }
-          />
-        )}
-
-        {decks.length > 0 && <PublicDeckTable decks={decks} forking={forking} onFork={(deck) => void fork(deck)} />}
-
-        {listing !== null && listing.nextCursor !== null && (
-          <div className="flex justify-center">
-            <Button variant="secondary" busy={loadingMore} onClick={() => void loadMore()}>
-              Load more
+      {listing !== null && decks.length === 0 && (
+        <EmptyState
+          title="No decks found"
+          body="Try a different search or clear your filters."
+          action={
+            <Button variant="secondary" size="sm" onClick={clearFilters}>
+              Clear filters
             </Button>
-          </div>
-        )}
-      </div>
-    </div>
+          }
+        />
+      )}
+
+      {decks.length > 0 && <PublicDeckRows decks={decks} forking={forking} onFork={(deck) => void fork(deck)} />}
+
+      {listing !== null && listing.nextCursor !== null && (
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Button variant="ghost" busy={loadingMore} onClick={() => void loadMore()}>
+            Load more
+          </Button>
+        </div>
+      )}
+    </>
   );
 }

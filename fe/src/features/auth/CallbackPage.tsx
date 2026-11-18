@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertCircle } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { Button } from "../../components/Button";
 import { Spinner } from "../../components/Spinner";
 import { session } from "../../lib/appSession";
@@ -41,23 +41,24 @@ export function CallbackPage() {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-100 px-6 py-12">
-      <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-card border border-stone-200 bg-white p-8 text-center shadow-[0_8px_32px_rgba(0,0,0,0.08)] lg:p-10">
+    <div className="auth-form" style={{ minHeight: "100vh" }}>
+      <div className="auth-card">
         <Logo />
+
         {failure === null ? (
-          <div className="flex flex-col items-center gap-4">
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Spinner size="lg" label="Signing you in" />
-            <p className="text-sm text-stone-500">Signing you in…</p>
+            <p className="sub">Signing you in…</p>
           </div>
         ) : (
           <>
-            <div className="flex flex-col gap-2">
-              <h1 className="font-montserrat text-2xl font-semibold tracking-tight text-stone-900">Sign-in failed</h1>
-              <p role="alert" className="flex items-center justify-center gap-2 text-sm text-red-600">
-                <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
-                {failureMessage(failure)}
-              </p>
+            <h1 className="h1">Sign-in failed</h1>
+
+            <div role="alert" className="alert alert-bad">
+              <CircleAlert className="i" aria-hidden="true" />
+              <span>{failureMessage(failure)}</span>
             </div>
+
             <Button variant="primary" href="/login">
               Try again
             </Button>
