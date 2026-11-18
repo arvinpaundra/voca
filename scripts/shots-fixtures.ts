@@ -250,6 +250,7 @@ export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
     ],
     hardDue: 5,
     newAvailable: 10,
+    estimatedMinutes: 8,
   })],
   [/^\/api\/decks$/, () => decks],
   [/^\/api\/decks\/[0-9A-Z]{10}$/, (url) => {
