@@ -181,6 +181,7 @@ body[data-opt="console"] .h2 { color: var(--muted); }
 .btn-icon { width: var(--btn-h-sm); height: var(--btn-h-sm); padding: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); border: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 body[data-opt="studio"] .btn-icon { border-radius: 999px; }
 .btn-icon:hover { background: rgba(28,25,23,.06); color: var(--ink); }
+.btn-icon.round { border-radius: 999px; background: #e7e5e4; color: var(--ink); }
 .btn-busy::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -1089,7 +1090,7 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
     <div class="screen-body"><div class="content">
       <div class="study">
         <div style="display:grid;gap:16px;min-width:0">
-          <div class="study-top"><button class="btn-icon" aria-label="Close session" style="background:#e7e5e4;color:var(--ink);border-radius:999px"><svg class="i"><use href="#i-x"/></svg></button><div class="strip" id="strip"></div><span class="num muted" style="font-size:13px">8 / 20</span></div>
+          <div class="study-top"><button class="btn-icon round" aria-label="Close session"><svg class="i"><use href="#i-x"/></svg></button><div class="strip" id="strip"></div><span class="num muted" style="font-size:13px">8 / 20</span></div>
           <section class="prompt">
             <span class="drill">Term → Meaning</span>
             <p class="term" lang="ja"><ruby>食べる<rt>たべる</rt></ruby></p>

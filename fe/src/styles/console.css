@@ -117,6 +117,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
 .btn-icon { width: var(--btn-h-sm); height: var(--btn-h-sm); padding: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); border: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .btn-icon:hover { background: rgba(28,25,23,.06); color: var(--ink); }
+.btn-icon.round { border-radius: 999px; background: #e7e5e4; color: var(--ink); }
 .btn-busy::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .field { display: grid; gap: 6px; min-width: 0; }

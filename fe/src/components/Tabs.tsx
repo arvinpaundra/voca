@@ -1,4 +1,5 @@
-export type Tab<T extends string> = { value: T; label: string; count?: number | undefined };
+// `count` is a number, or a word such as "new" for a drill not studied yet.
+export type Tab<T extends string> = { value: T; label: string; count?: number | string | undefined };
 
 export function Tabs<T extends string>({
   label,
