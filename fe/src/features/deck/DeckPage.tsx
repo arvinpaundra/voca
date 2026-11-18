@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Option, Result, Schema } from "effect";
-import { DeckSlug, type Deck } from "@voca/contract";
+import { DeckSlug, type DeckDetail } from "@voca/contract";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { DeckView } from "./DeckView";
 
 export function DeckPage({ deckSlug }: { deckSlug: string }) {
-  const [deck, setDeck] = useState<Deck | null>(null);
+  const [deck, setDeck] = useState<DeckDetail | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function DeckPage({ deckSlug }: { deckSlug: string }) {
 
   return (
     <>
-      {deck !== null && <DeckView deck={deck} onDeckChanged={setDeck} />}
+      {deck !== null && <DeckView deck={deck} onDeckChanged={(changed) => setDeck((previous) => ({ ...previous, ...changed }))} />}
       {deck === null && failed && <ErrorState message="This deck could not be loaded." />}
       {deck === null && !failed && <Skeleton label="Loading deck" rows={3} />}
     </>

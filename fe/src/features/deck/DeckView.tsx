@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DateTime, Result } from "effect";
-import type { Deck, DeckStats, Word, WordWithCards } from "@voca/contract";
+import type { DeckDetail, DeckStats, Word, WordWithCards } from "@voca/contract";
 import { wordLabels } from "@voca/contract";
 import { ArrowRight, Plus } from "lucide-react";
 import { Badge } from "../../components/Badge";
@@ -11,10 +11,11 @@ import { Menu } from "../../components/Menu";
 import { PageHeader } from "../../components/PageHeader";
 import { SearchInput } from "../../components/SearchInput";
 import { Skeleton } from "../../components/Skeleton";
-import { Tabs, type Tab } from "../../components/Tabs";
+import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
 import { DeckModal } from "../decks/DeckModal";
 import { DeleteDeckModal } from "../decks/DeleteDeckModal";
+import { deckCounts } from "./deckCounts";
 import { DeckProgress } from "./DeckProgress";
 import { DeleteWordModal } from "./DeleteWordModal";
 import { matchesWordFilter, type WordFilter } from "./wordFilter";
@@ -22,8 +23,8 @@ import { WordModal } from "./WordModal";
 import { WordList } from "./WordList";
 
 type DeckViewProps = {
-  deck: Deck;
-  onDeckChanged: (deck: Deck) => void;
+  deck: DeckDetail;
+  onDeckChanged: (deck: DeckDetail) => void;
 };
 
 type WordEditor = { kind: "add" } | { kind: "edit"; word: WordWithCards } | null;
@@ -47,6 +48,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   // The stats bar reloads whenever a word is added or removed, not only when the search changes.
   const [stats, setStats] = useState<DeckStats | null>(null);
   const [statsVersion, setStatsVersion] = useState(0);
+  const [wordDelta, setWordDelta] = useState(0);
 
   const [wordEditor, setWordEditor] = useState<WordEditor>(null);
   const [deletingWord, setDeletingWord] = useState<WordWithCards | null>(null);
@@ -126,6 +128,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     } else {
       setReloadKey((key) => key + 1);
       setStatsVersion((version) => version + 1);
+      setWordDelta((delta) => delta + 1);
     }
     setWordEditor(null);
   };
@@ -133,6 +136,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const wordDeleted = (slug: string) => {
     setWords((previous) => (previous === null ? previous : previous.filter((word) => word.slug !== slug)));
     setStatsVersion((version) => version + 1);
+    setWordDelta((delta) => delta - 1);
     setDeletingWord(null);
   };
 
@@ -160,15 +164,9 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const shown = words?.filter((word) => matchesWordFilter(word, filter, now)) ?? null;
   const unfiltered = query === "" && filter === "all";
 
-  const wordCount = stats === null ? null : stats.maturity.new + stats.maturity.learning + stats.maturity.mature;
-
-  const filterTabs: readonly Tab<WordFilter>[] = [
-    { value: "all", label: "All", count: wordCount ?? undefined },
-    { value: "due", label: "Due", count: stats?.dueToday },
-    { value: "new", label: "New", count: stats?.maturity.new },
-    { value: "hard", label: "Hard" },
-    { value: "mature", label: "Mature", count: stats?.maturity.mature },
-  ];
+  // The deck's word count was read with the deck, so words added or removed since are applied on top.
+  const counted = { ...deck, ...(deck.wordCount !== undefined && { wordCount: deck.wordCount + wordDelta }) };
+  const { tabs: filterTabs, searchPlaceholder } = deckCounts(counted, stats);
 
   return (
     <>
@@ -232,7 +230,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
         <div className="toolbar">
           <SearchInput
             label="Search words"
-            placeholder={wordCount === null ? "Search words" : `Search ${wordCount} words`}
+            placeholder={searchPlaceholder}
             value={searchInput}
             onChange={setSearchInput}
           />
