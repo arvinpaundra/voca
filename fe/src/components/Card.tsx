@@ -1,10 +1,6 @@
 import type { HTMLAttributes } from "react";
-import { cx } from "./cx";
 
-export function Card({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={cx("rounded-card border border-stone-200 bg-white p-4", className)} {...props}>
-      {children}
-    </div>
-  );
+// The design's `.card`: a <section> so an aria-label makes it a named region.
+export function Card(_props: HTMLAttributes<HTMLElement>) {
+  return <p>not implemented: UI-K2</p>;
 }

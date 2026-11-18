@@ -1,35 +1,14 @@
 import type { ReactNode } from "react";
-import { cx } from "./cx";
 
-type BadgeVariant = "default" | "lime" | "outline" | "new" | "learning" | "mature";
+// new/learning/mature are kept for pages written before ADR 36: new and learning render the plain badge, mature navy.
+export type BadgeVariant = "default" | "outline" | "lime" | "navy" | "new" | "learning" | "mature";
 
-const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-stone-100 text-stone-700",
-  lime: "bg-lime text-stone-900",
-  outline: "border border-stone-300 text-stone-600",
-  new: "bg-m-new text-stone-900",
-  learning: "bg-m-learning text-stone-900",
-  mature: "bg-m-mature text-white",
-};
-
-export function Badge({
-  variant = "default",
-  className,
-  children,
-}: {
+export function Badge(_props: {
   variant?: BadgeVariant;
+  dot?: boolean;
+  lang?: boolean;
   className?: string | undefined;
   children: ReactNode;
 }) {
-  return (
-    <span
-      className={cx(
-        "inline-flex h-5 items-center gap-1.5 rounded-[3px] px-2 text-xs font-medium",
-        variantClasses[variant],
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
+  return <p>not implemented: UI-K2</p>;
 }
