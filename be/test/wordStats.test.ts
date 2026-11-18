@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test"
-import { Effect } from "effect"
+import { DateTime, Effect } from "effect"
 import { retrievability } from "../src/study/domain/fsrs.ts"
 import { at, call, makeIdentityRuntime } from "./identity.ts"
 import { seedCard, seedDeck, seedReview, seedSessionAttempts, signedIn, wordList } from "./seed.ts"
@@ -15,7 +15,7 @@ beforeEach(() => rt.runPromise(Effect.andThen(resetDb, at("2026-11-14T00:00:00Z"
 const wordStats = (token: string, wordSlug: string) =>
   call((c) => c.insight.wordStats({ params: { wordSlug: wordSlug as never } }), token)
 
-const iso = (value: unknown) => new Date(String(value)).toISOString()
+const iso = (value: unknown) => DateTime.formatIso(value as DateTime.Utc)
 
 /** A word studied in two drills: five first attempts and two sessions in Term → Meaning, a mature hard card in Reading → Term. */
 const seedStudiedWord = Effect.gen(function* () {
