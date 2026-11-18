@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Result } from "effect";
 import type { Deck, Word, WordLabels, WordWithCards } from "@voca/contract";
+import { Button } from "../../components/Button";
+import { Modal } from "../../components/Modal";
 import { session } from "../../lib/appSession";
-import { Modal } from "../decks/Modal";
 import { WordForm } from "./WordForm";
 import {
   createPayload,
@@ -10,8 +11,9 @@ import {
   draftFromWord,
   emptyDraft,
   failureTag,
+  isComplete,
   updatePayload,
-  type WordDraft
+  type WordDraft,
 } from "./wordModel";
 
 type WordModalProps = {
@@ -25,36 +27,41 @@ type WordModalProps = {
 };
 
 export function WordModal({ open, deck, labels, word, onClose, onSaved }: WordModalProps) {
-  return (
-    <Modal open={open} title={word === undefined ? "Add word" : "Edit word"} onClose={onClose}>
-      <WordEditor deck={deck} labels={labels} word={word} onCancel={onClose} onSaved={onSaved} />
-    </Modal>
-  );
+  // Mounts only while open, so every opening starts from a fresh draft.
+  if (!open) return null;
+
+  return <WordEditor deck={deck} labels={labels} word={word} onClose={onClose} onSaved={onSaved} />;
 }
 
 type WordEditorProps = {
   deck: Deck;
   labels: WordLabels;
   word?: WordWithCards | undefined;
-  onCancel: () => void;
+  onClose: () => void;
   onSaved: (word: Word) => void;
 };
 
-function WordEditor({ deck, labels, word, onCancel, onSaved }: WordEditorProps) {
+function WordEditor({ deck, labels, word, onClose, onSaved }: WordEditorProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [draft, setDraft] = useState<WordDraft>(word === undefined ? emptyDraft : draftFromWord(word));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const save = async (draft: WordDraft) => {
+  const changeDraft = (name: keyof WordDraft, value: string) => {
+    setDraft((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const save = async () => {
     setBusy(true);
     setError(null);
 
     const result =
       word === undefined
         ? await session.call((client) =>
-            client.library.createWord({ params: { deckSlug: deck.slug }, payload: createPayload(draft) })
+            client.library.createWord({ params: { deckSlug: deck.slug }, payload: createPayload(draft) }),
           )
         : await session.call((client) =>
-            client.library.updateWord({ params: { wordSlug: word.slug }, payload: updatePayload(draft) })
+            client.library.updateWord({ params: { wordSlug: word.slug }, payload: updatePayload(draft) }),
           );
 
     setBusy(false);
@@ -67,14 +74,38 @@ function WordEditor({ deck, labels, word, onCancel, onSaved }: WordEditorProps) 
   };
 
   return (
-    <WordForm
-      labels={labels}
-      initial={word === undefined ? emptyDraft : draftFromWord(word)}
-      submitLabel={word === undefined ? "Add word" : "Save"}
-      busy={busy}
-      error={error}
-      onSubmit={(draft) => void save(draft)}
-      onCancel={onCancel}
-    />
+    <Modal
+      open
+      title={word === undefined ? "Add word" : "Edit word"}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            busy={busy}
+            disabled={!isComplete(draft)}
+            onClick={() => formRef.current?.requestSubmit()}
+          >
+            {word === undefined ? "Add word" : "Save"}
+          </Button>
+        </>
+      }
+    >
+      <WordForm
+        labels={labels}
+        draft={draft}
+        formRef={formRef}
+        onChange={changeDraft}
+        onSubmit={() => void save()}
+      />
+
+      {error !== null && (
+        <p role="alert" className="mt-4 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+    </Modal>
   );
 }
