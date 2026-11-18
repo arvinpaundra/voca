@@ -3,7 +3,7 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "../../components/Button";
 import { Spinner } from "../../components/Spinner";
 import { beginSignIn } from "../../lib/auth";
-import { BrandMark } from "../landing/BrandMark";
+import { Logo } from "../../components/Logo";
 
 function GoogleIcon() {
   return (
@@ -66,7 +66,7 @@ export function SignInPage() {
           aria-hidden="true"
         />
         <div className="relative z-10">
-          <BrandMark dark />
+          <Logo tone="dark" />
         </div>
         <div className="relative z-10 flex max-w-sm flex-col gap-6">
           <p className="font-mono text-xs tracking-widest text-lime uppercase">Spaced repetition for every language</p>
@@ -81,13 +81,13 @@ export function SignInPage() {
       </div>
 
       <header className="flex shrink-0 items-center justify-between bg-stone-900 px-6 py-5 lg:hidden">
-        <BrandMark dark />
+        <Logo tone="dark" />
         <span className="hidden text-xs text-stone-400 sm:block">Spaced repetition for every language</span>
       </header>
 
       <div className="flex flex-1 items-center justify-center bg-neutral-100 px-6 py-12">
         <div className="flex w-full max-w-md flex-col gap-8 rounded-card border border-stone-200 bg-white p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] lg:p-10">
-          <BrandMark />
+          <Logo />
           <div className="flex flex-col gap-1">
             <h1 className="font-montserrat text-2xl font-semibold tracking-tight text-stone-900">Welcome back.</h1>
             <p className="text-sm text-stone-500">
@@ -101,7 +101,7 @@ export function SignInPage() {
               type="button"
               disabled={!configured || busy}
               onClick={handleSignIn}
-              className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-stone-200 bg-white px-5 py-3.5 text-sm font-medium text-stone-800 shadow-[0_1px_3px_rgba(0,0,0,0.08)] transition-all duration-150 select-none hover:border-stone-300 hover:bg-stone-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.12)] focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
+              className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-card border border-stone-200 bg-white px-5 py-3.5 text-sm font-medium text-stone-800 shadow-[0_1px_3px_rgba(0,0,0,0.08)] transition-all duration-150 select-none hover:border-stone-300 hover:bg-stone-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.12)] focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
             >
               {busy ? <Spinner size="sm" label="Redirecting" /> : <GoogleIcon />}
               <span>{busy ? "Redirecting…" : "Sign in with Google"}</span>
@@ -114,7 +114,7 @@ export function SignInPage() {
             {error && (
               <div
                 role="alert"
-                className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600"
+                className="flex items-center gap-2 rounded-card border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600"
               >
                 <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
                 {error}

@@ -6,7 +6,7 @@ import { Spinner } from "../../components/Spinner";
 import { session } from "../../lib/appSession";
 import { consumePkce, redirectUri } from "../../lib/auth";
 import { completeSignIn, type SignInFailure } from "../../lib/signIn";
-import { BrandMark } from "../landing/BrandMark";
+import { Logo } from "../../components/Logo";
 
 function failureMessage(reason: SignInFailure): string {
   return reason === "google-error"
@@ -43,7 +43,7 @@ export function CallbackPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-100 px-6 py-12">
       <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-card border border-stone-200 bg-white p-8 text-center shadow-[0_8px_32px_rgba(0,0,0,0.08)] lg:p-10">
-        <BrandMark />
+        <Logo />
         {failure === null ? (
           <div className="flex flex-col items-center gap-4">
             <Spinner size="lg" label="Signing you in" />
@@ -58,7 +58,7 @@ export function CallbackPage() {
                 {failureMessage(failure)}
               </p>
             </div>
-            <Button variant="accent" href="/login">
+            <Button variant="primary" href="/login">
               Try again
             </Button>
           </>

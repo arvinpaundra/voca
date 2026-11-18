@@ -1,14 +1,16 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Result } from "effect";
 import type { Learner, LearnerSettings, Mode, SessionSize } from "@voca/contract";
-import { Settings as SettingsIcon, SlidersHorizontal, User } from "lucide-react";
 import { Avatar } from "../../components/Avatar";
 import { Button } from "../../components/Button";
-import { Card } from "../../components/Card";
+import { ErrorState } from "../../components/ErrorState";
 import { Input } from "../../components/Input";
-import { cx } from "../../components/cx";
+import { PageHeader } from "../../components/PageHeader";
+import { SegmentedControl } from "../../components/SegmentedControl";
+import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { changedSettings, draftFrom, parseDraft, type DraftErrors, type SettingsDraft } from "./settingsModel";
+import { SettingsSection } from "./SettingsSection";
 
 type LoadState =
   | { readonly kind: "loading" }
@@ -20,36 +22,27 @@ type Notice = { readonly kind: "saved" } | { readonly kind: "failed" } | null;
 const SESSION_SIZES: readonly SessionSize[] = [7, 10, 15, 20];
 
 const MODES: readonly { readonly value: Mode; readonly label: string; readonly hint: string }[] = [
-  { value: "easy", label: "Easy", hint: "Recognise the answer" },
-  { value: "hard", label: "Hard", hint: "Recall it from memory" },
+  { value: "easy", label: "Easy", hint: "Recognise the answer." },
+  { value: "hard", label: "Hard", hint: "Recall it from memory." },
 ];
 
 const timeZones: readonly string[] = Intl.supportedValuesOf("timeZone");
 
-const segmentClass = (active: boolean): string => {
-  return cx(
-    "cursor-pointer rounded-xl border px-4 py-2 text-sm font-semibold transition-colors duration-150",
-    active ? "border-lime bg-lime text-stone-900" : "border-stone-300 bg-white text-stone-600 hover:border-stone-400",
-  );
-};
+const controlClass =
+  "h-8 w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy";
 
-function ProfileCard({ learner }: { learner: Learner }) {
+function ProfileSection({ learner }: { learner: Learner }) {
   return (
-    <Card className="grid gap-6">
-      <h2 className="font-montserrat text-lg font-semibold text-stone-900">
-        <User className="mr-2 inline size-5 align-text-bottom text-stone-500" aria-hidden="true" />
-        Profile
-      </h2>
-
+    <SettingsSection title="Profile" description="Your name and picture come from your Google account.">
       <div className="flex items-center gap-4">
-        <Avatar name={learner.name} src={learner.avatarUrl} size="lg" tone="light" className="size-14" />
+        <Avatar name={learner.name} src={learner.avatarUrl} size="lg" className="size-14" />
 
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-stone-900">{learner.name}</p>
+          <p className="truncate text-sm font-semibold text-stone-900">{learner.name}</p>
           <p className="truncate text-sm text-stone-500">{learner.email}</p>
         </div>
       </div>
-    </Card>
+    </SettingsSection>
   );
 }
 
@@ -109,24 +102,23 @@ function StudyPreferences({
 
   // The current zone stays in the list even when the browser does not know it, so the select always shows it.
   const zoneOptions = timeZones.includes(draft.timezone) ? timeZones : [draft.timezone, ...timeZones];
+  const activeMode = MODES.find((mode) => mode.value === draft.defaultMode);
 
   return (
-    <Card className="grid gap-6">
-      <h2 className="font-montserrat text-lg font-semibold text-stone-900">
-        <SlidersHorizontal className="mr-2 inline size-5 align-text-bottom text-stone-500" aria-hidden="true" />
-        Study preferences
-      </h2>
-
-      <form className="grid gap-5" onSubmit={save} noValidate>
+    <SettingsSection
+      title="Study preferences"
+      description="How sessions start and when words come back."
+    >
+      <form className="grid gap-6" onSubmit={save} noValidate>
         <div className="grid gap-1.5">
-          <label htmlFor="settings-timezone" className="text-sm font-medium text-stone-700">
+          <label htmlFor="settings-timezone" className="text-xs font-medium text-stone-700">
             Timezone
           </label>
           <select
             id="settings-timezone"
             value={draft.timezone}
             onChange={(event) => change("timezone", event.target.value)}
-            className="w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-stone-900 focus:outline-none focus:ring-2 focus:ring-lime/60"
+            className={controlClass}
           >
             {zoneOptions.map((zone) => (
               <option key={zone} value={zone}>
@@ -163,43 +155,32 @@ function StudyPreferences({
           error={errors.newPerDay}
         />
 
-        <fieldset className="grid gap-2">
-          <legend className="mb-1.5 text-sm font-medium text-stone-700">Default session size</legend>
-          <div className="flex flex-wrap gap-2">
-            {SESSION_SIZES.map((size) => (
-              <button
-                key={size}
-                type="button"
-                aria-pressed={draft.defaultSessionSize === size}
-                className={segmentClass(draft.defaultSessionSize === size)}
-                onClick={() => change("defaultSessionSize", size)}
-              >
-                {size} words
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <div className="grid gap-2">
+          <p className="text-xs font-medium text-stone-700">Default session size</p>
+          <SegmentedControl
+            label="Default session size"
+            options={SESSION_SIZES.map((size) => ({ value: String(size), label: `${size} words` }))}
+            value={String(draft.defaultSessionSize)}
+            onChange={(value) => {
+              const size = SESSION_SIZES.find((candidate) => String(candidate) === value);
+              if (size !== undefined) change("defaultSessionSize", size);
+            }}
+          />
+        </div>
 
-        <fieldset className="grid gap-2">
-          <legend className="mb-1.5 text-sm font-medium text-stone-700">Default mode</legend>
-          <div className="flex flex-wrap gap-2">
-            {MODES.map((mode) => (
-              <button
-                key={mode.value}
-                type="button"
-                aria-pressed={draft.defaultMode === mode.value}
-                title={mode.hint}
-                className={segmentClass(draft.defaultMode === mode.value)}
-                onClick={() => change("defaultMode", mode.value)}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <div className="grid gap-2">
+          <p className="text-xs font-medium text-stone-700">Default mode</p>
+          <SegmentedControl
+            label="Default mode"
+            options={MODES.map((mode) => ({ value: mode.value, label: mode.label }))}
+            value={draft.defaultMode}
+            onChange={(value) => change("defaultMode", value)}
+          />
+          {activeMode !== undefined && <p className="text-xs text-stone-500">{activeMode.hint}</p>}
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" disabled={!dirty || saving}>
+          <Button type="submit" disabled={!dirty || saving} busy={saving}>
             {saving ? "Saving…" : "Save changes"}
           </Button>
 
@@ -216,7 +197,7 @@ function StudyPreferences({
           )}
         </div>
       </form>
-    </Card>
+    </SettingsSection>
   );
 }
 
@@ -239,28 +220,15 @@ export function SettingsPage() {
 
   return (
     <div className="w-full py-6 sm:py-8">
-      <header className="mb-8 flex items-center gap-4">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lime/20">
-          <SettingsIcon className="size-5 text-stone-900" aria-hidden="true" />
-        </div>
+      <PageHeader title="Settings" description="Manage your account and study preferences." />
 
-        <div>
-          <h1 className="font-montserrat text-2xl font-semibold text-stone-900">Settings</h1>
-          <p className="mt-0.5 text-sm text-stone-500">Manage your account and study preferences.</p>
-        </div>
-      </header>
+      {state.kind === "loading" && <Skeleton label="Loading settings" rows={3} />}
 
-      {state.kind === "loading" && <p className="text-sm text-stone-500">Loading…</p>}
-
-      {state.kind === "failed" && (
-        <p role="alert" className="text-sm text-red-600">
-          Couldn't load your settings.
-        </p>
-      )}
+      {state.kind === "failed" && <ErrorState message="Couldn't load your settings." />}
 
       {state.kind === "loaded" && (
-        <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-2">
-          <ProfileCard learner={state.learner} />
+        <div className="grid gap-8">
+          <ProfileSection learner={state.learner} />
 
           <StudyPreferences
             settings={state.learner.settings}

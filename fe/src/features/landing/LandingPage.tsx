@@ -2,7 +2,7 @@ import { ArrowRight, Check, GitFork, Lock, Upload } from "lucide-react";
 import { Button } from "../../components/Button";
 import { Term } from "../../components/Term";
 import { cx } from "../../components/cx";
-import { BrandMark } from "./BrandMark";
+import { Logo } from "../../components/Logo";
 
 export function LandingPage() {
   return (
@@ -29,7 +29,7 @@ function Header() {
     <header className="sticky top-0 z-50 border-b border-stone-200/60 bg-neutral-100/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-6 lg:h-20 lg:px-12">
         <a href="/" className="flex items-center no-underline">
-          <BrandMark />
+          <Logo />
         </a>
         <nav aria-label="Page" className="hidden items-center gap-8 lg:flex">
           <a
@@ -45,7 +45,7 @@ function Header() {
             Scripts
           </a>
         </nav>
-        <Button variant="accent" href="/login">
+        <Button variant="primary" href="/login">
           Sign in
         </Button>
       </div>
@@ -114,7 +114,7 @@ function Option({ label, correct = false, wrong = false }: { label: string; corr
   return (
     <span
       className={cx(
-        "flex items-center justify-between rounded-xl border px-3 py-2 text-sm font-medium",
+        "flex items-center justify-between rounded-card border px-3 py-2 text-sm font-medium",
         correct && "border-lime bg-lime/20 text-stone-900",
         wrong && "border-red-200 bg-red-50 text-red-700",
         !correct && !wrong && "border-stone-200 text-stone-700",
@@ -137,7 +137,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
 
 function StatTile({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-neutral-50 px-4 py-3">
+    <div className="rounded-card border border-stone-200 bg-neutral-50 px-4 py-3">
       <p className="text-2xl font-semibold tracking-tight">{value}</p>
       <p className="text-xs font-medium tracking-wide text-stone-500 uppercase">{label}</p>
     </div>
@@ -228,7 +228,7 @@ function Footer() {
     <footer className="bg-stone-900 text-stone-300">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-6 py-12 lg:flex-row lg:items-center lg:justify-between lg:px-12">
         <div>
-          <BrandMark dark />
+          <Logo tone="dark" />
           <p className="mt-2 text-sm text-stone-400">Vocabulary, remembered.</p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -237,7 +237,7 @@ function Footer() {
           </Button>
           <a
             href="/login"
-            className="inline-flex items-center justify-center rounded-lg border border-stone-700 px-5 py-2.5 text-sm font-semibold text-stone-200 no-underline transition-colors hover:bg-stone-800"
+            className="inline-flex items-center justify-center rounded-card border border-stone-700 px-5 py-2.5 text-sm font-semibold text-stone-200 no-underline transition-colors hover:bg-stone-800"
           >
             Sign in
           </a>
