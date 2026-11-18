@@ -38,6 +38,8 @@ export const notifications = Effect.gen(function* () {
   return {
     decks: [...decks.values()].sort((a, b) => b.overdue - a.overdue || b.due - a.due),
     hardDue: rows.reduce((sum, row) => sum + row.hard, 0),
-    newAvailable: Math.max(0, calendar.newPerDay - newToday)
+    newAvailable: Math.max(0, calendar.newPerDay - newToday),
+    // Null means no pace has been measured yet, and the UI then shows no estimate.
+    estimatedMinutes: null
   }
 })

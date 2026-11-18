@@ -79,7 +79,9 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 - A bell in the header opens a panel listing:
   - each deck with words due now (due count, overdue count)
   - hard words that are due
-  - new words still available today
+  - new words still available today: the daily allowance **capped by the words that actually have no Card yet**, so the
+    count is never a promise the decks can't keep
+  - about how long the queue will take, from the Learner's own pace ([10](10-analytics.md))
 - The panel is computed on request and nothing is stored. It refreshes when the window gains focus and every 5 minutes while the tab is visible.
 - **Won't:** email, web push, OS notifications.
 
@@ -108,6 +110,8 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 
 - Session size is chosen from **7, 10, 15, or 20** words. The last choice is remembered as the default.
 - If fewer words are due than the chosen size, the session is filled with new words (within the daily limit). If the session is still short, the smaller session is served with a notice.
+- A session always holds at least one word. When nothing is due and no new word is left, no session is created and the
+  app says so instead (`NothingToStudy`), rather than opening an empty session.
 
 ## FR-12 Easy / Hard mode (M, can be cut)
 

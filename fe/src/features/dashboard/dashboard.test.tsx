@@ -34,9 +34,13 @@ const queueDeck = (deckSlug: string, title: string, due: number, overdue: number
     byDrill: byDrill.map(([label, n]) => ({ drill: "term_meaning", label, due: n })),
   }) as unknown as Notifications["decks"][number];
 
-const notifications = (decks: Notifications["decks"], newAvailable = 10): Loadable<Notifications> => ({
+const notifications = (
+  decks: Notifications["decks"],
+  newAvailable = 10,
+  estimatedMinutes: number | null = null,
+): Loadable<Notifications> => ({
   kind: "loaded",
-  value: { decks, hardDue: 5, newAvailable },
+  value: { decks, hardDue: 5, newAvailable, estimatedMinutes },
 });
 
 const days = (count: number, from: string, counts: number[]) =>

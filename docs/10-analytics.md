@@ -106,7 +106,26 @@ GROUP BY d.id, d.title           -- byDrill: the same query grouped by (d.id, c.
 ORDER BY overdue DESC, due DESC;
 ```
 
-The `newAvailable` count is `newPerDay − newDoneToday`, where new-done counts today's reviews with `state_before = 'new'` across all drills. The per-drill new counts on the setup screen come from `/decks/:deckSlug/drills`.
+The `newAvailable` count is `min(newPerDay − newDoneToday, unstudiedPairs)`, where new-done counts today's reviews with
+`state_before = 'new'` across all drills and `unstudiedPairs` is the same anti-join the deck stats count as new: studyable
+(word, drill) pairs with no Card. The allowance alone would promise words the decks do not have. The per-drill new counts
+on the setup screen come from `/decks/:deckSlug/drills`.
+
+`estimatedMinutes` is how long the queue is likely to take, measured from the Learner's own pace rather than a guess:
+
+```sql
+-- seconds per card in one session: its span divided by the gaps between its first attempts
+SELECT session_id,
+       EXTRACT(epoch FROM max(reviewed_at) - min(reviewed_at)) / (count(*) - 1) AS seconds_per_card
+FROM reviews
+WHERE learner_id = $learner AND session_id IS NOT NULL
+GROUP BY session_id HAVING count(*) > 1
+ORDER BY max(reviewed_at) DESC LIMIT 20;
+```
+
+The median of those values, with each capped at 120 s so a session left open on a desk doesn't skew it, times
+`due + newAvailable`, rounded to minutes. It is `null` when the queue is empty or no finished session has 2 attempts yet,
+and the UI then shows nothing rather than a made-up number.
 
 **Frontend:** a TanStack Query with `refetchOnWindowFocus: true` and `refetchInterval: 5 min`. The badge shows the total due. The panel is a native `<dialog>`, and each row links to `/app/decks/:deckSlug/study`.
 

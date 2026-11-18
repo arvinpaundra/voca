@@ -417,7 +417,7 @@ describe("GET /notifications", () => {
 
         const panel = yield* notifications(token)
 
-        expect(panel).toEqual({ decks: [], hardDue: 0, newAvailable: 0 })
+        expect(panel).toEqual({ decks: [], hardDue: 0, newAvailable: 0, estimatedMinutes: null })
       })
     ))
 })
