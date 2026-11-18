@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
-import { DeckTooSmall, DrillNotAvailable, NotFound, QuestionAlreadyAnswered, SessionNotActive } from "./errors.ts"
+import { DeckTooSmall, DrillNotAvailable, NothingToStudy, NotFound, QuestionAlreadyAnswered, SessionNotActive } from "./errors.ts"
 import { Count, DeckTitle, Drill, Instant, LangTag, Mode, Page, PageQuery, SessionSize } from "./primitives.ts"
 import { DeckDrill, WordWithCards } from "./library.ts"
 import { DeckSlug, SessionSlug, WordSlug } from "./slug.ts"
@@ -93,11 +93,11 @@ export class StudyGroup extends HttpApiGroup.make("study").add(
     success: Schema.Array(DeckDrill),
     error: NotFound
   }),
-  /** Abandons any active session first (one active session per Learner). */
+  /** Abandons any active session first (one active session per Learner). A session always holds at least one word. */
   HttpApiEndpoint.post("start", "/sessions", {
     payload: StartSession,
     success: Session,
-    error: [NotFound, DeckTooSmall, DrillNotAvailable]
+    error: [NotFound, DeckTooSmall, DrillNotAvailable, NothingToStudy]
   }),
   HttpApiEndpoint.get("active", "/sessions/active", { success: Schema.NullOr(Session) }),
   HttpApiEndpoint.post("answer", "/sessions/:sessionSlug/answers", {

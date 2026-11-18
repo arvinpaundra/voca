@@ -37,6 +37,11 @@ export class DrillNotAvailable extends Schema.TaggedError<DrillNotAvailable>()(
 
 export class DeckTooSmall extends Schema.TaggedError<DeckTooSmall>()("DeckTooSmall", fields, { httpApiStatus: 422 }) {}
 
+/** Nothing is due in the scope and no new word is left for today, so there is no session to start. */
+export class NothingToStudy extends Schema.TaggedError<NothingToStudy>()(
+  "NothingToStudy", fields, { httpApiStatus: 422 }
+) {}
+
 export const ImportRowError = Schema.Struct({
   row: Schema.Int,
   column: Schema.NullOr(Schema.String),
