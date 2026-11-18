@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Result } from "effect";
 import { Check } from "lucide-react";
 import type { Learner, LearnerSettings, Mode, SessionSize } from "@voca/contract";
@@ -34,6 +34,11 @@ const DAY_START_HOURS: readonly number[] = [0, 4, 6];
 const hourLabel = (hour: number) => `${String(hour).padStart(2, "0")}:00`;
 
 const timeZones: readonly string[] = Intl.supportedValuesOf("timeZone");
+
+// A grid cell stretches its child across the card by default. Controls with short labels keep their own width.
+function FitContent({ children }: { children: ReactNode }) {
+  return <div style={{ justifySelf: "start", minWidth: 0, maxWidth: "100%" }}>{children}</div>;
+}
 
 function ProfileSection({ learner }: { learner: Learner }) {
   return (
@@ -136,55 +141,65 @@ function StudyPreferences({
           </SettingsRow>
 
           <SettingsRow label="Day starts at" help="Reviews after this hour count for the new day">
-            <SegmentedControl
-              label="Day starts at"
-              options={hours.map((hour) => ({ value: String(hour), label: hourLabel(hour) }))}
-              value={draft.dayStartHour}
-              onChange={(value) => change("dayStartHour", value)}
-            />
+            <FitContent>
+              <SegmentedControl
+                label="Day starts at"
+                options={hours.map((hour) => ({ value: String(hour), label: hourLabel(hour) }))}
+                value={draft.dayStartHour}
+                onChange={(value) => change("dayStartHour", value)}
+              />
+            </FitContent>
           </SettingsRow>
 
           <SettingsRow label="Desired retention" help="How likely you want to recall a word when it comes back (80-95%)">
-            <Input
-              aria-label="Desired retention (%)"
-              type="text"
-              inputMode="numeric"
-              value={draft.desiredRetention}
-              onChange={(event) => change("desiredRetention", event.target.value)}
-              error={errors.desiredRetention}
-            />
+            <FitContent>
+              <Input
+                aria-label="Desired retention (%)"
+                type="text"
+                inputMode="numeric"
+                value={draft.desiredRetention}
+                onChange={(event) => change("desiredRetention", event.target.value)}
+                error={errors.desiredRetention}
+              />
+            </FitContent>
           </SettingsRow>
 
           <SettingsRow label="New words per day" help="How many new words a study day introduces">
-            <Input
-              aria-label="New words per day"
-              type="text"
-              inputMode="numeric"
-              value={draft.newPerDay}
-              onChange={(event) => change("newPerDay", event.target.value)}
-              error={errors.newPerDay}
-            />
+            <FitContent>
+              <Input
+                aria-label="New words per day"
+                type="text"
+                inputMode="numeric"
+                value={draft.newPerDay}
+                onChange={(event) => change("newPerDay", event.target.value)}
+                error={errors.newPerDay}
+              />
+            </FitContent>
           </SettingsRow>
 
           <SettingsRow label="Default session size" help="Change it per session in setup">
-            <SegmentedControl
-              label="Default session size"
-              options={SESSION_SIZES.map((size) => ({ value: String(size), label: String(size) }))}
-              value={String(draft.defaultSessionSize)}
-              onChange={(value) => {
-                const size = SESSION_SIZES.find((candidate) => String(candidate) === value);
-                if (size !== undefined) change("defaultSessionSize", size);
-              }}
-            />
+            <FitContent>
+              <SegmentedControl
+                label="Default session size"
+                options={SESSION_SIZES.map((size) => ({ value: String(size), label: String(size) }))}
+                value={String(draft.defaultSessionSize)}
+                onChange={(value) => {
+                  const size = SESSION_SIZES.find((candidate) => String(candidate) === value);
+                  if (size !== undefined) change("defaultSessionSize", size);
+                }}
+              />
+            </FitContent>
           </SettingsRow>
 
           <SettingsRow label="Default mode" help="Hard mode picks look-alike options">
-            <SegmentedControl
-              label="Default mode"
-              options={MODES}
-              value={draft.defaultMode}
-              onChange={(value) => change("defaultMode", value)}
-            />
+            <FitContent>
+              <SegmentedControl
+                label="Default mode"
+                options={MODES}
+                value={draft.defaultMode}
+                onChange={(value) => change("defaultMode", value)}
+              />
+            </FitContent>
           </SettingsRow>
         </div>
 
