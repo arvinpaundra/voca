@@ -7,13 +7,22 @@
   --color-lime: #c1ff72;
   --color-lime-hover: #aef55a;
   --color-navy: #002f43;
-  --radius-card: 2rem;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --color-m-new: #d6d3d1;
+  --color-m-learning: #c1ff72;
+  --color-m-mature: #002f43;
+  --radius-control: 6px;
+  --radius-small: 5px;
+  --radius-card: 10px;
+  --radius-input: 8px;
+  --radius-badge: 3px;
   --text-2xs: 0.625rem;
   --text-caption: 0.6875rem;
 }
 
 body {
   @apply bg-neutral-100 text-stone-900 antialiased;
+  font-size: 14px;
 }
 
 ::selection {
