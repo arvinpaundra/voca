@@ -22,6 +22,7 @@ const { values: opt, positionals: specs } = parseArgs({
 
 const DESIGN_SCREENS = [
   "dashboard", "decks", "deck", "setup", "complete", "session", "discover", "preview", "settings", "login", "landing",
+  "word", "hard", "session-words",
 ]
 
 if (specs.length === 0 && !opt.design) {
