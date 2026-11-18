@@ -1,7 +1,28 @@
 import type { DateTime, Effect, Option } from "effect"
 import { Context } from "effect"
-import type { Drill, DrillSet, LangTag, Mode, SessionSize, SessionSlug } from "@voca/contract"
+import type { Drill, DrillSet, HardWord, LangTag, Mode, SessionSize, SessionSlug } from "@voca/contract"
 import type { StudyWord } from "../domain/words.ts"
+
+/** A hard Card of the Learner, with the deck of its word: the pool its session question draws options from. */
+export interface HardCard {
+  readonly wordId: bigint
+  readonly drill: Drill
+  readonly due: DateTime.Utc
+  readonly deckId: bigint
+  readonly termLang: LangTag
+}
+
+/** `drill` filters the words to those with a hard card in it; `cursor` continues after the last word of a page. */
+export interface HardWordQuery {
+  readonly drill: Drill | null
+  readonly cursor: string | null
+  readonly limit: number
+}
+
+export interface HardWordPage {
+  readonly items: ReadonlyArray<HardWord>
+  readonly nextCursor: string | null
+}
 
 /** The 1–4 drills of a session, as the contract states them. */
 export type Drills = typeof DrillSet.Type
@@ -65,8 +86,10 @@ export interface ReviewWrite {
 export interface SessionRecord {
   readonly id: bigint
   readonly slug: SessionSlug
-  readonly deckId: bigint
-  readonly termLang: LangTag
+  /** Null for a hard session, which spans decks. */
+  readonly deckId: bigint | null
+  /** Null for a hard session: its questions carry their own language. */
+  readonly termLang: LangTag | null
   readonly drills: Drills
   readonly mode: Mode
   readonly size: SessionSize
@@ -75,7 +98,7 @@ export interface SessionRecord {
 
 export interface NewSession {
   readonly slug: SessionSlug
-  readonly deckId: bigint
+  readonly deckId: bigint | null
   readonly drills: Drills
   readonly mode: Mode
   readonly size: SessionSize
@@ -106,6 +129,7 @@ export interface PendingQuestion {
   readonly drill: Drill
   readonly wordId: bigint
   readonly optionIds: ReadonlyArray<bigint>
+  readonly termLang: LangTag
 }
 
 export interface AnswerRecord {
@@ -130,6 +154,14 @@ export class StudyRepo extends Context.Service<StudyRepo, {
   /** Creates the Learner's card for this word and drill, or replaces its scheduling. */
   saveCard(learnerId: bigint, wordId: bigint, drill: Drill, card: CardWrite): Effect.Effect<void>
   insertReview(learnerId: bigint, review: ReviewWrite): Effect.Effect<void>
+  /** The Learner's hard cards in these drills, of live words in live decks they own. */
+  hardCards(learnerId: bigint, drills: ReadonlyArray<Drill>): Effect.Effect<ReadonlyArray<HardCard>>
+  /** The Learner's hard words, keyset-paged; each carries its hard cards and its deck. */
+  hardWords(learnerId: bigint, query: HardWordQuery): Effect.Effect<HardWordPage>
+  /** Sets or clears the hard flag of the Learner's card; false when there is no such card. */
+  setHard(learnerId: bigint, wordSlug: string, drill: Drill, isHard: boolean): Effect.Effect<boolean>
+  /** The deck a word lives in, deleted or not: a question keeps the pool it was asked from. */
+  deckOfWord(wordId: bigint): Effect.Effect<OwnedDeck>
   /** The Learner's active session, at most one. */
   findActiveSession(learnerId: bigint): Effect.Effect<Option.Option<SessionRecord>>
   /** The Learner's session with this slug, locked until the surrounding `Transaction` ends. */

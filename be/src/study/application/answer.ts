@@ -122,7 +122,9 @@ const askAgain = (input: {
   Effect.gen(function* () {
     const repo = yield* StudyRepo
     const { session, question, prompt } = input
-    const words = yield* repo.deckWords(session.deckId)
+    // The options come from the word's own deck, which is the session's deck for a deck session.
+    const deck = yield* repo.deckOfWord(question.wordId)
+    const words = yield* repo.deckWords(deck.id)
     const options = yield* pickOptions(words, question.drill, prompt).pipe(
       Effect.catchTag("DeckTooSmallError", () => Effect.succeed(input.previousOptions))
     )
@@ -137,7 +139,14 @@ const askAgain = (input: {
       optionIds: options.map((option) => option.id)
     })
 
-    return questionOf({ position, attempt, drill: question.drill, word: prompt, options, termLang: session.termLang })
+    return questionOf({
+      position,
+      attempt,
+      drill: question.drill,
+      word: prompt,
+      options,
+      termLang: deck.termLang
+    })
   })
 
 /**
