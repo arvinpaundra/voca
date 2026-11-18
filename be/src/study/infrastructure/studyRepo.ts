@@ -1,11 +1,32 @@
 import { DateTime, Effect, Layer, Option, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
-import { Drill, DrillSet, LangTag, Mode, SessionSize, SessionSlug, SessionStatus, WordSlug } from "@voca/contract"
+import {
+  DeckSlug,
+  DeckTitle,
+  Drill,
+  DrillSet,
+  Example,
+  LangTag,
+  Meaning,
+  Mode,
+  Notes,
+  Reading,
+  SessionSize,
+  SessionSlug,
+  SessionStatus,
+  Term,
+  WordCard,
+  WordSlug
+} from "@voca/contract"
+import type { HardWord } from "@voca/contract"
 import {
   StudyRepo,
   type AnswerRecord,
   type CardState,
   type CardWrite,
+  type HardCard,
+  type HardWordPage,
+  type HardWordQuery,
   type NewQuestion,
   type NewSession,
   type OwnedDeck,
@@ -17,6 +38,61 @@ import {
 
 const Id = Schema.BigIntFromString
 const Count = Schema.Number
+
+/** A cursor is `<created_at millis>:<id>` of the last word on the page: the keyset to continue after. */
+const CursorParts = Schema.Tuple([Schema.NumberFromString, Schema.BigIntFromString])
+
+const decodeCursor = (cursor: string | null) => {
+  return Option.map(Schema.decodeUnknownOption(CursorParts)((cursor ?? "").split(":")), ([createdAt, id]) => ({
+    createdAt,
+    id
+  }))
+}
+
+const HardCardRow = Schema.Struct({
+  wordId: Id,
+  drill: Drill,
+  due: Schema.DateTimeUtcFromDate,
+  deckId: Id,
+  termLang: LangTag
+})
+
+const HardWordRow = Schema.Struct({
+  id: Id,
+  slug: WordSlug,
+  term: Term,
+  reading: Schema.NullOr(Reading),
+  meaning: Meaning,
+  example: Schema.NullOr(Example),
+  notes: Schema.NullOr(Notes),
+  createdAt: Schema.DateTimeUtcFromDate,
+  deckSlug: DeckSlug,
+  deckTitle: DeckTitle,
+  deckTermLang: LangTag,
+  deckMeaningLang: LangTag,
+  cards: Schema.Array(WordCard)
+})
+
+const toHardWord = (row: typeof HardWordRow.Type): HardWord => {
+  return {
+    slug: row.slug,
+    term: row.term,
+    reading: row.reading,
+    meaning: row.meaning,
+    example: row.example,
+    notes: row.notes,
+    createdAt: row.createdAt,
+    cards: row.cards,
+    deck: {
+      slug: row.deckSlug,
+      title: row.deckTitle,
+      termLang: row.deckTermLang,
+      meaningLang: row.deckMeaningLang
+    }
+  }
+}
+
+const WordDeckRow = Schema.Struct({ deckId: Id, termLang: LangTag })
 
 const SettingsRow = Schema.Struct({
   timezone: Schema.String,
@@ -55,8 +131,8 @@ const CardRow = Schema.Struct({
 const SessionRow = Schema.Struct({
   id: Id,
   slug: SessionSlug,
-  deckId: Id,
-  termLang: LangTag,
+  deckId: Schema.NullOr(Id),
+  termLang: Schema.NullOr(LangTag),
   drills: DrillSet,
   mode: Mode,
   size: SessionSize,
@@ -77,7 +153,8 @@ const PendingRow = Schema.Struct({
   attempt: Count,
   drill: Drill,
   wordId: Id,
-  optionIds: Schema.Array(Id)
+  optionIds: Schema.Array(Id),
+  termLang: LangTag
 })
 
 /** A failing statement is a defect: the ports have no error channel for database errors, so calls end in `orDie`. */
@@ -153,13 +230,14 @@ export const StudyRepoLive = Layer.effect(
           AND deleted_at IS NULL`
     })
 
+    // A hard session has no scope deck, so the deck is a LEFT JOIN: its language is null then.
     const activeSessionOf = SqlSchema.findOneOption({
       Request: Schema.BigInt,
       Result: SessionRow,
       execute: (learnerId) => sql`
         SELECT s.id::text AS id, s.slug, s.scope_deck_id::text AS "deckId", d.term_lang AS "termLang",
                s.drills, s.mode, s.size, s.status
-        FROM study_sessions s JOIN decks d ON d.id = s.scope_deck_id
+        FROM study_sessions s LEFT JOIN decks d ON d.id = s.scope_deck_id
         WHERE s.learner_id = ${learnerId} AND s.status = 'active'`
     })
 
@@ -169,7 +247,7 @@ export const StudyRepoLive = Layer.effect(
       execute: ({ learnerId, slug }) => sql`
         SELECT s.id::text AS id, s.slug, s.scope_deck_id::text AS "deckId", d.term_lang AS "termLang",
                s.drills, s.mode, s.size, s.status
-        FROM study_sessions s JOIN decks d ON d.id = s.scope_deck_id
+        FROM study_sessions s LEFT JOIN decks d ON d.id = s.scope_deck_id
         WHERE s.slug = ${slug} AND s.learner_id = ${learnerId}
         FOR UPDATE OF s`
     })
@@ -184,13 +262,95 @@ export const StudyRepoLive = Layer.effect(
         FOR UPDATE`
     })
 
+    // The language comes from the question's own word's deck, so a hard session can mix decks.
     const pendingOf = SqlSchema.findAll({
       Request: Schema.BigInt,
       Result: PendingRow,
       execute: (sessionId) => sql`
-        SELECT position, attempt, drill, word_id::text AS "wordId", option_ids::text[] AS "optionIds"
-        FROM session_questions WHERE session_id = ${sessionId} AND answered_at IS NULL
-        ORDER BY position ASC`
+        SELECT q.position, q.attempt, q.drill, q.word_id::text AS "wordId",
+               q.option_ids::text[] AS "optionIds", d.term_lang AS "termLang"
+        FROM session_questions q
+          JOIN words w ON w.id = q.word_id
+          JOIN decks d ON d.id = w.deck_id
+        WHERE q.session_id = ${sessionId} AND q.answered_at IS NULL
+        ORDER BY q.position ASC`
+    })
+
+    const deckOfWordOf = SqlSchema.findOne({
+      Request: Schema.BigInt,
+      Result: WordDeckRow,
+      execute: (wordId) => sql`
+        SELECT w.deck_id::text AS "deckId", d.term_lang AS "termLang"
+        FROM words w JOIN decks d ON d.id = w.deck_id
+        WHERE w.id = ${wordId}`
+    })
+
+    // The Learner's hard cards in the drills, of live words in live decks they own.
+    const hardCardsOf = SqlSchema.findAll({
+      Request: Schema.Struct({ learnerId: Schema.BigInt, drills: Schema.Array(Schema.String) }),
+      Result: HardCardRow,
+      execute: ({ learnerId, drills }) => sql`
+        SELECT c.word_id::text AS "wordId", c.drill, c.due, d.id::text AS "deckId", d.term_lang AS "termLang"
+        FROM cards c
+          JOIN words w ON w.id = c.word_id
+          JOIN decks d ON d.id = w.deck_id
+        WHERE c.learner_id = ${learnerId} AND c.is_hard AND c.deleted_at IS NULL
+          AND c.drill IN ${sql.in(drills)}
+          AND w.deleted_at IS NULL AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL`
+    })
+
+    // One row per word, with the Learner's hard cards as a JSON array. The keyset works as in the word list.
+    const hardWordRows = SqlSchema.findAll({
+      Request: Schema.Struct({
+        learnerId: Schema.BigInt,
+        drill: Schema.NullOr(Drill),
+        after: Schema.NullOr(Schema.Struct({ createdAt: Schema.Number, id: Schema.BigInt })),
+        limit: Schema.Number
+      }),
+      Result: HardWordRow,
+      execute: ({ learnerId, drill, after, limit }) => {
+        const afterAt = after === null ? null : new Date(after.createdAt)
+        const afterId = after === null ? null : after.id
+
+        return sql`
+          SELECT w.id::text AS id, w.slug, w.term, w.reading, w.meaning, w.example, w.notes,
+                 w.created_at AS "createdAt", d.slug AS "deckSlug", d.title AS "deckTitle",
+                 d.term_lang AS "deckTermLang", d.meaning_lang AS "deckMeaningLang",
+                 COALESCE((
+                   SELECT json_agg(json_build_object('drill', c.drill, 'due', c.due,
+                                                     'stabilityDays', c.stability, 'isHard', c.is_hard))
+                   FROM cards c
+                   WHERE c.word_id = w.id AND c.learner_id = ${learnerId} AND c.is_hard AND c.deleted_at IS NULL
+                 ), '[]'::json) AS cards
+          FROM words w JOIN decks d ON d.id = w.deck_id
+          WHERE d.owner_id = ${learnerId} AND d.deleted_at IS NULL AND w.deleted_at IS NULL
+            AND EXISTS (
+              SELECT 1 FROM cards h
+              WHERE h.word_id = w.id AND h.learner_id = ${learnerId} AND h.is_hard AND h.deleted_at IS NULL
+                AND (${drill}::text IS NULL OR h.drill = ${drill}::text))
+            AND (${afterAt}::timestamptz IS NULL
+                 OR (w.created_at, w.id) > (${afterAt}::timestamptz, ${afterId}::bigint))
+          ORDER BY w.created_at ASC, w.id ASC
+          LIMIT ${limit}`
+      }
+    })
+
+    // The UPDATE matches the Learner's own card only; a word or card that isn't theirs matches no row.
+    const setHardOf = SqlSchema.findOneOption({
+      Request: Schema.Struct({
+        learnerId: Schema.BigInt,
+        wordSlug: Schema.String,
+        drill: Drill,
+        isHard: Schema.Boolean
+      }),
+      Result: Schema.Struct({ id: Id }),
+      execute: ({ learnerId, wordSlug, drill, isHard }) => sql`
+        UPDATE cards AS c SET is_hard = ${isHard}
+        FROM words w JOIN decks d ON d.id = w.deck_id
+        WHERE c.word_id = w.id AND w.slug = ${wordSlug} AND c.drill = ${drill}
+          AND c.learner_id = ${learnerId} AND d.owner_id = ${learnerId}
+          AND c.deleted_at IS NULL AND w.deleted_at IS NULL AND d.deleted_at IS NULL
+        RETURNING c.id::text AS id`
     })
 
     const maxPositionOf = SqlSchema.findOne({
@@ -211,7 +371,7 @@ export const StudyRepoLive = Layer.effect(
     const insertedSession = SqlSchema.findOne({
       Request: Schema.Struct({
         learnerId: Schema.BigInt,
-        deckId: Schema.BigInt,
+        deckId: Schema.NullOr(Schema.BigInt),
         slug: Schema.String,
         drills: Schema.Array(Schema.String),
         mode: Schema.String,
@@ -301,6 +461,38 @@ export const StudyRepoLive = Layer.effect(
             difficulty_after: review.difficultyAfter,
             scheduled_days: review.scheduledDays
           })}`.pipe(Effect.asVoid, Effect.orDie),
+
+      hardCards: (learnerId, drills) => hardCardsOf({ learnerId, drills: [...drills] }).pipe(Effect.orDie),
+
+      hardWords: (learnerId, query: HardWordQuery) =>
+        Effect.gen(function* () {
+          // One extra row tells whether a next page exists.
+          const rows = yield* hardWordRows({
+            learnerId,
+            drill: query.drill,
+            after: Option.getOrNull(decodeCursor(query.cursor)),
+            limit: query.limit + 1
+          })
+          const page = rows.slice(0, query.limit)
+          const last = page.at(-1)
+          const hasMore = rows.length > query.limit
+          const nextCursor =
+            hasMore && last !== undefined ? `${DateTime.toEpochMillis(last.createdAt)}:${last.id}` : null
+
+          return { items: page.map(toHardWord), nextCursor } satisfies HardWordPage
+        }).pipe(Effect.orDie),
+
+      setHard: (learnerId, wordSlug, drill, isHard) =>
+        setHardOf({ learnerId, wordSlug, drill, isHard }).pipe(
+          Effect.map(Option.isSome),
+          Effect.orDie
+        ),
+
+      deckOfWord: (wordId) =>
+        deckOfWordOf(wordId).pipe(
+          Effect.map((row): OwnedDeck => ({ id: row.deckId, termLang: row.termLang })),
+          Effect.orDie
+        ),
 
       findActiveSession: (learnerId) =>
         activeSessionOf(learnerId).pipe(

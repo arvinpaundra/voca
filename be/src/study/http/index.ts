@@ -8,9 +8,10 @@ import {
   SessionNotActive as SessionNotActiveContract,
   VocaApi
 } from "@voca/contract"
-import { abandonSession, activeSession, startSession } from "../application/sessions.ts"
+import { abandonSession, activeSession, startHardSession, startSession } from "../application/sessions.ts"
 import { answerQuestion } from "../application/answer.ts"
 import { deckDrills } from "../application/deckDrills.ts"
+import { listHardWords, markHard, unmarkHard } from "../application/hardWords.ts"
 import type { StudyRepo } from "../application/studyRepo.ts"
 import type { Transaction } from "../../shared/transaction.ts"
 
@@ -21,7 +22,7 @@ const alreadyAnswered = () =>
 
 const notActive = () => Effect.fail(new SessionNotActiveContract({ message: "The session has ended" }))
 
-// Each endpoint calls its use case and maps the domain errors to the contract's. Hard Words belong to a later feature.
+// Each endpoint calls its use case and maps the domain errors to the contract's.
 export const StudyHandlers = HttpApiBuilder.group(
   VocaApi,
   "study",
@@ -36,9 +37,18 @@ export const StudyHandlers = HttpApiBuilder.group(
         ),
 
       start: ({ payload }) => {
-        // The Hard Words place is a later feature, so its scope has no session yet.
         if (payload.scope.kind === "hard") {
-          return Effect.die("not implemented: hard words")
+          return startHardSession({ drills: payload.drills, size: payload.size }).pipe(
+            Effect.provideContext(ports),
+            Effect.catchTag(
+              "DeckTooSmallError",
+              () => Effect.fail(new DeckTooSmall({ message: "The deck needs at least 4 words with distinct answers" }))
+            ),
+            Effect.catchTag(
+              "DrillNotAvailableError",
+              () => Effect.fail(new DrillNotAvailable({ message: "None of these drills applies to a hard word" }))
+            )
+          )
         }
 
         return startSession(payload.scope.deckSlug, { drills: payload.drills, size: payload.size }).pipe(
@@ -72,9 +82,19 @@ export const StudyHandlers = HttpApiBuilder.group(
           Effect.catchTag("SessionNotFound", notFound("Session"))
         ),
 
-      hardWords: () => Effect.die("not implemented: hard words"),
-      markHard: () => Effect.die("not implemented: hard words"),
-      unmarkHard: () => Effect.die("not implemented: hard words")
+      hardWords: ({ query }) => listHardWords(query).pipe(Effect.provideContext(ports)),
+
+      markHard: ({ params }) =>
+        markHard(params.wordSlug, params.drill).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("CardNotFound", notFound("Card"))
+        ),
+
+      unmarkHard: ({ params }) =>
+        unmarkHard(params.wordSlug, params.drill).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("CardNotFound", notFound("Card"))
+        )
     })
   })
 )

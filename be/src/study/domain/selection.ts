@@ -3,6 +3,32 @@ import { OPTIONS_PER_QUESTION, type Drill } from "@voca/contract"
 import { DeckTooSmallError } from "./errors.ts"
 import { appliesTo, answerKey, type StudyWord } from "./words.ts"
 
+/**
+ * Hard words: each word is asked once, in the drill where its hard card is most overdue. Due words come first, most
+ * overdue first, then the rest by due. `due` is epoch milliseconds; a card is due before `dueBefore`.
+ */
+export const pickHard = <T extends { readonly wordId: bigint; readonly due: number }>(input: {
+  readonly cards: ReadonlyArray<T>
+  readonly dueBefore: number
+  readonly size: number
+}): Array<T> => {
+  const earliest = new Map<bigint, T>()
+
+  for (const card of input.cards) {
+    const current = earliest.get(card.wordId)
+
+    if (current === undefined || card.due < current.due) {
+      earliest.set(card.wordId, card)
+    }
+  }
+
+  const isDue = (card: T): boolean => card.due < input.dueBefore
+
+  return [...earliest.values()]
+    .sort((a, b) => Number(isDue(b)) - Number(isDue(a)) || a.due - b.due)
+    .slice(0, input.size)
+}
+
 /** One word asked in one drill. */
 export interface Pick {
   readonly word: StudyWord
