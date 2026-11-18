@@ -345,12 +345,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 760px) {
   .deck, .card .deck {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      "title title title menu"
-      "tags due words cta";
     align-items: center;
     gap: 10px 12px;
     padding: 14px 16px;
+  }
+  .deck {
+    grid-template-areas:
+      "title title title menu"
+      "tags tags tags tags"
+      "due words . cta";
+  }
+  .card .deck {
+    grid-template-areas:
+      "title title title menu"
+      "tags due words cta";
   }
   .deck .deck-top > .deck-title { grid-area: title; }
   .deck .deck-top > :not(.deck-title) {
@@ -359,6 +367,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   }
   .deck .deck-tags {
     display: flex;
+    flex-wrap: wrap;
     min-width: 0;
     grid-area: tags;
   }
