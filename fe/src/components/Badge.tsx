@@ -1,34 +1,34 @@
 import type { ReactNode } from "react";
 import { cx } from "./cx";
 
-type BadgeVariant = "default" | "lime" | "outline" | "new" | "learning" | "mature";
+// new/learning/mature are kept for pages written before ADR 36: new and learning render the plain badge, mature navy.
+export type BadgeVariant = "default" | "outline" | "lime" | "navy" | "new" | "learning" | "mature";
 
-const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-stone-100 text-stone-700",
-  lime: "bg-lime text-stone-900",
-  outline: "border border-stone-300 text-stone-600",
-  new: "bg-m-new text-stone-900",
-  learning: "bg-m-learning text-stone-900",
-  mature: "bg-m-mature text-white",
+const VARIANT: Record<BadgeVariant, string | false> = {
+  default: false,
+  new: false,
+  learning: false,
+  outline: "badge-outline",
+  lime: "badge-lime",
+  navy: "badge-navy",
+  mature: "badge-navy",
 };
 
 export function Badge({
   variant = "default",
+  dot,
+  lang,
   className,
   children,
 }: {
   variant?: BadgeVariant;
+  dot?: boolean;
+  lang?: boolean;
   className?: string | undefined;
   children: ReactNode;
 }) {
   return (
-    <span
-      className={cx(
-        "inline-flex h-5 items-center gap-1.5 rounded-[3px] px-2 text-xs font-medium",
-        variantClasses[variant],
-        className,
-      )}
-    >
+    <span className={cx("badge", VARIANT[variant], dot === true && "badge-dot", lang === true && "lang", className)}>
       {children}
     </span>
   );

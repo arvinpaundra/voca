@@ -20,9 +20,12 @@
   --text-caption: 0.6875rem;
 }
 
-body {
-  @apply bg-neutral-100 text-stone-900 antialiased;
-  font-size: 14px;
+/* Furigana: the readings above the term stay small and quiet. */
+ruby rt {
+  font-family: var(--f-body);
+  font-size: 0.32em;
+  color: var(--muted);
+  letter-spacing: 0.05em;
 }
 
 ::selection {

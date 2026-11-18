@@ -15,9 +15,14 @@ export function Section({
   return (
     <section className="pt-14" id={id}>
       <Container>
-        <header className="mb-5 flex items-baseline gap-3 border-b border-stone-200 pb-2">
-          <h2 className="text-[28px]">{title}</h2>
-          <span className="label">{eyebrow}</span>
+        <header
+          className="mb-5 flex items-baseline gap-3 pb-2"
+          style={{ borderBottom: "1px solid var(--line)" }}
+        >
+          <h2 className="h1" style={{ fontSize: 28, lineHeight: 1.1 }}>
+            {title}
+          </h2>
+          <span className="eyebrow">{eyebrow}</span>
         </header>
         {children}
       </Container>

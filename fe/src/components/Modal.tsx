@@ -6,12 +6,14 @@ const FOCUSABLE = "button, [href], input, select, textarea, [tabindex]:not([tabi
 export function Modal({
   open,
   title,
+  description,
   onClose,
   footer,
   children,
 }: {
   open: boolean;
   title: string;
+  description?: string;
   onClose: () => void;
   footer?: ReactNode;
   children: ReactNode;
@@ -46,25 +48,21 @@ export function Modal({
         event.preventDefault();
         onClose();
       }}
-      className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-card border border-stone-200 bg-white p-0 text-stone-900 backdrop:bg-black/40"
+      style={{ border: 0, padding: 0, background: "transparent", margin: "auto", maxWidth: "calc(100vw - 32px)" }}
     >
-      <div className="flex items-center justify-between gap-4 border-b border-stone-200 px-4 py-3">
-        <h2 id={titleId} className="font-montserrat text-base font-semibold">
-          {title}
-        </h2>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[5px] text-stone-500 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-        >
-          <X className="size-4" aria-hidden="true" />
-        </button>
+      <div className="modal">
+        <div className="modal-head">
+          <div>
+            <h3 id={titleId}>{title}</h3>
+            {description !== undefined && <p>{description}</p>}
+          </div>
+          <button type="button" className="btn-icon" aria-label="Close" onClick={onClose}>
+            <X className="i" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer !== undefined && <div className="modal-foot">{footer}</div>}
       </div>
-      <div className="p-4 text-sm">{children}</div>
-      {footer !== undefined && (
-        <div className="flex justify-end gap-2 border-t border-stone-200 px-4 py-3">{footer}</div>
-      )}
     </dialog>
   );
 }

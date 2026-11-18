@@ -8,12 +8,14 @@ export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  full,
   className,
 }: {
   label: string;
   options: ReadonlyArray<SegmentOption<T>>;
   value: T;
   onChange: (value: T) => void;
+  full?: boolean;
   className?: string | undefined;
 }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -35,11 +37,7 @@ export function SegmentedControl<T extends string>({
   };
 
   return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className={cx("inline-flex gap-0.5 rounded-lg border border-stone-200 bg-stone-100 p-0.5", className)}
-    >
+    <div role="radiogroup" aria-label={label} className={cx("seg", full === true && "full", className)}>
       {options.map((option, index) => {
         const checked = option.value === value;
 
@@ -55,10 +53,6 @@ export function SegmentedControl<T extends string>({
             tabIndex={checked ? 0 : -1}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => move(event, index)}
-            className={cx(
-              "h-7 cursor-pointer rounded-[5px] px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy",
-              checked ? "bg-white text-stone-900 ring-1 ring-stone-200" : "text-stone-600 hover:text-stone-900",
-            )}
           >
             {option.label}
           </button>

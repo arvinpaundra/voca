@@ -1,13 +1,36 @@
 import type { ReactNode } from "react";
+import { ArrowLeft } from "lucide-react";
 
-export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+export function PageHeader({
+  title,
+  eyebrow,
+  description,
+  meta,
+  back,
+  actions,
+}: {
+  title: string;
+  eyebrow?: string;
+  description?: string;
+  meta?: ReactNode;
+  back?: { href: string; label: string };
+  actions?: ReactNode;
+}) {
   return (
-    <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-      <div className="min-w-0">
-        <h1 className="font-montserrat text-xl/7 font-semibold tracking-[-0.02em] text-stone-900">{title}</h1>
-        {description !== undefined && <p className="mt-1 text-sm text-stone-500">{description}</p>}
+    <header className="page-head">
+      <div className="ph-text">
+        {back !== undefined && (
+          <a className="back" href={back.href}>
+            <ArrowLeft className="i" aria-hidden="true" />
+            {back.label}
+          </a>
+        )}
+        {eyebrow !== undefined && <span className="eyebrow">{eyebrow}</span>}
+        <h1 className="h1">{title}</h1>
+        {meta !== undefined && <div className="ph-meta">{meta}</div>}
+        {description !== undefined && <p className="sub">{description}</p>}
       </div>
-      {actions !== undefined && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions !== undefined && <div className="ph-actions">{actions}</div>}
     </header>
   );
 }

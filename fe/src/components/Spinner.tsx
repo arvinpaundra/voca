@@ -19,7 +19,8 @@ export function Spinner({
     <div
       role="status"
       aria-label={label}
-      className={cx("animate-spin rounded-full border-stone-200 border-t-lime", sizeClasses[size], className)}
+      className={cx("animate-spin rounded-full", sizeClasses[size], className)}
+      style={{ borderColor: "var(--line-strong)", borderTopColor: "var(--navy)" }}
     />
   );
 }

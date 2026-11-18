@@ -1,40 +1,36 @@
 import { cx } from "./cx";
 
-type AvatarProps = {
+const SMALL = { width: 28, height: 28 } as const;
+
+export function Avatar({
+  name,
+  src,
+  size = "md",
+  tone = "light",
+  className,
+}: {
   name: string;
   src?: string | null | undefined;
   size?: "sm" | "md" | "lg";
   tone?: "light" | "dark";
   className?: string | undefined;
-};
+}) {
+  const initial = name.trim().charAt(0).toUpperCase();
+  const classes = cx("avatar", tone === "dark" && "dark", size === "lg" && "lg", className);
 
-const sizeClasses = {
-  sm: "size-6 text-[10px]",
-  md: "size-8 text-xs",
-  lg: "size-10 text-sm",
-};
-
-const toneClasses = {
-  light: "bg-stone-200 text-stone-600",
-  dark: "bg-stone-700 text-stone-200",
-};
-
-// The initial stands in for the picture when the learner has no avatar.
-export function Avatar({ name, src = null, size = "md", tone = "light", className }: AvatarProps) {
-  const classes = cx(
-    "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-bold uppercase",
-    sizeClasses[size],
-    toneClasses[tone],
-    className,
-  );
-
-  if (src !== null) {
-    return <img className={cx(classes, "object-cover")} src={src} alt="" />;
+  if (src !== undefined && src !== null && src !== "") {
+    return (
+      <img
+        src={src}
+        alt=""
+        className={classes}
+        style={{ objectFit: "cover", ...(size === "sm" ? SMALL : {}) }}
+      />
+    );
   }
 
-  const initial = name.trim().slice(0, 1).toUpperCase() || "?";
   return (
-    <span className={classes} aria-hidden="true">
+    <span className={classes} style={size === "sm" ? SMALL : undefined}>
       {initial}
     </span>
   );
