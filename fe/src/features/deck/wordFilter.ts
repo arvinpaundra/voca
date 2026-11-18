@@ -1,7 +1,9 @@
 import { DateTime } from "effect";
 import type { WordWithCards } from "@voca/contract";
 
-export type WordFilter = "all" | "due" | "new" | "hard";
+export type WordFilter = "all" | "due" | "new" | "hard" | "mature";
+
+const MATURE_DAYS = 21;
 
 /** Whether a word belongs under a filter, judged from its Cards at `now`. */
 export const matchesWordFilter = (word: WordWithCards, filter: WordFilter, now: DateTime.Utc): boolean => {
@@ -17,5 +19,8 @@ export const matchesWordFilter = (word: WordWithCards, filter: WordFilter, now: 
 
     case "hard":
       return word.cards.some((card) => card.isHard);
+
+    case "mature":
+      return word.cards.some((card) => card.stabilityDays >= MATURE_DAYS);
   }
 };

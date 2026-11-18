@@ -11,9 +11,6 @@ type WordFormProps = {
   onSubmit: () => void;
 };
 
-const textareaClass =
-  "w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 hover:border-stone-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy";
-
 // The fields only: the dialog footer owns the actions and submits this form through `formRef`.
 export function WordForm({ labels, draft, formRef, onChange, onSubmit }: WordFormProps) {
   const change = (name: keyof WordDraft) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -33,13 +30,13 @@ export function WordForm({ labels, draft, formRef, onChange, onSubmit }: WordFor
 
       <Input label="Meaning" dir="auto" required value={draft.meaning} onChange={change("meaning")} />
 
-      <div className="grid gap-1.5">
-        <label htmlFor="word-example" className="text-xs font-medium text-stone-700">
+      <div className="field">
+        <label htmlFor="word-example">
           Example
         </label>
         <textarea
           id="word-example"
-          className={textareaClass}
+          className="textarea"
           dir="auto"
           rows={2}
           value={draft.example}
@@ -47,13 +44,13 @@ export function WordForm({ labels, draft, formRef, onChange, onSubmit }: WordFor
         />
       </div>
 
-      <div className="grid gap-1.5">
-        <label htmlFor="word-notes" className="text-xs font-medium text-stone-700">
+      <div className="field">
+        <label htmlFor="word-notes">
           Notes
         </label>
         <textarea
           id="word-notes"
-          className={textareaClass}
+          className="textarea"
           dir="auto"
           rows={2}
           value={draft.notes}

@@ -1,15 +1,17 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { DateTime, Result } from "effect";
 import type { Deck, DeckStats, Word, WordWithCards } from "@voca/contract";
 import { wordLabels } from "@voca/contract";
+import { ArrowRight, Plus } from "lucide-react";
+import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
-import { Input } from "../../components/Input";
 import { Menu } from "../../components/Menu";
 import { PageHeader } from "../../components/PageHeader";
-import { SegmentedControl } from "../../components/SegmentedControl";
+import { SearchInput } from "../../components/SearchInput";
 import { Skeleton } from "../../components/Skeleton";
+import { Tabs, type Tab } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
 import { DeckModal } from "../decks/DeckModal";
 import { DeleteDeckModal } from "../decks/DeleteDeckModal";
@@ -17,7 +19,7 @@ import { DeckProgress } from "./DeckProgress";
 import { DeleteWordModal } from "./DeleteWordModal";
 import { matchesWordFilter, type WordFilter } from "./wordFilter";
 import { WordModal } from "./WordModal";
-import { WordTable } from "./WordTable";
+import { WordList } from "./WordList";
 
 type DeckViewProps = {
   deck: Deck;
@@ -28,13 +30,6 @@ type WordEditor = { kind: "add" } | { kind: "edit"; word: WordWithCards } | null
 
 // The search box fills `q` only when it has text, so an empty search lists every word.
 const searchQuery = (query: string) => (query === "" ? {} : { q: query });
-
-const filterOptions: readonly { value: WordFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "due", label: "Due" },
-  { value: "new", label: "New" },
-  { value: "hard", label: "Hard" },
-];
 
 export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const labels = wordLabels(deck.termLang);
@@ -95,10 +90,12 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     };
   }, [deck.slug, statsVersion]);
 
-  const search = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setQuery(searchInput.trim());
-  };
+  // The words are searched on the server, so typing waits a moment before asking.
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(searchInput.trim()), 250);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const loadMore = async () => {
     if (nextCursor === null || loadingMore) return;
@@ -163,121 +160,127 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const shown = words?.filter((word) => matchesWordFilter(word, filter, now)) ?? null;
   const unfiltered = query === "" && filter === "all";
 
-  const languages = `${deck.termLang} → ${deck.meaningLang}`;
-  const visibility = deck.visibility === "public" ? " · Public" : "";
+  const wordCount = stats === null ? null : stats.maturity.new + stats.maturity.learning + stats.maturity.mature;
+
+  const filterTabs: readonly Tab<WordFilter>[] = [
+    { value: "all", label: "All", count: wordCount ?? undefined },
+    { value: "due", label: "Due", count: stats?.dueToday },
+    { value: "new", label: "New", count: stats?.maturity.new },
+    { value: "hard", label: "Hard" },
+    { value: "mature", label: "Mature", count: stats?.maturity.mature },
+  ];
 
   return (
-    <section>
-      <a className="mb-4 inline-block text-sm text-stone-500 no-underline hover:text-stone-900" href="/app/decks">
-        ← Decks
-      </a>
-
-      <PageHeader
-        title={deck.title}
-        description={`${languages}${visibility}`}
-        actions={
-          <>
-            <Button href={`/app/decks/${deck.slug}/study`}>Study</Button>
-            <Menu
-              label="Deck actions"
-              items={[
-                {
-                  label: deck.visibility === "public" ? "Unpublish" : "Publish",
-                  onSelect: () => void toggleVisibility(),
-                },
-                { label: "Edit deck", onSelect: () => setEditingDeck(true) },
-                { label: "Delete deck", danger: true, onSelect: () => setConfirmingDelete(true) },
-              ]}
-            />
-          </>
-        }
-      />
-
-      <div className="grid gap-8">
-        {(deck.description !== "" || deck.visibility === "public" || deck.forkedFrom !== null) && (
-          <div className="grid gap-2 text-sm text-stone-600">
-            {deck.description !== "" && <p dir="auto">{deck.description}</p>}
-
-            {deck.visibility === "public" && <p className="text-stone-500">{deck.forkCount} forks</p>}
-
-            {deck.forkedFrom !== null &&
-              (deck.forkedFrom.deleted ? (
-                <p className="text-stone-500">Forked from {deck.forkedFrom.title} (deleted)</p>
-              ) : (
-                <p className="text-stone-500">
-                  Forked from{" "}
-                  <a className="text-navy underline" href={`/app/discover/${deck.forkedFrom.slug}`} dir="auto">
-                    {deck.forkedFrom.title}
-                  </a>
-                </p>
-              ))}
-          </div>
-        )}
-
-        {visibilityError !== null && (
-          <p className="text-sm text-red-600" role="alert">
-            {visibilityError}
-          </p>
-        )}
+    <>
+      <div className="deck-hero">
+        <PageHeader
+          back={{ href: "/app/decks", label: "Decks" }}
+          title={deck.title}
+          meta={
+            <>
+              <Badge variant="outline" lang>
+                {`${deck.termLang} → ${deck.meaningLang}`}
+              </Badge>
+              {deck.visibility === "public" && <Badge variant="lime">Public</Badge>}
+              {deck.visibility === "public" && <span>{deck.forkCount} forks</span>}
+              {deck.forkedFrom !== null && (
+                <>
+                  <span className="dot"></span>
+                  {deck.forkedFrom.deleted ? (
+                    <span>Forked from {deck.forkedFrom.title} (deleted)</span>
+                  ) : (
+                    <span>
+                      Forked from{" "}
+                      <a href={`/app/discover/${deck.forkedFrom.slug}`} dir="auto" style={{ color: "var(--navy)" }}>
+                        {deck.forkedFrom.title}
+                      </a>
+                    </span>
+                  )}
+                </>
+              )}
+            </>
+          }
+          {...(deck.description !== "" && { description: deck.description })}
+          actions={
+            <>
+              <Button href={`/app/decks/${deck.slug}/study`}>
+                {stats === null ? "Study" : `Study ${stats.dueToday} due`}
+                <ArrowRight className="i" aria-hidden="true" />
+              </Button>
+              <Menu
+                trigger="secondary"
+                label="More actions"
+                items={[
+                  { label: "Edit deck", onSelect: () => setEditingDeck(true) },
+                  {
+                    label: deck.visibility === "public" ? "Unpublish" : "Publish",
+                    onSelect: () => void toggleVisibility(),
+                  },
+                  { label: "Delete deck", danger: true, onSelect: () => setConfirmingDelete(true) },
+                ]}
+              />
+            </>
+          }
+        />
 
         {stats !== null && <DeckProgress stats={stats} />}
+      </div>
 
-        <div className="grid gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <form className="min-w-0 flex-1" role="search" onSubmit={search}>
-              <Input
-                type="search"
-                dir="auto"
-                aria-label="Search words"
-                placeholder="Search words"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-              />
-            </form>
+      {visibilityError !== null && <ErrorState message={visibilityError} />}
 
+      <div className="grid gap-3">
+        <div className="toolbar">
+          <SearchInput
+            label="Search words"
+            placeholder={wordCount === null ? "Search words" : `Search ${wordCount} words`}
+            value={searchInput}
+            onChange={setSearchInput}
+          />
+
+          <Button variant="secondary" onClick={() => setWordEditor({ kind: "add" })}>
+            <Plus className="i" aria-hidden="true" />
+            Add word
+          </Button>
+        </div>
+
+        <Tabs label="Filter words" tabs={filterTabs} value={filter} onChange={setFilter} />
+      </div>
+
+      {loadError !== null && <ErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
+
+      {shown === null && loadError === null && <Skeleton label="Loading words" rows={4} />}
+
+      {shown !== null && shown.length > 0 && (
+        <WordList
+          deck={deck}
+          words={shown}
+          now={now}
+          onEdit={(word) => setWordEditor({ kind: "edit", word })}
+          onDelete={(word) => setDeletingWord(word)}
+        />
+      )}
+
+      {shown !== null && shown.length === 0 && unfiltered && (
+        <EmptyState
+          title="No words yet"
+          body="Add the first word to this deck."
+          action={
             <Button variant="secondary" onClick={() => setWordEditor({ kind: "add" })}>
               Add word
             </Button>
-          </div>
+          }
+        />
+      )}
 
-          <SegmentedControl label="Filter words" options={filterOptions} value={filter} onChange={setFilter} />
+      {shown !== null && shown.length === 0 && !unfiltered && <EmptyState title="No words match this view." />}
 
-          {loadError !== null && <ErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
-
-          {shown === null && loadError === null && <Skeleton label="Loading words" rows={4} />}
-
-          {shown !== null && shown.length > 0 && (
-            <WordTable
-              deck={deck}
-              words={shown}
-              onEdit={(word) => setWordEditor({ kind: "edit", word })}
-              onDelete={(word) => setDeletingWord(word)}
-            />
-          )}
-
-          {shown !== null && shown.length === 0 && unfiltered && (
-            <EmptyState
-              title="No words yet"
-              body="Add the first word to this deck."
-              action={
-                <Button variant="secondary" onClick={() => setWordEditor({ kind: "add" })}>
-                  Add word
-                </Button>
-              }
-            />
-          )}
-
-          {shown !== null && shown.length === 0 && !unfiltered && <EmptyState title="No words match this view." />}
-
-          {nextCursor !== null && (
-            <div className="flex justify-center">
-              <Button variant="ghost" disabled={loadingMore} onClick={() => void loadMore()}>
-                {loadingMore ? "Loading…" : "Load more"}
-              </Button>
-            </div>
-          )}
+      {nextCursor !== null && (
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Button variant="ghost" disabled={loadingMore} onClick={() => void loadMore()}>
+            {loadingMore ? "Loading…" : "Load more"}
+          </Button>
         </div>
-      </div>
+      )}
 
       <WordModal
         open={wordEditor !== null}
@@ -305,6 +308,6 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
         onClose={() => setConfirmingDelete(false)}
         onDeleted={() => window.location.assign("/app/decks")}
       />
-    </section>
+    </>
   );
 }
