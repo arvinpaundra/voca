@@ -13,6 +13,7 @@ type ButtonProps = {
   className?: string | undefined;
   "aria-label"?: string;
   title?: string;
+  busy?: boolean;
   children: ReactNode;
 };
 
@@ -38,8 +39,11 @@ export function Button({
   className,
   "aria-label": ariaLabel,
   title,
+  busy,
   children,
 }: ButtonProps) {
+  if (busy) return <p>not implemented: UI-K</p>;
+
   const classes = cx(
     "inline-flex cursor-pointer select-none items-center justify-center gap-2 rounded-lg font-semibold no-underline transition-colors duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
     variantClasses[variant],
