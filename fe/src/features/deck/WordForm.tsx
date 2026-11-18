@@ -1,37 +1,32 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import { Button } from "../../components/Button";
+import type { ChangeEvent, FormEvent, Ref } from "react";
 import { Input } from "../../components/Input";
 import type { WordLabels } from "@voca/contract";
 import { isComplete, type WordDraft } from "./wordModel";
 
 type WordFormProps = {
   labels: WordLabels;
-  initial: WordDraft;
-  submitLabel: string;
-  busy: boolean;
-  error: string | null;
-  onSubmit: (draft: WordDraft) => void;
-  onCancel: () => void;
+  draft: WordDraft;
+  formRef: Ref<HTMLFormElement>;
+  onChange: (name: keyof WordDraft, value: string) => void;
+  onSubmit: () => void;
 };
 
 const textareaClass =
-  "w-full resize-y rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-stone-900 placeholder:text-stone-400 hover:border-stone-400 focus:outline-none focus:ring-2 focus:ring-lime/60";
+  "w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 hover:border-stone-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy";
 
-export function WordForm({ labels, initial, submitLabel, busy, error, onSubmit, onCancel }: WordFormProps) {
-  const [draft, setDraft] = useState(initial);
-
+// The fields only: the dialog footer owns the actions and submits this form through `formRef`.
+export function WordForm({ labels, draft, formRef, onChange, onSubmit }: WordFormProps) {
   const change = (name: keyof WordDraft) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const value = event.target.value;
-    setDraft((previous) => ({ ...previous, [name]: value }));
+    onChange(name, event.target.value);
   };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isComplete(draft)) onSubmit(draft);
+    if (isComplete(draft)) onSubmit();
   };
 
   return (
-    <form className="flex flex-col gap-4 p-6" onSubmit={submit}>
+    <form ref={formRef} className="grid gap-4" onSubmit={submit}>
       <Input label={labels.term} dir="auto" required value={draft.term} onChange={change("term")} />
 
       <Input label={labels.reading} dir="auto" value={draft.reading} onChange={change("reading")} />
@@ -39,7 +34,7 @@ export function WordForm({ labels, initial, submitLabel, busy, error, onSubmit, 
       <Input label="Meaning" dir="auto" required value={draft.meaning} onChange={change("meaning")} />
 
       <div className="grid gap-1.5">
-        <label htmlFor="word-example" className="text-sm font-medium text-stone-700">
+        <label htmlFor="word-example" className="text-xs font-medium text-stone-700">
           Example
         </label>
         <textarea
@@ -53,7 +48,7 @@ export function WordForm({ labels, initial, submitLabel, busy, error, onSubmit, 
       </div>
 
       <div className="grid gap-1.5">
-        <label htmlFor="word-notes" className="text-sm font-medium text-stone-700">
+        <label htmlFor="word-notes" className="text-xs font-medium text-stone-700">
           Notes
         </label>
         <textarea
@@ -64,21 +59,6 @@ export function WordForm({ labels, initial, submitLabel, busy, error, onSubmit, 
           value={draft.notes}
           onChange={change("notes")}
         />
-      </div>
-
-      {error !== null && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
-      )}
-
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" disabled={busy || !isComplete(draft)}>
-          {busy ? "Saving…" : submitLabel}
-        </Button>
       </div>
     </form>
   );

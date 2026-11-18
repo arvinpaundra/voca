@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Option, Result, Schema } from "effect";
 import { DeckSlug, type Deck } from "@voca/contract";
+import { ErrorState } from "../../components/ErrorState";
+import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { DeckView } from "./DeckView";
 
@@ -34,12 +36,8 @@ export function DeckPage({ deckSlug }: { deckSlug: string }) {
   return (
     <div className="mx-auto w-full max-w-3xl">
       {deck !== null && <DeckView deck={deck} onDeckChanged={setDeck} />}
-      {deck === null && failed && (
-        <p className="text-sm text-red-600" role="alert">
-          This deck could not be loaded.
-        </p>
-      )}
-      {deck === null && !failed && <p className="text-sm text-stone-500">Loading…</p>}
+      {deck === null && failed && <ErrorState message="This deck could not be loaded." />}
+      {deck === null && !failed && <Skeleton label="Loading deck" rows={3} />}
     </div>
   );
 }
