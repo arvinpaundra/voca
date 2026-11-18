@@ -74,7 +74,7 @@ bun scripts/recheck.ts <PR numbers>
 - `✓`: CI is green with the path guard and no stub is left.
 - A `disputed` reply: check it. If the worker is right, fix the test or the split (new issue, new hash) and tell the owner.
 - A failing PR: run `agent-loop` with `{ heals: [{ issue, hash, pr, branch, worktree, finding, files, model: "haiku" }] }`, one narrow round each. After 2 failed rounds on the same finding, use `model: "sonnet"`.
-- UI tasks: `bun scripts/shots.ts <specs>` on the PR's branch, and give the owner the paths.
+- UI tasks: on the PR's branch, `bun scripts/shots.ts --mock <specs>` and `bun scripts/shots.ts --design`; compare each page with its design screen, heal every mismatch, then give the owner both sets of paths.
 - `bun scripts/merge-gate.ts <pr>`: merge it yourself only on `merge: ok` with a clean reply; otherwise the owner merges.
 - Report to the owner: one line per task (PR, state), the disputes, and what waits for them.
 

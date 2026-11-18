@@ -84,7 +84,7 @@ After 2 failed rounds on the same finding, move the task to the next model tier.
 1. CI `verify` is green on the PR and ran the path guard (the PR is linked to its task issue).
 2. The locked tests are unchanged, and behaviour the worker added has its own test.
 3. No `not implemented: <TASK>` stub is left in the task's files.
-4. **UI tasks:** the issue names the screenshots; the decision thread runs `bun scripts/shots.ts <specs>` on the PR's branch and gives the paths to the owner. No model views them.
+4. **UI tasks:** the issue names the screenshots. On the PR's branch the decision thread runs `bun scripts/shots.ts --mock <specs>` (signed-in pages against the design's sample data) and `bun scripts/shots.ts --design`, compares each page with its design screen, and sends every mismatch back to the worker before the owner sees the PR. Then it gives the owner both sets of paths.
 
 ## Merging and branches
 
