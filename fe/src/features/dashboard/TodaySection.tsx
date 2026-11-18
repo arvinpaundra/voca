@@ -1,5 +1,6 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
 import type { Learner, LearnerStats, Notifications } from "@voca/contract";
+import { estimateText, nextDueDate } from "./queueSummary";
 import { Button } from "../../components/Button";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
@@ -64,6 +65,8 @@ export function TodaySection({
   const overdue = decks.reduce((sum, deck) => sum + deck.overdue, 0);
   const reviewedToday = stats.kind === "loaded" ? (stats.value.reviewsPerDay.at(-1)?.count ?? 0) : undefined;
   const first = decks[0];
+  const estimate = estimateText(state.value.estimatedMinutes);
+  const nextDue = stats.kind === "loaded" ? nextDueDate(stats.value.forecast) : null;
 
   return (
     <section className="today" aria-label="Today">
@@ -101,7 +104,14 @@ export function TodaySection({
             Start studying
             <ArrowRight className="i" aria-hidden="true" />
           </Button>
+          {estimate !== null && <span className="muted">{estimate}</span>}
         </div>
+      )}
+
+      {first === undefined && nextDue !== null && (
+        <p className="muted" data-next-due={nextDue}>
+          Next review {nextDue}
+        </p>
       )}
     </section>
   );

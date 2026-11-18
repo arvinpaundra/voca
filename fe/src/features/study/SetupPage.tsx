@@ -10,6 +10,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { failureTag } from "../deck/wordModel";
+import { startFailure } from "./startFailure";
 import { rememberDrills, rememberedDrills } from "./queue";
 import { rememberStudyDeck } from "./returnTo";
 import { rememberRequestedSize } from "./shortSession";
@@ -19,12 +20,6 @@ const DEFAULT_SIZE: SessionSize = 10;
 
 // The API takes a non-empty drill list; this narrows the Learner's selection to that shape.
 const isDrillSet = (drills: readonly Drill[]): drills is [Drill, ...Drill[]] => drills.length > 0;
-
-const startFailure = (tag: string | undefined): string => {
-  if (tag === "DeckTooSmall") return "This deck has too few words for that session size. Choose a smaller size.";
-  if (tag === "DrillNotAvailable") return "One of the drills is not available in this deck. Pick the drills again.";
-  return "Could not start the session. Try again.";
-};
 
 type SetupState =
   | { readonly kind: "loading" }
