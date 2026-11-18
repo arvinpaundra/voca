@@ -178,7 +178,7 @@ function StudyPreferences({
             />
           </SettingsRow>
 
-          <SettingsRow label="Default mode" help="Hard mode hides readings">
+          <SettingsRow label="Default mode" help="Hard mode picks look-alike options">
             <SegmentedControl
               label="Default mode"
               options={MODES}

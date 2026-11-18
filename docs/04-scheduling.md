@@ -49,7 +49,7 @@ export const ratingFromAnswer = (correct: boolean, latencyMs: number): Rating =>
 
 - `Easy` is never produced automatically. Recognizing the answer from 4 options is easier than recalling it unprompted, so an automatic `Easy` would inflate stability.
 - If Learners find intervals too short, they can **lower** `desiredRetention`. That setting already exists, so no new rating is needed.
-- `latencyMs` is measured on the client (`performance.now()` from when the options render to when one is clicked). The server clamps it to `[0, 120000]`.
+- `latencyMs` is measured on the client (`performance.now()` from when the options render to when one is clicked). The client clamps it to `[0, MAX_LATENCY_MS]` (10 minutes); the contract Schema bounds the field the same way, so a larger value is a client bug and gets the built-in empty `400` (ADR 24).
 
 ## Card state transitions
 

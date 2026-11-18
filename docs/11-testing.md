@@ -17,10 +17,14 @@ be/test/
   setup.ts            # makeTestDb(): per file, copies the template into database voca_test_<n>, drops it on release; resetDb
   layers.ts           # TestLayer = Db(real) (+ GoogleStub + TestClock + seeded Random as those contexts arrive)
   db.test.ts          # smoke test of the above
-  fixtures/fsrs-golden.json
-  scheduling.test.ts  study-session.test.ts  timezone.test.ts
-  analytics.test.ts   import.test.ts          auth.test.ts   community.test.ts
-be/src/**/domain/*.test.ts   # pure unit + property tests next to the code
+  fixtures/fsrs-vectors.json
+  fsrs.test.ts        # the scheduler's golden vectors, rating derivation, study days and DST
+  study.test.ts       # sessions, retries, drills
+  insight.test.ts     wordStats.test.ts       # deck, learner and per-word metrics; the activity heatmap
+  decks.test.ts       words.test.ts           deckDetail.test.ts   community.test.ts   hardWords.test.ts
+  me.test.ts          settings.test.ts        google.test.ts       googleClaims.test.ts
+  refresh.test.ts     refreshTokens.test.ts   logout.test.ts
+  server.test.ts      slugCollision.test.ts   db.test.ts
 ```
 
 ### Container runtime: Podman first, Docker fallback
@@ -49,7 +53,7 @@ Isolation:
 ## Correctness suites (the "integration tests for correctness metrics")
 
 ### 1. Scheduling: FSRS correctness
-- **Golden vectors:** 200 rating sequences generated once with `ts-fsrs` (FSRS-6 defaults, `enable_short_term: false`, fuzz off) and stored in `fsrs-golden.json`. The domain `schedule` must match `stability`, `difficulty`, and interval within `1e-4`.
+- **Golden vectors:** 100 rating sequences generated once with `ts-fsrs` (FSRS-6 defaults, `enable_short_term: false`, fuzz off) and stored in `fsrs-vectors.json`, alongside tables for the initial state, retrievability and intervals. The domain `schedule` must match `stability`, `difficulty`, and interval within `1e-4`.
 - **Properties** (`Arbitrary`, 1,000 runs each):
   - `difficulty ∈ [1, 10]` and `stability > 0`, always
   - success never decreases stability, and a lapse never increases it
@@ -167,4 +171,4 @@ DOCKER_HOST=unix:///var/run/docker.sock bun test   # force Docker
 bun run typecheck             # tsc across workspaces
 ```
 
-The frontend tests only its pure logic in `fe/src/lib` (PKCE, the token store). Everything else lives in the shared contract and on the server, so there are no component tests in the MVP. Add Playwright for the study flow if regressions appear.
+The frontend tests its pure logic in `fe/src/lib` (PKCE, the token store) and its models (`*Model.test.ts`, the session queue, the word filter, the sounds). Shared components and the ported pages get component tests with happy-dom and Testing Library (ADR 35), run by `bun test` inside `fe/`. Add Playwright for the study flow if regressions appear.

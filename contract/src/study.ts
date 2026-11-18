@@ -44,7 +44,8 @@ export const Session = Schema.Struct({
   drills: DrillSet,
   termLang: LangTag,
   mode: Mode,
-  size: SessionSize,
+  // The words actually picked. Fewer than the requested size when not enough were due or new.
+  size: Count,
   status: SessionStatus,
   cleared: Count, // progress = cleared / size
   questions: Schema.Array(Question) // pending only, in position order

@@ -350,7 +350,11 @@ export const DeckRepoLive = Layer.effect(
         hasWordsRow(deckId).pipe(Effect.map((row) => row.exists), Effect.orDie),
 
       softDelete: (deckId, at) =>
-        sql`UPDATE decks SET deleted_at = ${new Date(at)} WHERE id = ${deckId} AND deleted_at IS NULL`.pipe(
+        // Unpublished as well, so an admin undoing the delete doesn't silently republish it.
+        sql`
+          UPDATE decks
+          SET deleted_at = ${new Date(at)}, visibility = 'private', published_at = NULL
+          WHERE id = ${deckId} AND deleted_at IS NULL`.pipe(
           Effect.asVoid,
           Effect.orDie
         ),

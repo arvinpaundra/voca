@@ -91,7 +91,8 @@ export const startSession = (
           deckId: deck.id,
           drills: request.drills,
           mode: "easy",
-          size: request.size,
+          // What was found, not what was asked for: the progress bar counts the words of this session.
+          size: picks.length,
           createdAt: now
         })
 
@@ -110,7 +111,7 @@ export const startSession = (
           drills: request.drills,
           termLang: deck.termLang,
           mode: "easy",
-          size: request.size,
+          size: picks.length,
           status: "active",
           cleared: 0,
           questions: questions.map((question) =>
@@ -201,7 +202,7 @@ export const startHardSession = (
           deckId: null,
           drills: request.drills,
           mode: "easy",
-          size: request.size,
+          size: ordered.length,
           createdAt: now
         })
 
@@ -222,7 +223,7 @@ export const startHardSession = (
           drills: request.drills,
           termLang: lead.termLang,
           mode: "easy",
-          size: request.size,
+          size: ordered.length,
           status: "active",
           cleared: 0,
           questions: questions.map((question) =>
