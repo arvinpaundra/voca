@@ -29,7 +29,7 @@ export function HardWordList({
           ) : (
             <ruby>
               {word.term}
-              <rt>{word.reading}</rt>
+              <rt lang={"not implemented: LF"}>{word.reading}</rt>
             </ruby>
           );
 

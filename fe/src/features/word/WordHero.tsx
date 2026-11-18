@@ -9,7 +9,7 @@ export function WordHero({ word, termLang, meaningLang }: { word: Word; termLang
         ) : (
           <ruby>
             {word.term}
-            <rt>{word.reading}</rt>
+            <rt lang={"not implemented: LF"}>{word.reading}</rt>
           </ruby>
         )}
       </p>

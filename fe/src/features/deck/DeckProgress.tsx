@@ -22,6 +22,19 @@ export function DeckProgress({ stats }: { stats: DeckStats }) {
         <dt className="l">mature</dt>
       </div>
 
+      <div className="wide" aria-label="Due next 7 study days">
+        <div className="forecast">
+          <div>
+            <small>not implemented: LF</small>
+            <b>not implemented: LF</b>
+          </div>
+        </div>
+      </div>
+
+      <div className="wide" aria-label="True retention">
+        not implemented: LF
+      </div>
+
       <div className="wide maturity">
         <div
           className="mbar"

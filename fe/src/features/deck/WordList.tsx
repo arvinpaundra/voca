@@ -72,7 +72,7 @@ export function WordList({
                 ) : (
                   <ruby>
                     {word.term}
-                    <rt>{word.reading}</rt>
+                    <rt lang={"not implemented: LF"}>{word.reading}</rt>
                   </ruby>
                 )}
               </a>
