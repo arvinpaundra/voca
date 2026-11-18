@@ -48,6 +48,7 @@ function DeleteDeckDialog({ deck, onClose, onDeleted }: DeleteDeckDialogProps) {
     <Modal
       open
       title="Delete deck?"
+      description="All cards in this deck will be removed. This cannot be undone."
       onClose={onClose}
       footer={
         <>
@@ -61,10 +62,8 @@ function DeleteDeckDialog({ deck, onClose, onDeleted }: DeleteDeckDialogProps) {
       }
     >
       <div className="grid gap-4">
-        <p className="text-stone-600">All cards in this deck will be removed. This cannot be undone.</p>
-
         {error !== null && (
-          <p role="alert" className="text-red-600">
+          <p role="alert" className="err">
             {error}
           </p>
         )}

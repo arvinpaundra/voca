@@ -34,10 +34,10 @@ export function DeckPage({ deckSlug }: { deckSlug: string }) {
   }, [deckSlug]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <>
       {deck !== null && <DeckView deck={deck} onDeckChanged={setDeck} />}
       {deck === null && failed && <ErrorState message="This deck could not be loaded." />}
       {deck === null && !failed && <Skeleton label="Loading deck" rows={3} />}
-    </div>
+    </>
   );
 }

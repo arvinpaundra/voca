@@ -1,10 +1,13 @@
 import { describe, expect, mock, test } from "bun:test";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { DateTime } from "effect";
 import type { Deck, DeckStats, DeckSummary, WordWithCards } from "@voca/contract";
 import { DeckProgress } from "../deck/DeckProgress";
-import { WordTable } from "../deck/WordTable";
-import { DeckTable } from "./DeckTable";
+import { WordList } from "../deck/WordList";
+import { DeckRows } from "./DeckRows";
+
+// Markup and class names follow the Decks and Deck page screens of docs/design/ui-refinement.html (Console).
 
 const deck = (slug: string, title: string, wordCount: number, dueCount: number, visibility = "private") =>
   ({
@@ -23,136 +26,171 @@ const deck = (slug: string, title: string, wordCount: number, dueCount: number, 
     dueCount,
   }) as unknown as DeckSummary;
 
-const word = (slug: string, term: string, reading: string | null, meaning: string) =>
+const card = (due: string, stabilityDays: number, isHard = false) => ({ drill: "term_meaning", due, stabilityDays, isHard });
+
+const word = (slug: string, term: string, reading: string | null, meaning: string, example: string | null, cards: unknown[]) =>
   ({
     slug,
     term,
     reading,
     meaning,
-    example: null,
+    example,
     notes: null,
     createdAt: "2026-01-01T00:00:00.000Z",
-    cards: [],
+    cards,
   }) as unknown as WordWithCards;
 
-const stats = (trueRetention: number | null) =>
-  ({
-    maturity: { new: 3, learning: 2, mature: 1 },
-    dueToday: 4,
-    overdue: 1,
-    forecast: [],
-    trueRetention,
-    calibration: null,
-    reviewsPerDay: [],
-  }) as unknown as DeckStats;
+const NOW = DateTime.makeUnsafe("2026-11-18T12:00:00.000Z");
 
-describe("DeckTable", () => {
-  const decks = [deck("DECK000001", "JLPT N5", 128, 12, "public"), deck("DECK000002", "Empty", 0, 0)];
+const stats = {
+  maturity: { new: 48, learning: 96, mature: 104 },
+  dueToday: 20,
+  overdue: 0,
+  forecast: [],
+  trueRetention: 0.88,
+  calibration: null,
+  reviewsPerDay: [],
+} as unknown as DeckStats;
 
-  test("decks are rows under column headers", () => {
-    render(<DeckTable decks={decks} onEdit={() => {}} onDelete={() => {}} />);
+const sorted = (element: Element | null | undefined) => [...(element?.classList ?? [])].sort();
 
-    const table = screen.getByRole("table", { name: "Decks" });
-    const headers = within(table).getAllByRole("columnheader").map((header) => header.textContent);
-    expect(headers).toEqual(["Deck", "Language", "Due", "Words", "Actions"]);
+describe("DeckRows", () => {
+  const decks = [
+    deck("DECK000001", "Japanese N5 verbs", 248, 20, "public"),
+    deck("DECK000004", "Mandarin HSK 1", 150, 0),
+    deck("DECK000006", "Korean honorifics", 0, 0),
+  ];
 
-    const [first] = within(table).getAllByRole("row").slice(1);
-    const row = within(first!);
-    expect(row.getByRole("link", { name: "JLPT N5" }).getAttribute("href")).toBe("/app/decks/DECK000001");
-    expect(row.getByText("ja → en")).toBeDefined();
-    expect(row.getByText("Public")).toBeDefined();
-    expect(row.getByRole("cell", { name: "12" })).toBeDefined();
-    expect(row.getByRole("cell", { name: "128" })).toBeDefined();
-    expect(row.getByRole("link", { name: "Study JLPT N5" }).getAttribute("href")).toBe("/app/decks/DECK000001/study");
+  test("a .list-head over a .deck-grid of .deck rows", () => {
+    const { container } = render(<DeckRows decks={decks} onEdit={() => {}} onDelete={() => {}} />);
+
+    const list = screen.getByRole("list", { name: "Decks" });
+    expect([...container.querySelectorAll(".list-head span")].map((span) => span.textContent)).toEqual([
+      "Deck",
+      "Languages",
+      "Due",
+      "Words",
+      "",
+      "",
+    ]);
+
+    expect(list.classList.contains("deck-grid")).toBe(true);
+
+    const rows = list.querySelectorAll("li > article.deck");
+    expect(rows).toHaveLength(3);
+
+    const first = rows[0] as HTMLElement;
+    expect(within(first).getByRole("link", { name: "Japanese N5 verbs" }).getAttribute("href")).toBe("/app/decks/DECK000001");
+    expect(within(first).getByRole("link", { name: "Japanese N5 verbs" }).classList.contains("deck-title")).toBe(true);
+    expect(sorted(within(first).getByText("ja → en"))).toEqual(["badge", "badge-outline", "lang"]);
+    expect(sorted(within(first).getByText("Public"))).toEqual(["badge", "badge-lime"]);
+    expect(first.querySelector(".deck-stats .due")?.textContent).toBe("20");
+    expect(first.querySelector(".deck-stats .words-col .words")?.textContent).toBe("248");
   });
 
-  test("a deck without words cannot be studied", () => {
-    render(<DeckTable decks={decks} onEdit={() => {}} onDelete={() => {}} />);
+  test("Study is primary when words are due, secondary otherwise, and Add words when the deck is empty", () => {
+    render(<DeckRows decks={decks} onEdit={() => {}} onDelete={() => {}} />);
 
-    const study = screen.getByRole("button", { name: "Study Empty" });
+    const due = screen.getByRole("link", { name: "Study Japanese N5 verbs" });
+    expect(due.getAttribute("href")).toBe("/app/decks/DECK000001/study");
+    expect(sorted(due)).toEqual(["btn", "btn-primary", "btn-sm"]);
 
-    expect((study as HTMLButtonElement).disabled).toBe(true);
+    const idle = screen.getByRole("link", { name: "Study Mandarin HSK 1" });
+    expect(sorted(idle)).toEqual(["btn", "btn-secondary", "btn-sm"]);
+
+    const empty = screen.getByRole("link", { name: "Add words to Korean honorifics" });
+    expect(empty.getAttribute("href")).toBe("/app/decks/DECK000006");
+    expect(empty.textContent).toBe("Add words");
+
+    expect(screen.getAllByRole("listitem")[1]?.querySelector(".due")?.classList.contains("zero")).toBe(true);
   });
 
   test("edit and delete live in the row's menu", async () => {
     const user = userEvent.setup();
     const onEdit = mock((_deck: DeckSummary) => {});
     const onDelete = mock((_deck: DeckSummary) => {});
-    render(<DeckTable decks={decks} onEdit={onEdit} onDelete={onDelete} />);
+    render(<DeckRows decks={decks} onEdit={onEdit} onDelete={onDelete} />);
 
-    await user.click(screen.getByRole("button", { name: "Actions for JLPT N5" }));
+    await user.click(screen.getByRole("button", { name: "Actions for Japanese N5 verbs" }));
     await user.click(screen.getByRole("menuitem", { name: "Delete deck" }));
     expect(onDelete).toHaveBeenCalledWith(decks[0]!);
 
-    await user.click(screen.getByRole("button", { name: "Actions for JLPT N5" }));
+    await user.click(screen.getByRole("button", { name: "Actions for Japanese N5 verbs" }));
     await user.click(screen.getByRole("menuitem", { name: "Edit deck" }));
     expect(onEdit).toHaveBeenCalledWith(decks[0]!);
   });
 });
 
-describe("WordTable", () => {
-  const owner = deck("DECK000001", "JLPT N5", 2, 0) as unknown as Deck;
-  const words = [word("WORD00000001", "食べる", "たべる", "to eat"), word("WORD00000002", "水", null, "water")];
+describe("WordList", () => {
+  const owner = deck("DECK000001", "Japanese N5 verbs", 4, 1) as unknown as Deck;
+  const words = [
+    word("WRD000000001", "食べる", "たべる", "to eat", "毎朝パンを食べる。", [card("2026-11-18T00:00:00.000Z", 3)]),
+    word("WRD000000002", "飲む", "のむ", "to drink", null, [card("2026-11-25T00:00:00.000Z", 8)]),
+    word("WRD000000003", "行く", "いく", "to go", null, [card("2027-01-20T00:00:00.000Z", 40)]),
+    word("WRD000000004", "見る", "みる", "to see, to watch", null, []),
+  ];
 
-  test("words are rows of term and meaning, the term in the deck's language", () => {
-    render(<WordTable deck={owner} words={words} onEdit={() => {}} onDelete={() => {}} />);
+  test("a .word-list of .word rows: term with its reading, meaning and example", () => {
+    render(<WordList deck={owner} words={words} now={NOW} onEdit={() => {}} onDelete={() => {}} />);
 
-    const table = screen.getByRole("table", { name: "Words" });
-    const headers = within(table).getAllByRole("columnheader").map((header) => header.textContent);
-    expect(headers).toEqual(["Term", "Meaning", "Actions"]);
+    const list = screen.getByRole("list", { name: "Words" });
+    expect(list.classList.contains("word-list")).toBe(true);
 
-    const rows = within(table).getAllByRole("row").slice(1);
-    expect(rows).toHaveLength(2);
-    expect(within(rows[0]!).getByText("to eat")).toBeDefined();
-    expect(within(rows[0]!).getByText("たべる")).toBeDefined();
-    expect(within(rows[0]!).getByText("食べる").closest("[lang]")?.getAttribute("lang")).toBe("ja");
+    const rows = list.querySelectorAll("li > article.word");
+    expect(rows).toHaveLength(4);
+
+    const term = rows[0]?.querySelector(".w-term");
+    expect(term?.getAttribute("lang")).toBe("ja");
+    expect(term?.querySelector("ruby")?.textContent).toBe("食べるたべる");
+    expect(term?.querySelector("rt")?.textContent).toBe("たべる");
+    expect(rows[0]?.querySelector(".w-body .w-meaning")?.textContent).toBe("to eat");
+    expect(rows[0]?.querySelector(".w-body .w-meaning")?.getAttribute("lang")).toBe("en");
+    expect(rows[0]?.querySelector(".w-body .w-example")?.textContent).toBe("毎朝パンを食べる。");
   });
 
-  test("edit and delete live in the row's menu, not as buttons on every row", async () => {
+  test("each word's state badge: due, learning, mature (21+ days), new", () => {
+    render(<WordList deck={owner} words={words} now={NOW} onEdit={() => {}} onDelete={() => {}} />);
+
+    const list = screen.getByRole("list", { name: "Words" });
+    const badges = [...list.querySelectorAll(".w-state .badge")];
+
+    expect(badges.map((badge) => badge.textContent)).toEqual(["Due", "Learning", "Mature", "New"]);
+    expect(sorted(badges[0])).toEqual(["badge", "badge-lime"]);
+    expect(sorted(badges[1])).toEqual(["badge"]);
+    expect(sorted(badges[2])).toEqual(["badge", "badge-dot", "badge-navy"]);
+    expect(sorted(badges[3])).toEqual(["badge"]);
+  });
+
+  test("edit and delete are icon buttons on each row", async () => {
     const user = userEvent.setup();
     const onEdit = mock((_word: WordWithCards) => {});
     const onDelete = mock((_word: WordWithCards) => {});
-    render(<WordTable deck={owner} words={words} onEdit={onEdit} onDelete={onDelete} />);
+    render(<WordList deck={owner} words={words} now={NOW} onEdit={onEdit} onDelete={onDelete} />);
 
-    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+    const edit = screen.getByRole("button", { name: "Edit 飲む" });
+    expect(edit.classList.contains("btn-icon")).toBe(true);
+    expect(edit.closest(".w-actions")).not.toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Actions for 水" }));
-    await user.click(screen.getByRole("menuitem", { name: "Delete word" }));
-    expect(onDelete).toHaveBeenCalledWith(words[1]!);
-
-    await user.click(screen.getByRole("button", { name: "Actions for 水" }));
-    await user.click(screen.getByRole("menuitem", { name: "Edit word" }));
+    await user.click(edit);
     expect(onEdit).toHaveBeenCalledWith(words[1]!);
+
+    await user.click(screen.getByRole("button", { name: "Delete 飲む" }));
+    expect(onDelete).toHaveBeenCalledWith(words[1]!);
   });
 });
 
 describe("DeckProgress", () => {
-  test("the deck's numbers in one strip, and the maturity split", () => {
-    render(<DeckProgress stats={stats(0.874)} />);
+  test("a .deck-stats-strip of due today, new, learning, mature and the maturity bar", () => {
+    render(<DeckProgress stats={stats} />);
 
-    const progress = screen.getByRole("region", { name: "Deck progress" });
+    const strip = screen.getByRole("region", { name: "Deck progress" });
+    expect(strip.classList.contains("deck-stats-strip")).toBe(true);
 
-    expect(within(progress).getAllByRole("term").map((term) => term.textContent)).toEqual([
-      "Words",
-      "Due today",
-      "Overdue",
-      "Retention",
-    ]);
-    expect(within(progress).getAllByRole("definition").map((value) => value.textContent)).toEqual([
-      "6",
-      "4",
-      "1",
-      "87%",
-    ]);
-    expect(within(progress).getByRole("img", { name: "New 3, learning 2, mature 1" })).toBeDefined();
-  });
+    expect(within(strip).getAllByRole("term").map((term) => term.textContent)).toEqual(["due today", "new", "learning", "mature"]);
+    expect(within(strip).getAllByRole("definition").map((value) => value.textContent)).toEqual(["20", "48", "96", "104"]);
 
-  test("retention without reviews yet is a dash", () => {
-    render(<DeckProgress stats={stats(null)} />);
-
-    const progress = screen.getByRole("region", { name: "Deck progress" });
-
-    expect(within(progress).getAllByRole("definition").at(-1)?.textContent).toBe("—");
+    const bar = within(strip).getByRole("img", { name: "New 48, learning 96, mature 104" });
+    expect(bar.classList.contains("mbar")).toBe(true);
+    expect(bar.closest(".wide.maturity")).not.toBeNull();
   });
 });

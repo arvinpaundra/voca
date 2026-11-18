@@ -109,6 +109,7 @@ function DeckEditor({ deck, onClose, onSaved }: DeckEditorProps) {
     <Modal
       open
       title={deck === undefined ? "New deck" : "Edit deck"}
+      description={deck === undefined ? "A deck holds the words you want to learn." : "Change the deck's title, description or languages."}
       onClose={onClose}
       footer={
         <>
@@ -124,8 +125,8 @@ function DeckEditor({ deck, onClose, onSaved }: DeckEditorProps) {
       <form ref={formRef} className="grid gap-4" onSubmit={(event) => void submit(event)}>
         <Input label="Title" dir="auto" required value={title} onChange={(event) => setTitle(event.target.value)} />
 
-        <div className="grid gap-1.5">
-          <label htmlFor={descriptionId} className="text-xs font-medium text-stone-700">
+        <div className="field">
+          <label htmlFor={descriptionId}>
             Description
           </label>
           <textarea
@@ -134,7 +135,7 @@ function DeckEditor({ deck, onClose, onSaved }: DeckEditorProps) {
             rows={3}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 hover:border-stone-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+            className="textarea"
           />
         </div>
 
@@ -157,7 +158,7 @@ function DeckEditor({ deck, onClose, onSaved }: DeckEditorProps) {
         />
 
         {error !== null && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="err">
             {error}
           </p>
         )}

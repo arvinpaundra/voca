@@ -1,18 +1,24 @@
-import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Result } from "effect";
 import { Plus } from "lucide-react";
 import type { DeckSummary } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
-import { Input } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
+import { SearchInput } from "../../components/SearchInput";
+import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { DeckModal } from "./DeckModal";
-import { DeckTable } from "./DeckTable";
+import { DeckRows } from "./DeckRows";
 import { DeleteDeckModal } from "./DeleteDeckModal";
-import { filterDecks, termLangsOf, type DeckFilter, type DeckSort } from "./deckList";
+import {
+  filterDecks,
+  termLangsOf,
+  type DeckFilter,
+  type DeckSort,
+} from "./deckList";
 
 type DeckListState =
   | { kind: "loading" }
@@ -28,10 +34,7 @@ const sortOptions: readonly { value: DeckSort; label: string }[] = [
   { value: "due", label: "Most due" },
 ];
 
-const initialFilter: DeckFilter = { q: "", termLang: null, sort: "recent" };
-
-const selectClass =
-  "h-8 cursor-pointer rounded-lg border border-stone-300 bg-white px-2 text-sm text-stone-900 hover:border-stone-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy";
+const initialFilter: DeckFilter = { q: "", termLang: null, sort: "due" };
 
 export function DecksPage() {
   const [state, setState] = useState<DeckListState>({ kind: "loading" });
@@ -42,7 +45,11 @@ export function DecksPage() {
   // The whole list is loaded once; search, the language filter and sorting happen in the browser.
   const loadDecks = useCallback(async () => {
     const result = await session.call((client) => client.library.listDecks());
-    setState(Result.isSuccess(result) ? { kind: "loaded", decks: result.success } : { kind: "failed" });
+    setState(
+      Result.isSuccess(result)
+        ? { kind: "loaded", decks: result.success }
+        : { kind: "failed" },
+    );
   }, []);
 
   useEffect(() => {
@@ -53,23 +60,25 @@ export function DecksPage() {
   const langs = termLangsOf(decks);
   const visible = filterDecks(decks, filter);
   const dueToday = decks.reduce((sum, deck) => sum + deck.dueCount, 0);
+  const words = decks.reduce((sum, deck) => sum + deck.wordCount, 0);
 
-  const changeLang = (event: ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
-    setFilter((previous) => ({ ...previous, termLang: value === "" ? null : value }));
+  const changeLang = (value: string) => {
+    setFilter((previous) => ({
+      ...previous,
+      termLang: value === "" ? null : value,
+    }));
   };
 
-  const changeSort = (event: ChangeEvent<HTMLSelectElement>) => {
-    const sort = event.target.value as DeckSort;
-    setFilter((previous) => ({ ...previous, sort }));
+  const changeSort = (value: string) => {
+    setFilter((previous) => ({ ...previous, sort: value as DeckSort }));
   };
 
-  const changeSearch = (event: ChangeEvent<HTMLInputElement>) => {
-    const q = event.target.value;
+  const changeSearch = (q: string) => {
     setFilter((previous) => ({ ...previous, q }));
   };
 
-  const clearFilter = () => setFilter((previous) => ({ ...previous, q: "", termLang: null }));
+  const clearFilter = () =>
+    setFilter((previous) => ({ ...previous, q: "", termLang: null }));
 
   const retry = () => {
     setState({ kind: "loading" });
@@ -90,83 +99,92 @@ export function DecksPage() {
     <>
       <PageHeader
         title="Decks"
-        {...(state.kind === "loaded" && { description: `${decks.length} decks · ${dueToday} due today` })}
+        {...(state.kind === "loaded" && {
+          meta: (
+            <>
+              <span>{decks.length} decks</span>
+              <span className="dot"></span>
+              <span>{words} words</span>
+              <span className="dot"></span>
+              <span>{dueToday} due today</span>
+            </>
+          ),
+        })}
         actions={
           <Button onClick={() => setForm({ kind: "create" })}>
-            <Plus className="size-4" aria-hidden="true" />
+            <Plus className="i" aria-hidden="true" />
             New deck
           </Button>
         }
       />
 
-      <div className="grid gap-8">
-        {state.kind === "loaded" && decks.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-0 flex-1 basis-60">
-              <Input
-                type="search"
-                dir="auto"
-                aria-label="Search decks"
-                placeholder="Search decks"
-                value={filter.q}
-                onChange={changeSearch}
-              />
-            </div>
-
-            <select className={selectClass} aria-label="Term language" value={filter.termLang ?? ""} onChange={changeLang}>
-              <option value="">All languages</option>
-              {langs.map((lang) => (
-                <option key={lang} value={lang}>
-                  {lang}
-                </option>
-              ))}
-            </select>
-
-            <select className={selectClass} aria-label="Sort" value={filter.sort} onChange={changeSort}>
-              {sortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {state.kind === "loading" && <Skeleton label="Loading decks" rows={4} />}
-
-        {state.kind === "failed" && <ErrorState message="Could not load your decks." onRetry={retry} />}
-
-        {state.kind === "loaded" && decks.length === 0 && (
-          <EmptyState
-            title="No decks yet"
-            body="Create your first deck to start building your vocabulary."
-            action={
-              <Button variant="secondary" onClick={() => setForm({ kind: "create" })}>
-                Create your first deck
-              </Button>
-            }
+      {state.kind === "loaded" && decks.length > 0 && (
+        <div className="toolbar">
+          <SearchInput
+            label="Search decks"
+            placeholder="Search decks"
+            value={filter.q}
+            onChange={changeSearch}
           />
-        )}
 
-        {state.kind === "loaded" && decks.length > 0 && visible.length === 0 && (
-          <EmptyState
-            title="No decks match your search."
-            action={
-              <Button variant="secondary" onClick={clearFilter}>
-                Clear search
-              </Button>
-            }
+          <Select
+            label="Term language"
+            value={filter.termLang ?? ""}
+            options={[
+              { value: "", label: "All languages" },
+              ...langs.map((lang) => ({ value: lang, label: lang })),
+            ]}
+            onChange={changeLang}
           />
-        )}
 
-        {visible.length > 0 && (
-          <DeckTable
-            decks={visible}
-            onEdit={(deck) => setForm({ kind: "edit", deck })}
-            onDelete={(deck) => setDeleting(deck)}
+          <Select
+            label="Sort"
+            value={filter.sort}
+            options={sortOptions}
+            onChange={changeSort}
           />
-        )}
-      </div>
+        </div>
+      )}
+
+      {state.kind === "loading" && <Skeleton label="Loading decks" rows={4} />}
+
+      {state.kind === "failed" && (
+        <ErrorState message="Could not load your decks." onRetry={retry} />
+      )}
+
+      {state.kind === "loaded" && decks.length === 0 && (
+        <EmptyState
+          title="No decks yet"
+          body="Create your first deck to start building your vocabulary."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => setForm({ kind: "create" })}
+            >
+              Create your first deck
+            </Button>
+          }
+        />
+      )}
+
+      {state.kind === "loaded" && decks.length > 0 && visible.length === 0 && (
+        <EmptyState
+          title="No decks match your search."
+          action={
+            <Button variant="secondary" onClick={clearFilter}>
+              Clear search
+            </Button>
+          }
+        />
+      )}
+
+      {visible.length > 0 && (
+        <DeckRows
+          decks={visible}
+          onEdit={(deck) => setForm({ kind: "edit", deck })}
+          onDelete={(deck) => setDeleting(deck)}
+        />
+      )}
 
       <DeckModal
         open={form !== null}
@@ -175,7 +193,11 @@ export function DecksPage() {
         onSaved={saved}
       />
 
-      <DeleteDeckModal deck={deleting} onClose={() => setDeleting(null)} onDeleted={deleted} />
+      <DeleteDeckModal
+        deck={deleting}
+        onClose={() => setDeleting(null)}
+        onDeleted={deleted}
+      />
     </>
   );
 }

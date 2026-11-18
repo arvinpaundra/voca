@@ -48,6 +48,7 @@ function DeleteWordDialog({ word, onClose, onDeleted }: DeleteWordDialogProps) {
     <Modal
       open
       title="Delete word?"
+      description="The word and its cards will be removed from this deck."
       onClose={onClose}
       footer={
         <>
@@ -61,10 +62,8 @@ function DeleteWordDialog({ word, onClose, onDeleted }: DeleteWordDialogProps) {
       }
     >
       <div className="grid gap-4">
-        <p className="text-stone-600">The word and its cards will be removed from this deck.</p>
-
         {error !== null && (
-          <p role="alert" className="text-red-600">
+          <p role="alert" className="err">
             {error}
           </p>
         )}

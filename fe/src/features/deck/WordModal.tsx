@@ -77,6 +77,7 @@ function WordEditor({ deck, labels, word, onClose, onSaved }: WordEditorProps) {
     <Modal
       open
       title={word === undefined ? "Add word" : "Edit word"}
+      description={word === undefined ? "Add a word to this deck." : "Change this word."}
       onClose={onClose}
       footer={
         <>
@@ -102,7 +103,7 @@ function WordEditor({ deck, labels, word, onClose, onSaved }: WordEditorProps) {
       />
 
       {error !== null && (
-        <p role="alert" className="mt-4 text-sm text-red-600">
+        <p role="alert" className="err">
           {error}
         </p>
       )}
