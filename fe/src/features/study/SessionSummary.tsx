@@ -3,11 +3,20 @@ import { Button } from "../../components/Button";
 import { StatStrip } from "../../components/StatStrip";
 import { tally } from "./progress";
 
-export function SessionSummary({ firstAttempts, backHref }: { firstAttempts: readonly boolean[]; backHref: string }) {
+export function SessionSummary({
+  firstAttempts,
+  backHref,
+  tight,
+}: {
+  firstAttempts: readonly boolean[];
+  backHref: string;
+  // The words card follows, so the card closes with less room below the buttons.
+  tight?: boolean;
+}) {
   const { right, wrong, accuracy } = tally(firstAttempts);
 
   return (
-    <section className="card complete">
+    <section className="card complete" style={tight === true ? { paddingBottom: 24 } : undefined}>
       <span className="medal">
         <Check className="i i-lg" style={{ strokeWidth: 2.5 }} aria-hidden="true" />
       </span>
