@@ -4,6 +4,7 @@ import { Count, DeckDescription, DeckSlug, DeckTitle, LangTag, Visibility } from
 import type { Deck, PublicDeck, UpdateDeck } from "@voca/contract"
 import { DeckRepo } from "../application/deckRepo.ts"
 import type {
+  DeckCounts,
   LiveDeck,
   NewDeck,
   OwnedDeck,
@@ -193,6 +194,17 @@ export const DeckRepoLive = Layer.effect(
         ORDER BY d.created_at DESC, d.id DESC`
     })
 
+    // The same count expressions as `listOwned`, for one deck.
+    const countsOf = SqlSchema.findOne({
+      Request: Schema.Struct({ deckId: Schema.BigInt, learnerId: Schema.BigInt, now: Schema.Number }),
+      Result: Schema.Struct({ wordCount: Count, dueCount: Count }),
+      execute: ({ deckId, learnerId, now }) => sql`
+        SELECT (SELECT count(*)::int FROM words w WHERE w.deck_id = ${deckId} AND w.deleted_at IS NULL) AS "wordCount",
+               (SELECT count(*)::int FROM cards c JOIN words w ON w.id = c.word_id
+                 WHERE w.deck_id = ${deckId} AND w.deleted_at IS NULL AND c.learner_id = ${learnerId}
+                   AND c.deleted_at IS NULL AND c.due <= ${new Date(now)}) AS "dueCount"`
+    })
+
     const insert = SqlSchema.findOne({
       Request: NewDeckRequest,
       Result: DeckRow,
@@ -304,6 +316,12 @@ export const DeckRepoLive = Layer.effect(
       findOwned: (learnerId, slug) =>
         findOwned({ learnerId, slug }).pipe(
           Effect.map(Option.map((row): OwnedDeck => ({ id: row.id, deck: toDeck(row) }))),
+          Effect.orDie
+        ),
+
+      counts: (deckId, learnerId, now) =>
+        countsOf({ deckId, learnerId, now }).pipe(
+          Effect.map((row): DeckCounts => ({ wordCount: row.wordCount, dueCount: row.dueCount })),
           Effect.orDie
         ),
 

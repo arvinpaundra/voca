@@ -1,6 +1,6 @@
 import { Clock, Effect, Option } from "effect"
 import { CurrentLearner, SLUG_LENGTH } from "@voca/contract"
-import type { CreateDeck, Deck, DeckSummary, UpdateDeck } from "@voca/contract"
+import type { CreateDeck, Deck, DeckDetail, DeckSummary, UpdateDeck } from "@voca/contract"
 import { DeckNotFound, TermLangLocked } from "../domain/errors.ts"
 import { newSlug } from "../domain/slug.ts"
 import { Transaction } from "../../shared/transaction.ts"
@@ -70,12 +70,16 @@ export const unpublishDeck = (slug: string): Effect.Effect<Deck, DeckNotFound, N
     return yield* decks.unpublish(owned.id, at)
   })
 
-export const getDeck = (slug: string): Effect.Effect<Deck, DeckNotFound, Needs> =>
+/** The deck with its counts, taken now: the same numbers the decks list shows for it. */
+export const getDeck = (slug: string): Effect.Effect<DeckDetail, DeckNotFound, Needs> =>
   Effect.gen(function* () {
     const { id } = yield* CurrentLearner
+    const decks = yield* DeckRepo
     const owned = yield* findOwnedDeck(id, slug)
+    const now = yield* Clock.currentTimeMillis
+    const counts = yield* decks.counts(owned.id, id, now)
 
-    return owned.deck
+    return { ...owned.deck, ...counts }
   })
 
 /**

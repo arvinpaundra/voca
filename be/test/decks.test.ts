@@ -129,7 +129,7 @@ describe("GET /decks/:deckSlug", () => {
 
         const deck = yield* call((c) => c.library.getDeck({ params: { deckSlug: created.slug } }), token)
 
-        expect(deck).toEqual(created)
+        expect(deck).toMatchObject(created)
       })
     ))
 
