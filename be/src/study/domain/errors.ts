@@ -21,5 +21,8 @@ export class DeckTooSmallError extends Data.TaggedError("DeckTooSmallError")<{}>
 /** None of the drills asked for applies to any word of the deck. */
 export class DrillNotAvailableError extends Data.TaggedError("DrillNotAvailableError")<{}> {}
 
+/** No word is due and no new word is left for today, so the session builder picked nothing. */
+export class NothingToStudyError extends Data.TaggedError("NothingToStudyError")<{}> {}
+
 /** The Learner has no Card for this word in that drill (never studied there), or the word is not theirs. */
 export class CardNotFound extends Data.TaggedError("CardNotFound")<{}> {}

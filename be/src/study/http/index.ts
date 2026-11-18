@@ -4,6 +4,7 @@ import {
   DeckTooSmall,
   DrillNotAvailable,
   NotFound,
+  NothingToStudy,
   QuestionAlreadyAnswered as QuestionAlreadyAnsweredContract,
   SessionNotActive as SessionNotActiveContract,
   VocaApi
@@ -47,6 +48,10 @@ export const StudyHandlers = HttpApiBuilder.group(
             Effect.catchTag(
               "DrillNotAvailableError",
               () => Effect.fail(new DrillNotAvailable({ message: "None of these drills applies to a hard word" }))
+            ),
+            Effect.catchTag(
+              "NothingToStudyError",
+              () => Effect.fail(new NothingToStudy({ message: "Nothing is due and no new word is left today. Come back tomorrow, or add words to the deck" }))
             )
           )
         }
@@ -61,6 +66,10 @@ export const StudyHandlers = HttpApiBuilder.group(
           Effect.catchTag(
             "DrillNotAvailableError",
             () => Effect.fail(new DrillNotAvailable({ message: "None of these drills applies to a word in the deck" }))
+          ),
+          Effect.catchTag(
+            "NothingToStudyError",
+            () => Effect.fail(new NothingToStudy({ message: "Nothing is due and no new word is left today. Come back tomorrow, or add words to the deck" }))
           )
         )
       },

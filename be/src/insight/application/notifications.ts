@@ -1,5 +1,6 @@
 import { Effect } from "effect"
 import { CurrentLearner, drillLabel, type Notifications } from "@voca/contract"
+import { estimateMinutes } from "../domain/pace.ts"
 import { learnerCalendar } from "./calendar.ts"
 import { InsightRepo } from "./insightRepo.ts"
 
@@ -35,11 +36,19 @@ export const notifications = Effect.gen(function* () {
     })
   }
 
+  const due = rows.reduce((sum, row) => sum + row.due, 0)
+  const unstudied = yield* repo.unstudiedPairs({ learnerId, deckId: null })
+  const settings = yield* repo.learnerSettings(learnerId)
+
+  // The allowance caps the count, and the words the decks no longer have cap the allowance.
+  const newAvailable = Math.max(0, Math.min(settings.newPerDay - newToday, unstudied))
+
+  const paces = yield* repo.sessionPaces(learnerId)
+
   return {
     decks: [...decks.values()].sort((a, b) => b.overdue - a.overdue || b.due - a.due),
     hardDue: rows.reduce((sum, row) => sum + row.hard, 0),
-    newAvailable: Math.max(0, calendar.newPerDay - newToday),
-    // Null means no pace has been measured yet, and the UI then shows no estimate.
-    estimatedMinutes: null
+    newAvailable,
+    estimatedMinutes: estimateMinutes(paces, due + newAvailable)
   }
 })
