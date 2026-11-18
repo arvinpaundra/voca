@@ -257,7 +257,18 @@ function StudyFlow({ studySession }: { studySession: Session }) {
 
   const summary = tally(firstAttempts);
 
-  if (finished) {
+  // A session with no question left and no answer to show has nothing to study: say so and offer a way back.
+  if (!finished && head === undefined && words.length === 0) {
+    return (
+      <EmptyState
+        title="Nothing to study right now."
+        body="No word is due in this session and no new word is left for today."
+        action={<Button variant="secondary" href={studyReturnHref()}>Back</Button>}
+      />
+    );
+  }
+
+  if (finished || head === undefined) {
     return (
       <div className="mx-auto grid w-full max-w-[640px] gap-4">
         <SessionSummary firstAttempts={firstAttempts} backHref={studyReturnHref()} tight={words.length > 0} />
@@ -274,8 +285,6 @@ function StudyFlow({ studySession }: { studySession: Session }) {
       </div>
     );
   }
-
-  if (head === undefined) return null;
 
   const promptIsTerm = DRILLS[head.drill].prompt !== "meaning";
 

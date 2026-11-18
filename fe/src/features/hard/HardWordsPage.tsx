@@ -9,6 +9,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
 import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
+import { failureTag } from "../deck/wordModel";
+import { startFailure } from "../study/startFailure";
 import { rememberHardStudy } from "../study/returnTo";
 import { HardStudySetup } from "./HardStudySetup";
 import { HardWordList } from "./HardWordList";
@@ -156,7 +158,7 @@ export function HardWordsPage() {
       return;
     }
 
-    setError("Could not start the session. Try again.");
+    setError(startFailure(failureTag(result.failure)));
   };
 
   if (studying) {

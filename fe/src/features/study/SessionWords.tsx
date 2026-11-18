@@ -51,7 +51,8 @@ export function SessionWords({
                 {item.leech && !item.hard && <Badge variant="lime">Suggested</Badge>}
               </div>
 
-              <div className="w-actions">
+              {/* A fixed width keeps the dot column aligned: "Mark hard" is wider than "Hard". */}
+              <div className="w-actions" style={{ width: 132, justifyContent: "flex-end" }}>
                 {item.hard ? (
                   <Button variant="ghost" size="sm" aria-label={`Unmark ${item.term}`} onClick={() => onToggleHard(item)}>
                     <Check className="i" aria-hidden="true" />
