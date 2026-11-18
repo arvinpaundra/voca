@@ -38,7 +38,7 @@ function useWideViewport(): boolean {
 }
 
 // The form scrolls inside the dialog instead of growing it, so the footer stays in reach on a phone.
-const FORM_SCROLL: CSSProperties = { maxHeight: "min(60vh, 460px)", overflowY: "auto", padding: 2 };
+const FORM_SCROLL: CSSProperties = { maxHeight: "min(calc(100dvh - 220px), 560px)", overflowY: "auto", padding: 2 };
 
 // The fields only: the dialog footer owns the actions and submits this form through `formRef`.
 export function WordForm({ labels, draft, formRef, onChange, onSubmit }: WordFormProps) {

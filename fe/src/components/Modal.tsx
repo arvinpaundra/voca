@@ -48,7 +48,14 @@ export function Modal({
         event.preventDefault();
         onClose();
       }}
-      style={{ border: 0, padding: 0, background: "transparent", margin: "auto", maxWidth: "calc(100vw - 32px)" }}
+      style={{
+        border: 0,
+        padding: 0,
+        background: "transparent",
+        margin: "auto",
+        width: "min(480px, calc(100vw - 32px))",
+        maxWidth: "calc(100vw - 32px)",
+      }}
     >
       <div className="modal">
         <div className="modal-head">
