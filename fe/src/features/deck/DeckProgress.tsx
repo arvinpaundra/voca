@@ -25,19 +25,23 @@ export function DeckProgress({ stats }: { stats: DeckStats }) {
         <dt className="l">mature</dt>
       </div>
 
-      <div className="wide" aria-label="Due next 7 study days">
-        <div className="forecast">
-          {forecast.map((day) => (
-            <div key={day.date}>
-              <small>{weekdayLetter(day.date)}</small>
-              <b>{day.count}</b>
-            </div>
-          ))}
+      <div className="wide">
+        <span className="eyebrow">Due · next 7 days</span>
+        <div aria-label="Due next 7 study days">
+          <div className="forecast">
+            {forecast.map((day) => (
+              <div key={day.date}>
+                <small>{weekdayLetter(day.date)}</small>
+                <b>{day.count}</b>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="wide" aria-label="True retention">
-        {retention === null ? "—" : `${retention}%`}
+      <div className="wide">
+        <span className="eyebrow">True retention · 30 days</span>
+        <b aria-label="True retention">{retention === null ? "—" : `${retention}%`}</b>
       </div>
 
       <div className="wide maturity">
