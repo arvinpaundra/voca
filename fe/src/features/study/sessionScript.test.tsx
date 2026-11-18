@@ -33,8 +33,8 @@ test.each([
 });
 
 test.each([
-  ["term_meaning", "ja"],
-  ["term_meaning", "zh-Hans"],
+  ["meaning_term", "ja"],
+  ["meaning_term", "zh-Hans"],
 ] as const)("a meaning prompt carries no language (%s, %s)", (drill: Drill, termLang) => {
   expect(promptLang(drill, termLang)).toBeUndefined();
 });
