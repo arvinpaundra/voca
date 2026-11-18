@@ -28,6 +28,10 @@ export type Deck = typeof Deck.Type
 export const DeckSummary = Schema.Struct({ ...Deck.fields, wordCount: Count, dueCount: Count })
 export type DeckSummary = typeof DeckSummary.Type
 
+/** `GET /decks/:deckSlug`: the deck with its counts. The counts are optional only while the server rolls out. */
+export const DeckDetail = Schema.Struct({ ...Deck.fields, wordCount: Schema.optionalKey(Count), dueCount: Schema.optionalKey(Count) })
+export type DeckDetail = typeof DeckDetail.Type
+
 /** A drill available in a deck: applies to at least one word. `label` follows the term language. */
 export const DeckDrill = Schema.Struct({ drill: Drill, label: Schema.String, due: Count, new: Count })
 export type DeckDrill = typeof DeckDrill.Type
@@ -99,7 +103,7 @@ const wordParams = { wordSlug: WordSlug }
 export class LibraryGroup extends HttpApiGroup.make("library").add(
   HttpApiEndpoint.get("listDecks", "/decks", { success: Schema.Array(DeckSummary) }),
   HttpApiEndpoint.post("createDeck", "/decks", { payload: CreateDeck, success: Deck }),
-  HttpApiEndpoint.get("getDeck", "/decks/:deckSlug", { params: deckParams, success: Deck, error: NotFound }),
+  HttpApiEndpoint.get("getDeck", "/decks/:deckSlug", { params: deckParams, success: DeckDetail, error: NotFound }),
   HttpApiEndpoint.patch("updateDeck", "/decks/:deckSlug", {
     params: deckParams,
     payload: UpdateDeck,

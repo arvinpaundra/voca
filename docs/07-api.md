@@ -31,7 +31,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 |---|---|---|
 | GET | `/decks` | → `DeckSummary[]` (own decks, with `wordCount` and `dueCount`) |
 | POST | `/decks` | `{title, description?, termLang, meaningLang}` → `Deck` |
-| GET | `/decks/:deckSlug` | → `Deck` |
+| GET | `/decks/:deckSlug` | → `Deck & {wordCount, dueCount}` |
 | GET | `/decks/:deckSlug/drills` | → `[{drill, label, due, new}]`: only drills that apply to at least one word (FR-17) |
 | PATCH | `/decks/:deckSlug` | `{title?, description?, termLang?, meaningLang?}` → `Deck` |
 | DELETE | `/decks/:deckSlug` | → `204` |
@@ -60,7 +60,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | GET | `/sessions/active` | → `Session \| null` (resume after reload) |
 | POST | `/sessions/:sessionSlug/answers` | `{position, chosenWordSlug, latencyMs}` → `{correct, correctWordSlug, nextDue \| null, retry: Question \| null, completed, leech}` |
 | POST | `/sessions/:sessionSlug/abandon` | → `204` (end early; uncleared words were already rescheduled on attempt 1) |
-| GET | `/hard-words` | `?drill&cursor` → `Page<WordWithCard>` |
+| GET | `/hard-words` | `?drill&cursor` → `Page<WordWithCard & {deck: {slug, title, termLang, meaningLang}}>` (the list spans decks) |
 | PUT | `/words/:wordSlug/drills/:drill/hard` | → `204` (mark that card) |
 | DELETE | `/words/:wordSlug/drills/:drill/hard` | → `204` (unmark) |
 

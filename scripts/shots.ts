@@ -7,13 +7,13 @@
 //
 // --mock signs in with a fake refresh token and answers /api/* from scripts/shots-fixtures.ts (the design's sample
 // data), with the clock frozen on the design's date. States: `complete` (a finished session), `wrong` (press 1 on
-// the question, which the fake API marks wrong). --design writes .shots/design-<screen>.png for side-by-side checks.
+// the question, which the fake API marks wrong), `finish` (answer right and end the session). --design writes .shots/design-<screen>.png for side-by-side checks.
 // First run downloads Chromium once (`bunx playwright install chromium`).
 import { mkdirSync } from "node:fs"
 import { resolve } from "node:path"
 import { parseArgs } from "node:util"
 import { chromium, type Page } from "playwright-core"
-import { NOW, TIMEZONE, routes } from "./shots-fixtures"
+import { NO_CONTENT, NOW, TIMEZONE, routes } from "./shots-fixtures"
 
 const { values: opt, positionals: specs } = parseArgs({
   allowPositionals: true,
@@ -22,6 +22,7 @@ const { values: opt, positionals: specs } = parseArgs({
 
 const DESIGN_SCREENS = [
   "dashboard", "decks", "deck", "setup", "complete", "session", "discover", "preview", "settings", "login", "landing",
+  "word", "hard", "session-words",
 ]
 
 if (specs.length === 0 && !opt.design) {
@@ -78,7 +79,9 @@ const fakeApi = async (page: Page, state: string, problems: string[]) => {
       problems.push(`no fixture for ${route.request().method()} ${url.pathname}`)
       return route.fulfill({ status: 404, body: "" })
     }
-    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(hit[1](url, state)) })
+    const body = hit[1](url, state, route.request().method())
+    if (body === NO_CONTENT) return route.fulfill({ status: 204, body: "" })
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) })
   })
 }
 
@@ -103,6 +106,12 @@ for (const spec of specs) {
   await page.waitForTimeout(800)
   if (state === "wrong") {
     await page.keyboard.press("1")
+    await page.waitForTimeout(400)
+  }
+  if (state === "finish") {
+    await page.keyboard.press("2")
+    await page.waitForTimeout(400)
+    await page.keyboard.press("Enter")
     await page.waitForTimeout(400)
   }
 
