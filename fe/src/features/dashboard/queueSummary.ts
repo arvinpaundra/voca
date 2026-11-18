@@ -2,10 +2,25 @@ import type { DeckStats } from "@voca/contract";
 
 /** "About 12 minutes" for the queue, or null when no pace has been measured yet. */
 export const estimateText = (minutes: number | null): string | null => {
-  throw new Error("not implemented: CAUGHT");
+  if (minutes === null) return null;
+
+  if (minutes === 0) return "Under a minute";
+
+  return `About ${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
 };
 
 /** The first of the next 7 study days that has cards falling due, or null when none has. */
 export const nextDueDate = (forecast: DeckStats["forecast"]): string | null => {
-  throw new Error("not implemented: CAUGHT");
+  const day = forecast.find((entry) => entry.count > 0);
+
+  return day?.date ?? null;
 };
+
+/** "Thu 19 Nov" for a "YYYY-MM-DD" date. */
+export const nextReviewLabel = (date: string): string =>
+  new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00.000Z`));

@@ -1,6 +1,6 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
 import type { Learner, LearnerStats, Notifications } from "@voca/contract";
-import { estimateText, nextDueDate } from "./queueSummary";
+import { estimateText, nextDueDate, nextReviewLabel } from "./queueSummary";
 import { Button } from "../../components/Button";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
@@ -110,7 +110,7 @@ export function TodaySection({
 
       {first === undefined && nextDue !== null && (
         <p className="muted" data-next-due={nextDue}>
-          Next review {nextDue}
+          Next review {nextReviewLabel(nextDue)}
         </p>
       )}
     </section>
