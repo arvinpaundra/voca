@@ -8,11 +8,16 @@ import {
   type Session,
   type WordSlug
 } from "@voca/contract";
-import { X, Trophy } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "../../components/Button";
+import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { Skeleton } from "../../components/Skeleton";
 import { Term } from "../../components/Term";
 import { cx } from "../../components/cx";
 import { session } from "../../lib/appSession";
+import { AnswerOptions } from "./AnswerOptions";
+import { SessionSummary } from "./SessionSummary";
 import { advance } from "./queue";
 import { segments, tally, type Segment } from "./progress";
 import { studyReturnHref } from "./returnTo";
@@ -59,7 +64,7 @@ export function StudyPage() {
   if (state.kind === "loading") {
     return (
       <Shell>
-        <p className="text-sm text-stone-500">Loading…</p>
+        <Skeleton label="Loading study session" rows={3} />
       </Shell>
     );
   }
@@ -67,7 +72,7 @@ export function StudyPage() {
   if (state.kind === "failed") {
     return (
       <Shell>
-        <p className="text-sm text-red-600" role="alert">Could not load your session.</p>
+        <ErrorState message="Could not load your session." />
       </Shell>
     );
   }
@@ -75,8 +80,10 @@ export function StudyPage() {
   if (state.kind === "none") {
     return (
       <Shell>
-        <p className="text-sm text-stone-500">No study session is running.</p>
-        <Button variant="ghost" href="/app">Back to dashboard</Button>
+        <EmptyState
+          title="No study session is running."
+          action={<Button variant="secondary" href="/app">Back to dashboard</Button>}
+        />
       </Shell>
     );
   }
@@ -177,60 +184,25 @@ function StudyFlow({ studySession }: { studySession: Session }) {
   };
 
   const summary = tally(firstAttempts);
-  const accuracyLabel = summary.accuracy === null ? "—" : `${Math.round(summary.accuracy * 100)}%`;
 
   if (finished) {
-    return (
-      <section className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center" aria-live="polite">
-        <Trophy className="size-12 text-lime-hover" aria-hidden="true" />
-        <h1 className="font-montserrat text-3xl font-bold text-stone-900">Session complete!</h1>
-        <div className="flex w-full max-w-xs">
-          <SegmentStrip size={studySession.size} firstAttempts={firstAttempts} />
-        </div>
-        <p className="text-sm text-stone-600">{`${summary.right} right · ${summary.wrong} wrong`}</p>
-        {summary.accuracy !== null && (
-          <p className="text-sm text-stone-600">{`${accuracyLabel} accuracy`}</p>
-        )}
-        <div className="flex w-full flex-col-reverse gap-3 pt-2 sm:w-auto sm:flex-row">
-          <Button variant="primary" href={studyReturnHref()}>Back to deck</Button>
-          <Button variant="ghost" href="/app">Dashboard</Button>
-        </div>
-      </section>
-    );
+    return <SessionSummary right={summary.right} wrong={summary.wrong} backHref={studyReturnHref()} />;
   }
 
   if (head === undefined) return null;
 
-  const answered = feedback !== null;
   const answerIsTerm = DRILLS[head.drill].answer !== "meaning";
   const promptIsTerm = DRILLS[head.drill].prompt !== "meaning";
-  const correctOption = head.options.find((option) => feedback?.result.correctWordSlug === option.wordSlug);
-
-  const cue = (() => {
-    if (feedback === null) return "";
-    if (feedback.result.correct) return "Correct.";
-    return `Wrong. The answer is ${correctOption?.text ?? ""}.`;
-  })();
-
-  const optionClass = (wordSlug: WordSlug) => {
-    const base =
-      "flex min-h-14 w-full items-center justify-center rounded-2xl border px-5 py-4 text-center text-lg font-medium transition-colors duration-150 disabled:cursor-default";
-
-    if (feedback === null) return cx(base, "border-stone-200 bg-white text-stone-900 hover:border-stone-400 disabled:opacity-60");
-    if (wordSlug === feedback.result.correctWordSlug) return cx(base, "border-lime bg-lime text-stone-900");
-    if (wordSlug === feedback.chosen) return cx(base, "border-red-500 bg-red-50 text-red-700");
-    return cx(base, "border-stone-200 bg-white text-stone-400");
-  };
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
       <div className="flex min-w-0 flex-1 flex-col gap-6">
-        <header className="flex items-center gap-3 sm:gap-4">
+        <header className="flex items-center gap-3">
           <a
             href={studyReturnHref()}
             aria-label="Close session"
             title="Close session"
-            className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-stone-200/70 text-stone-700 hover:bg-stone-300"
+            className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-stone-600 hover:bg-stone-200/70 hover:text-stone-900"
           >
             <X className="size-4" aria-hidden="true" />
           </a>
@@ -238,10 +210,10 @@ function StudyFlow({ studySession }: { studySession: Session }) {
             {head.drillLabel}
           </p>
           <SegmentStrip size={studySession.size} firstAttempts={firstAttempts} />
-          <p className="shrink-0 text-xs text-stone-500">{`${cleared} / ${studySession.size}`}</p>
+          <p className="shrink-0 font-mono text-xs tabular-nums text-stone-500">{`${cleared} / ${studySession.size}`}</p>
         </header>
 
-        <section className="flex flex-col items-center gap-8 rounded-card border border-stone-200 bg-white px-6 py-12 shadow-sm">
+        <section className="flex flex-col items-center gap-8 rounded-card border border-stone-200 bg-white px-6 py-12">
           <p className="text-center">
             {promptIsTerm ? (
               <Term
@@ -255,34 +227,23 @@ function StudyFlow({ studySession }: { studySession: Session }) {
             )}
           </p>
 
-          <ul className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
-            {head.options.map((option) => (
-              <li key={option.wordSlug}>
-                <button
-                  type="button"
-                  className={optionClass(option.wordSlug)}
-                  disabled={answered || busy}
-                  onClick={() => void choose(head, option.wordSlug)}
-                >
-                  <span
-                    dir="auto"
-                    lang={answerIsTerm ? studySession.termLang : undefined}
-                    className={answerIsTerm ? "font-term" : undefined}
-                  >
-                    {option.text}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <AnswerOptions
+            options={head.options}
+            correctSlug={feedback?.result.correctWordSlug ?? null}
+            chosenSlug={feedback?.chosen ?? null}
+            disabled={busy}
+            lang={answerIsTerm ? studySession.termLang : undefined}
+            onChoose={(wordSlug) => {
+              const option = head.options.find((candidate) => candidate.wordSlug === wordSlug);
+              if (option !== undefined) void choose(head, option.wordSlug);
+            }}
+          />
         </section>
-
-        <p className="min-h-5 text-center text-sm font-medium text-stone-700" aria-live="polite">{cue}</p>
 
         {error !== null && <p className="text-center text-sm text-red-600" role="alert">{error}</p>}
 
         <div className="flex flex-wrap items-center justify-center gap-3">
-          {answered && <Button variant="primary" onClick={next}>Next</Button>}
+          {feedback !== null && <Button variant="primary" onClick={next}>Next</Button>}
           <Button variant="ghost" disabled={busy} onClick={() => void endSession()}>
             End session
           </Button>
@@ -291,28 +252,29 @@ function StudyFlow({ studySession }: { studySession: Session }) {
 
       <aside
         aria-label="This session"
-        className="flex w-full shrink-0 flex-col gap-5 rounded-card border border-stone-200 bg-white p-6 shadow-sm lg:sticky lg:top-6 lg:w-72"
+        className="flex w-full shrink-0 flex-col gap-6 rounded-card border border-stone-200 bg-white p-6 lg:sticky lg:top-6 lg:w-72"
       >
-        <h2 className="text-sm font-semibold text-stone-900">This session</h2>
-        <div className="flex flex-col items-center gap-2">
-          <p className="font-montserrat text-3xl font-bold text-stone-900">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-stone-500">This session</h2>
+        <div className="flex flex-col gap-1">
+          <p className="font-mono text-3xl font-semibold tabular-nums text-stone-900">
             {`${cleared} / ${studySession.size}`}
           </p>
           <p className="text-xs text-stone-500">words cleared</p>
         </div>
-        <dl className="flex flex-col gap-3">
-          <div className="flex items-center justify-between text-sm">
-            <dt className="text-stone-600">Right</dt>
-            <dd className="font-semibold text-stone-900">{summary.right}</dd>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <dt className="text-stone-600">Wrong</dt>
-            <dd className="font-semibold text-stone-900">{summary.wrong}</dd>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <dt className="text-stone-600">Accuracy</dt>
-            <dd className="font-semibold text-stone-900">{accuracyLabel}</dd>
-          </div>
+        <dl className="flex flex-col divide-y divide-stone-200">
+          {[
+            { label: "Right", value: String(summary.right) },
+            { label: "Wrong", value: String(summary.wrong) },
+            {
+              label: "Accuracy",
+              value: summary.accuracy === null ? "—" : `${Math.round(summary.accuracy * 100)}%`,
+            },
+          ].map((stat) => (
+            <div key={stat.label} className="flex items-center justify-between py-2">
+              <dt className="text-sm text-stone-600">{stat.label}</dt>
+              <dd className="font-mono text-sm font-semibold tabular-nums text-stone-900">{stat.value}</dd>
+            </div>
+          ))}
         </dl>
       </aside>
     </div>
