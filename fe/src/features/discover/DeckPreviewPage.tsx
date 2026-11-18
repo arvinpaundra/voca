@@ -1,27 +1,24 @@
 import { useEffect, useState } from "react";
-import { DateTime, Option, Result, Schema } from "effect";
+import { Option, Result, Schema } from "effect";
 import { DeckSlug, type PublicDeckDetail } from "@voca/contract";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, GitFork } from "lucide-react";
+import { Avatar } from "../../components/Avatar";
+import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
-import { StatStrip } from "../../components/StatStrip";
-import { Term } from "../../components/Term";
 import { session } from "../../lib/appSession";
 import { forkDeck, forkMessage } from "./fork";
+import { PreviewList } from "./PreviewList";
+import { forkLabel } from "./PublicDeckRows";
 
 type PreviewState =
   | { kind: "loading" }
   | { kind: "missing" }
   | { kind: "failed" }
   | { kind: "loaded"; deck: PublicDeckDetail };
-
-const publishedLabel = (publishedAt: DateTime.Utc) =>
-  new Intl.DateTimeFormat("en", { month: "short", year: "numeric", timeZone: "UTC" }).format(
-    new Date(DateTime.toEpochMillis(publishedAt)),
-  );
 
 export function DeckPreviewPage({ deckSlug }: { deckSlug: string }) {
   const [state, setState] = useState<PreviewState>({ kind: "loading" });
@@ -74,11 +71,11 @@ export function DeckPreviewPage({ deckSlug }: { deckSlug: string }) {
   };
 
   return (
-    <div className="w-full py-6 sm:py-8">
-      <Button variant="ghost" size="sm" href="/app/discover" className="-ml-3 mb-6">
-        <ArrowLeft className="size-4" aria-hidden="true" />
+    <div className="content" style={{ maxWidth: 820 }}>
+      <a className="back" href="/app/discover">
+        <ArrowLeft className="i" aria-hidden="true" />
         Discover
-      </Button>
+      </a>
 
       {state.kind === "loading" && <Skeleton label="Loading deck" rows={4} />}
 
@@ -115,80 +112,42 @@ type PreviewBodyProps = {
 };
 
 function PreviewBody({ deck, forking, forkError, onFork }: PreviewBodyProps) {
-  const languages = `${deck.termLang} → ${deck.meaningLang}`;
-
   return (
-    <div>
+    <>
       <PageHeader
         title={deck.title}
-        description={`${deck.owner.name} · ${languages} · Published ${publishedLabel(deck.publishedAt)}`}
+        meta={
+          <>
+            <span className="author">
+              <Avatar name={deck.owner.name} src={deck.owner.avatarUrl} />
+              {deck.owner.name}
+            </span>
+            <span className="dot"></span>
+            <Badge variant="outline" lang>
+              {`${deck.termLang} → ${deck.meaningLang}`}
+            </Badge>
+            <span>{`${deck.wordCount} words`}</span>
+            <span className="dot"></span>
+            <span>{forkLabel(deck.forkCount)}</span>
+          </>
+        }
         actions={
           <Button variant="primary" busy={forking} onClick={onFork}>
-            {forking ? "Forking…" : "Fork"}
+            <GitFork className="i" aria-hidden="true" />
+            {forking ? "Forking…" : "Fork deck"}
           </Button>
         }
       />
 
-      <div className="grid gap-8">
-        {deck.description !== "" && (
-          <p dir="auto" className="whitespace-pre-line text-sm text-stone-700">
-            {deck.description}
-          </p>
-        )}
+      {forkError !== null && <ErrorState message={forkError} />}
 
-        <StatStrip
-          stats={[
-            { label: "Words", value: String(deck.wordCount) },
-            { label: "Forks", value: String(deck.forkCount) },
-          ]}
-        />
+      {deck.description !== "" && (
+        <p dir="auto" style={{ color: "var(--ink-2)", maxWidth: 640, whiteSpace: "pre-line" }}>
+          {deck.description}
+        </p>
+      )}
 
-        {forkError !== null && (
-          <p role="alert" className="text-sm text-red-600">
-            {forkError}
-          </p>
-        )}
-
-        <section className="grid gap-3">
-        <h2 className="text-xs font-semibold tracking-[0.06em] text-stone-500 uppercase">Preview</h2>
-
-        <div className="overflow-hidden rounded-card border border-stone-200 bg-white">
-          <table className="w-full border-collapse text-sm">
-            <caption className="sr-only">Preview words</caption>
-
-            <thead>
-              <tr className="h-8 border-b border-stone-200 text-[11px] font-semibold tracking-[0.06em] text-stone-500 uppercase">
-                <th scope="col" className="px-4 text-left font-semibold">
-                  Term
-                </th>
-                <th scope="col" className="px-4 text-left font-semibold">
-                  Meaning
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {deck.preview.map((word) => (
-                <tr key={word.slug} className="border-b border-stone-100 last:border-b-0">
-                  <td className="px-4 py-3" lang={deck.termLang}>
-                    <Term term={word.term} reading={word.reading ?? ""} lang={deck.termLang} dir="auto" size="md" />
-                  </td>
-                  <td className="px-4 py-3 text-stone-700" lang={deck.meaningLang} dir="auto">
-                    {word.meaning}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-          {deck.wordCount > deck.preview.length && (
-            <p className="text-center text-xs text-stone-400">
-              Showing {deck.preview.length} of {deck.wordCount} words
-            </p>
-          )}
-        </section>
-      </div>
-    </div>
+      <PreviewList words={deck.preview} total={deck.wordCount} termLang={deck.termLang} meaningLang={deck.meaningLang} />
+    </>
   );
 }
