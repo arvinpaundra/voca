@@ -35,11 +35,13 @@ export const notifications = Effect.gen(function* () {
     })
   }
 
+  const newAvailable: number = yield* Effect.die("not implemented: QUEUE")
+  const estimatedMinutes: number | null = yield* Effect.die("not implemented: QUEUE")
+
   return {
     decks: [...decks.values()].sort((a, b) => b.overdue - a.overdue || b.due - a.due),
     hardDue: rows.reduce((sum, row) => sum + row.hard, 0),
-    newAvailable: Math.max(0, calendar.newPerDay - newToday),
-    // Null means no pace has been measured yet, and the UI then shows no estimate.
-    estimatedMinutes: null
+    newAvailable,
+    estimatedMinutes
   }
 })

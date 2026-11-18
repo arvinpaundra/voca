@@ -72,6 +72,10 @@ export const startSession = (
 
         // Shuffled, so the due words don't always come first on the screen.
         const picks = yield* Random.shuffle([...due.map(({ pick }) => pick), ...fresh])
+
+        if (picks.length === 0) {
+          return yield* Effect.die("not implemented: QUEUE")
+        }
         const questions: Array<{
           readonly position: number
           readonly drill: Drill
