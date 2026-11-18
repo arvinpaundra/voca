@@ -1,9 +1,8 @@
 import { useEffect } from "react";
+import { Check, X } from "lucide-react";
 import { cx } from "../../components/cx";
 
 export type AnswerOption = { wordSlug: string; text: string };
-
-const KEYS = ["1", "2", "3", "4"];
 
 // Keys 1-4 choose an option while the question is unanswered.
 export function AnswerOptions({
@@ -21,14 +20,18 @@ export function AnswerOptions({
   lang?: string | undefined;
   onChoose: (wordSlug: string) => void;
 }) {
-  const answered = correctSlug !== null;
+  const answered = chosenSlug !== null;
   const locked = answered || disabled === true;
 
   useEffect(() => {
     if (locked) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      const option = options[KEYS.indexOf(event.key)];
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (!/^[1-4]$/.test(event.key)) return;
+
+      const option = options[Number(event.key) - 1];
+
       if (option === undefined) return;
 
       onChoose(option.wordSlug);
@@ -36,52 +39,34 @@ export function AnswerOptions({
 
     window.addEventListener("keydown", onKeyDown);
 
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [locked, options, onChoose]);
 
-  const correctText = options.find((option) => option.wordSlug === correctSlug)?.text ?? "";
-
-  const cue = (() => {
-    if (!answered) return "";
-    if (chosenSlug === correctSlug) return "Correct.";
-    return `Wrong. The answer is ${correctText}.`;
-  })();
-
-  const optionClass = (wordSlug: string) => {
-    const base =
-      "flex min-h-11 w-full items-center gap-3 rounded-card border bg-white px-4 py-3 text-left text-base font-medium text-stone-900 transition-colors duration-150 disabled:cursor-default";
-
-    if (!answered) return cx(base, "border-stone-200 hover:border-stone-400");
-    if (wordSlug === correctSlug) return cx(base, "border-lime bg-lime");
-    if (wordSlug === chosenSlug) return cx(base, "border-red-500 bg-red-50 text-red-700");
-    return cx(base, "border-stone-200 text-stone-500");
-  };
-
   return (
-    <div className="flex w-full flex-col gap-3">
-      <div role="group" aria-label="Answers" className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-        {options.map((option, index) => (
+    <div className="options" role="group" aria-label="Answers">
+      {options.map((option, index) => {
+        const isRight = answered && option.wordSlug === correctSlug;
+        const isWrong = answered && option.wordSlug === chosenSlug && !isRight;
+
+        return (
           <button
             key={option.wordSlug}
             type="button"
-            className={optionClass(option.wordSlug)}
+            className={cx("opt", isRight && "right", isWrong && "wrong", answered && !isRight && !isWrong && "dim")}
             disabled={locked}
             onClick={() => onChoose(option.wordSlug)}
           >
-            <kbd className="inline-flex size-5 shrink-0 items-center justify-center rounded-[5px] border border-stone-200 font-mono text-[11px] text-stone-500">
-              {KEYS[index]}
-            </kbd>
-            <span dir="auto" lang={lang} className={cx("min-w-0", lang !== undefined && "font-term")}>
+            <kbd>{index + 1}</kbd>
+
+            <span className={cx("grow", lang !== undefined && "font-term")} lang={lang} dir="auto">
               {option.text}
             </span>
+
+            {isWrong && <X className="i" aria-hidden="true" />}
+            {isRight && <Check className="i" aria-hidden="true" />}
           </button>
-        ))}
-      </div>
-      <p role="status" className="min-h-5 text-center text-sm font-medium text-stone-700">
-        {cue}
-      </p>
+        );
+      })}
     </div>
   );
 }

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Option, Result, Schema } from "effect";
 import { DeckSlug, type Drill, type DeckDrill, type SessionSize } from "@voca/contract";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "../../components/Button";
+import { Card } from "../../components/Card";
+import { ChoiceCard } from "../../components/ChoiceCard";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
-import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
-import { cx } from "../../components/cx";
 import { session } from "../../lib/appSession";
 import { failureTag } from "../deck/wordModel";
 import { rememberDrills, rememberedDrills } from "./queue";
@@ -27,7 +28,7 @@ const startFailure = (tag: string | undefined): string => {
 type SetupState =
   | { readonly kind: "loading" }
   | { readonly kind: "failed" }
-  | { readonly kind: "ready"; readonly drills: readonly DeckDrill[]; readonly defaultSize: SessionSize };
+  | { readonly kind: "ready"; readonly drills: readonly DeckDrill[]; readonly defaultSize: SessionSize; readonly deckTitle: string };
 
 export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
   const [state, setState] = useState<SetupState>({ kind: "loading" });
@@ -51,8 +52,9 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
 
     Promise.all([
       session.call((client) => client.study.deckDrills({ params: { deckSlug: parsedSlug } })),
-      session.call((client) => client.me.get())
-    ]).then(([drillsResult, learnerResult]) => {
+      session.call((client) => client.me.get()),
+      session.call((client) => client.library.getDeck({ params: { deckSlug: parsedSlug } }))
+    ]).then(([drillsResult, learnerResult, deckResult]) => {
       if (!active) return;
       if (!Result.isSuccess(drillsResult)) {
         setState({ kind: "failed" });
@@ -64,7 +66,10 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
         ? learnerResult.success.settings.defaultSessionSize
         : DEFAULT_SIZE;
 
-      setState({ kind: "ready", drills, defaultSize });
+      // The title only labels the way back; without it the link says "Deck".
+      const deckTitle = Result.isSuccess(deckResult) ? deckResult.success.title : "Deck";
+
+      setState({ kind: "ready", drills, defaultSize, deckTitle });
       setSize(defaultSize);
       setSelected(
         rememberedDrills(window.localStorage, parsedSlug, drills.map((drill) => drill.drill))
@@ -112,8 +117,8 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-100 px-4 py-6 lg:px-8 lg:py-10">
-      <div className="mx-auto flex w-full max-w-xl flex-col">
+    <main className="main">
+      <div className="content">
         {state.kind === "loading" && <Skeleton label="Loading drills" rows={3} />}
 
         {state.kind === "failed" && <ErrorState message="The drills could not be loaded." />}
@@ -123,63 +128,56 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
         )}
 
         {state.kind === "ready" && state.drills.length > 0 && (
-          <>
-            <PageHeader title="Study this deck" />
+          <Card className="mx-auto w-full max-w-[520px]" style={{ gap: 24 }}>
+            <div className="ph-text" style={{ display: "grid", gap: 4 }}>
+              <a className="back" href={`/app/decks/${deckSlug}`}>
+                <ArrowLeft className="i" aria-hidden="true" />
+                {state.deckTitle}
+              </a>
 
-            <div className="flex flex-col gap-8">
-              <fieldset className="flex flex-col gap-3">
-                <legend className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-stone-500">
-                  Drills
-                </legend>
-                {state.drills.map((drill) => {
-                  const checked = selected.includes(drill.drill);
+              <h1 className="h1" style={{ fontSize: "calc(var(--h1) * .85)" }}>
+                Study session
+              </h1>
+            </div>
 
-                  return (
-                    <label
-                      key={drill.drill}
-                      className={cx(
-                        "flex min-h-11 cursor-pointer items-center gap-3 rounded-card border bg-white px-4 py-3 transition-colors duration-150",
-                        checked ? "border-navy" : "border-stone-200 hover:border-stone-400",
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        className="size-4 shrink-0 accent-lime"
-                        checked={checked}
-                        onChange={() => toggle(drill.drill)}
-                      />
-                      <span dir="auto" className="min-w-0 flex-1 text-sm font-medium text-stone-900">
-                        {drill.label}
-                      </span>
-                      <span className="shrink-0 font-mono text-xs tabular-nums text-stone-500">
-                        {`${drill.due} due · ${drill.new} new`}
-                      </span>
-                    </label>
-                  );
-                })}
-              </fieldset>
+            <div className="field">
+              <span className="lbl">Drills</span>
 
-              <SessionSizeField value={size} onChange={setSize} />
-
-              {error !== null && <p className="text-sm text-red-600" role="alert">{error}</p>}
-
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <Button variant="ghost" href={`/app/decks/${deckSlug}`}>
-                  Back to deck
-                </Button>
-                <Button
-                  variant="primary"
-                  busy={busy}
-                  disabled={selected.length === 0}
-                  onClick={() => void start()}
-                >
-                  Start
-                </Button>
+              <div className="choices">
+                {state.drills.map((drill) => (
+                  <ChoiceCard
+                    key={drill.drill}
+                    label={drill.label}
+                    meta={`${drill.due} due · ${drill.new} new`}
+                    checked={selected.includes(drill.drill)}
+                    onChange={() => toggle(drill.drill)}
+                  />
+                ))}
               </div>
             </div>
-          </>
+
+            <div className="field">
+              <span className="lbl">Session size</span>
+
+              <SessionSizeField value={size} onChange={setSize} />
+            </div>
+
+            {error !== null && <p role="alert" style={{ color: "var(--bad)", fontSize: 13 }}>{error}</p>}
+
+            <div className="form-actions" style={{ alignItems: "center" }}>
+              <Button
+                variant="primary"
+                busy={busy}
+                disabled={selected.length === 0}
+                onClick={() => void start()}
+              >
+                Start session
+                <ArrowRight className="i" aria-hidden="true" />
+              </Button>
+            </div>
+          </Card>
         )}
       </div>
-    </div>
+    </main>
   );
 }
