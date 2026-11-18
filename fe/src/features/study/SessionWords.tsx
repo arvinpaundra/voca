@@ -34,7 +34,7 @@ export function SessionWords({
         </span>
       </div>
 
-      <ul className="word-list" style={{ border: 0 }}>
+      <ul className="word-list sess" style={{ border: 0 }}>
         {items.map((item) => (
           <li key={item.wordSlug}>
             <article className="word">
@@ -47,13 +47,13 @@ export function SessionWords({
               </div>
 
               {/* A fixed width keeps the dot aligned whether or not the "Suggested" badge is shown. */}
-              <div className="w-state" style={{ width: 120 }}>
+              <div className="w-state">
                 <span className={item.correct ? "w-mark" : "w-mark w"} />
                 {item.leech && !item.hard && <Badge variant="lime">Suggested</Badge>}
               </div>
 
               {/* A fixed width keeps the dot column aligned: "Mark hard" is wider than "Hard". */}
-              <div className="w-actions" style={{ width: 132, justifyContent: "flex-end" }}>
+              <div className="w-actions">
                 {item.hard ? (
                   <Button variant="ghost" size="sm" aria-label={`Unmark ${item.term}`} onClick={() => onToggleHard(item)}>
                     <Check className="i" aria-hidden="true" />

@@ -343,8 +343,44 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .list-head { display: grid; grid-template-columns: minmax(0, 1fr) 140px 64px 64px 84px 32px; gap: 16px; padding: 8px 16px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .list-head span:nth-child(3), .list-head span:nth-child(4) { text-align: right; }
 @media (max-width: 760px) {
-  .deck { grid-template-columns: minmax(0, 1fr) 40px 84px 32px; }
-  .deck-tags, .deck-stats .words-col { display: none; }
+  .deck, .card .deck {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title title title menu"
+      "tags due words cta";
+    align-items: center;
+    gap: 10px 12px;
+    padding: 14px 16px;
+  }
+  .deck .deck-top > .deck-title { grid-area: title; }
+  .deck .deck-top > :not(.deck-title) {
+    grid-area: menu;
+    justify-self: end;
+  }
+  .deck .deck-tags {
+    display: flex;
+    min-width: 0;
+    grid-area: tags;
+  }
+  .deck .deck-stats {
+    display: contents;
+  }
+  .deck .deck-stats > div {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    text-align: left;
+  }
+  .deck .deck-stats > div:first-child { grid-area: due; }
+  .deck .deck-stats > .words-col { grid-area: words; }
+  .deck .deck-stats small {
+    display: inline;
+    margin: 0;
+  }
+  .deck .deck-foot > .btn {
+    grid-area: cta;
+    justify-self: end;
+  }
   .list-head { display: none; }
 }
 .deck-hero { display: grid; gap: 20px; }
@@ -373,15 +409,39 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .w-example { display: none; }
 .w-state { margin: 0; }
 .w-actions { opacity: 1; }
+.sess .w-state { width: 120px; }
+.sess .w-actions {
+  width: 132px;
+  justify-content: flex-end;
+}
 @media (max-width: 640px) {
   .deck-stats-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .deck-stats-strip > div:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
   .deck-stats-strip > div:nth-child(4) { border-top: 1px solid var(--line); }
 }
 @media (max-width: 640px) {
-  .word, .word { grid-template-columns: minmax(0, 1fr) auto auto; }
-  .w-body { grid-column: 1 / -1; grid-row: 2; }
-  .w-state { display: none; }
+  .word {
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) auto;
+    grid-template-areas:
+      "term state actions"
+      "body body body";
+    align-items: center;
+    gap: 6px 12px;
+    padding: 12px 16px;
+  }
+  .w-term {
+    grid-area: term;
+    overflow-wrap: anywhere;
+  }
+  .w-body { grid-area: body; }
+  .w-state {
+    grid-area: state;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .w-actions { grid-area: actions; }
+  .sess .w-state,
+  .sess .w-actions { width: auto; }
 }
 .study { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr) 260px; align-items: start; }
 @media (max-width: 960px) {
@@ -440,8 +500,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .pub-head span:nth-child(3) { text-align: left; }
 .pub-head span:nth-child(4) { text-align: right; }
 @media (max-width: 760px) {
-  .pub { grid-template-columns: minmax(0, 1fr) 64px; }
-  .pub .author, .pub .deck-tags, .pub .deck-foot > span { display: none; }
+  .deck.pub {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title title title"
+      "author author author"
+      "tags forks cta";
+    gap: 10px 12px;
+    padding: 14px 16px;
+  }
+  .deck.pub .author { grid-area: author; }
+  .deck.pub .deck-foot > span {
+    grid-area: forks;
+    justify-self: start;
+  }
 }
 .word-hero { display: grid; gap: 4px; min-width: 0; }
 .word-hero .t { font: 600 40px/1.25 var(--f-term); }
