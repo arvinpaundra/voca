@@ -6,17 +6,35 @@ export interface WordLabels {
   readonly reading: string
 }
 
-const profiles = new Map<string, WordLabels>([
-  ["ja", { term: "Word", reading: "Hiragana" }],
-  ["zh", { term: "Hanzi", reading: "Pinyin" }],
-  ["yue", { term: "Hanzi", reading: "Jyutping" }]
+/**
+ * The language tag a reading is written in. Hiragana is Japanese, but pinyin and jyutping are Latin
+ * transcriptions: tagging them keeps a screen reader from reading `xuéxí` as Chinese.
+ * `null` means the reading has no script of its own, so it is tagged with the term's language.
+ */
+interface Profile extends WordLabels {
+  readonly readingLang: string | null
+}
+
+const profiles = new Map<string, Profile>([
+  ["ja", { term: "Word", reading: "Hiragana", readingLang: null }],
+  ["zh", { term: "Hanzi", reading: "Pinyin", readingLang: "zh-Latn-pinyin" }],
+  ["yue", { term: "Hanzi", reading: "Jyutping", readingLang: "yue-Latn-jyutping" }]
 ])
 
-const fallback: WordLabels = { term: "Word", reading: "Reading" }
+const fallback: Profile = { term: "Word", reading: "Reading", readingLang: null }
 
 const primarySubtag = (termLang: string): string => termLang.split("-")[0]!.toLowerCase()
 
-export const wordLabels = (termLang: string): WordLabels => profiles.get(primarySubtag(termLang)) ?? fallback
+const profileOf = (termLang: string): Profile => profiles.get(primarySubtag(termLang)) ?? fallback
+
+export const wordLabels = (termLang: string): WordLabels => {
+  const { term, reading } = profileOf(termLang)
+
+  return { term, reading }
+}
+
+/** The `lang` for a word's reading in a deck whose terms are in `termLang`. */
+export const readingLang = (termLang: string): string => profileOf(termLang).readingLang ?? termLang
 
 export type Field = "term" | "reading" | "meaning"
 

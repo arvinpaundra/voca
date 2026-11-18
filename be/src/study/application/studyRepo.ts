@@ -1,6 +1,6 @@
 import type { DateTime, Effect, Option } from "effect"
 import { Context } from "effect"
-import type { Drill, DrillSet, HardWord, LangTag, Mode, SessionSize, SessionSlug } from "@voca/contract"
+import type { Drill, DrillSet, HardWord, LangTag, Mode, SessionSlug } from "@voca/contract"
 import type { StudyWord } from "../domain/words.ts"
 
 /** A hard Card of the Learner, with the deck of its word: the pool its session question draws options from. */
@@ -92,7 +92,7 @@ export interface SessionRecord {
   readonly termLang: LangTag | null
   readonly drills: Drills
   readonly mode: Mode
-  readonly size: SessionSize
+  readonly size: number
   readonly status: "active" | "completed" | "abandoned"
 }
 
@@ -101,7 +101,7 @@ export interface NewSession {
   readonly deckId: bigint | null
   readonly drills: Drills
   readonly mode: Mode
-  readonly size: SessionSize
+  readonly size: number
   readonly createdAt: DateTime.Utc
 }
 

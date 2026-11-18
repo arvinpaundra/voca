@@ -287,12 +287,32 @@ export const WordRepoLive = Layer.effect(
 
       softDelete: (wordId, at) =>
         Effect.gen(function* () {
+          // An active session would keep asking for a word that no longer exists, so it ends here.
+          yield* sql`
+            UPDATE study_sessions SET status = 'abandoned', ended_at = ${new Date(at)}
+            WHERE status = 'active'
+              AND id IN (
+                SELECT session_id FROM session_questions
+                WHERE word_id = ${wordId} AND answered_at IS NULL
+              )`
           yield* sql`UPDATE cards SET deleted_at = ${new Date(at)} WHERE word_id = ${wordId} AND deleted_at IS NULL`
           yield* sql`UPDATE words SET deleted_at = ${new Date(at)} WHERE id = ${wordId} AND deleted_at IS NULL`
         }).pipe(Effect.orDie),
 
       softDeleteInDeck: (deckId, at) =>
         Effect.gen(function* () {
+          // Both the sessions scoped to this deck and the hard-words sessions still asking for one of its words.
+          yield* sql`
+            UPDATE study_sessions SET status = 'abandoned', ended_at = ${new Date(at)}
+            WHERE status = 'active'
+              AND (
+                scope_deck_id = ${deckId}
+                OR id IN (
+                  SELECT q.session_id FROM session_questions q
+                  JOIN words w ON w.id = q.word_id
+                  WHERE w.deck_id = ${deckId} AND q.answered_at IS NULL
+                )
+              )`
           yield* sql`
             UPDATE cards SET deleted_at = ${new Date(at)}
             WHERE deleted_at IS NULL

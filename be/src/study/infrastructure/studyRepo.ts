@@ -11,7 +11,6 @@ import {
   Mode,
   Notes,
   Reading,
-  SessionSize,
   SessionSlug,
   SessionStatus,
   Term,
@@ -135,7 +134,7 @@ const SessionRow = Schema.Struct({
   termLang: Schema.NullOr(LangTag),
   drills: DrillSet,
   mode: Mode,
-  size: SessionSize,
+  size: Count,
   status: SessionStatus
 })
 

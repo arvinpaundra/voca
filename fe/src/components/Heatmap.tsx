@@ -63,7 +63,7 @@ export function Heatmap({ month, days, today }: HeatmapProps) {
   });
 
   return (
-    <div style={{ display: "grid", gap: 10 }}>
+    <>
       <div className="heat" role="img" aria-label={"Study activity for " + monthName + ": " + total + " reviews"}>
         {WEEKDAYS.map((d, i) => (
           <span key={"w" + i} className="wd">
@@ -83,6 +83,6 @@ export function Heatmap({ month, days, today }: HeatmapProps) {
         ))}
         More
       </div>
-    </div>
+    </>
   );
 }

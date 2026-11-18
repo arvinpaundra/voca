@@ -317,7 +317,7 @@ describe("POST /sessions", () => {
       })
     ))
 
-  test("new words stop at today's new-word limit, so the session can be smaller than its size", () =>
+  test("new words stop at today's new-word limit, so the session is smaller than the size asked for", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const { id, token } = yield* signedIn("ABCDEFGH")
@@ -330,7 +330,8 @@ describe("POST /sessions", () => {
 
         const session = yield* start(token, deck.deckSlug)
 
-        expect(session.size).toBe(7)
+        // The size is what was found, not the 7 requested.
+        expect(session.size).toBe(3)
         expect(session.questions).toHaveLength(3)
         expect(slugsOf(session.questions)).toContain(dueWord!.slug)
       })
@@ -628,6 +629,49 @@ describe("GET /sessions/active and POST /sessions/:sessionSlug/abandon", () => {
         expect(notTheirs._tag).toBe("NotFound")
         expect(yield* sessionStatus(String(session.slug))).toBe("abandoned")
         expect(yield* active(ada.token)).toBeNull()
+      })
+    ))
+})
+
+// A soft delete has to end a session that would otherwise keep asking for words that are gone.
+describe("deleting content under an active session", () => {
+  const deleteWord = (token: string, wordSlug: string) =>
+    call((c) => c.library.deleteWord({ params: { wordSlug: wordSlug as never } }), token)
+
+  const deleteDeck = (token: string, deckSlug: string) =>
+    call((c) => c.library.deleteDeck({ params: { deckSlug: deckSlug as never } }), token)
+
+  test("deleting an asked word abandons the session; deleting an unasked one leaves it active", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const { id, token } = yield* signedIn("ABCDEFGH")
+        const deck = yield* seedDeck(id, words(8))
+        const session = yield* start(token, deck.deckSlug)
+        const asked = new Set(slugsOf(session.questions))
+        const spare = deck.words.find((word) => !asked.has(word.slug))
+
+        yield* deleteWord(token, spare!.slug)
+
+        expect(yield* sessionStatus(String(session.slug))).toBe("active")
+
+        yield* deleteWord(token, String(session.questions[0]!.wordSlug))
+
+        expect(yield* sessionStatus(String(session.slug))).toBe("abandoned")
+        expect(yield* active(token)).toBeNull()
+      })
+    ))
+
+  test("deleting the deck abandons the session scoped to it", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const { id, token } = yield* signedIn("ABCDEFGH")
+        const deck = yield* seedDeck(id, words(8))
+        const session = yield* start(token, deck.deckSlug)
+
+        yield* deleteDeck(token, deck.deckSlug)
+
+        expect(yield* sessionStatus(String(session.slug))).toBe("abandoned")
+        expect(yield* active(token)).toBeNull()
       })
     ))
 })

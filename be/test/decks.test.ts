@@ -233,6 +233,23 @@ describe("DELETE /decks/:deckSlug", () => {
       })
     ))
 
+  test("a published deck is unpublished as it is deleted, so an undelete can't republish it", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const token = yield* signedIn("ABCDEFGH")
+        const deck = yield* newDeck(token)
+
+        yield* call((c) => c.library.publishDeck({ params: { deckSlug: deck.slug } }), token)
+        yield* call((c) => c.library.deleteDeck({ params: { deckSlug: deck.slug } }), token)
+
+        const sql = yield* SqlClient.SqlClient
+        const rows = yield* sql<{ readonly visibility: string; readonly published: boolean }>`
+          SELECT visibility, published_at IS NOT NULL AS published FROM decks WHERE slug = ${String(deck.slug)}`
+
+        expect(rows[0]).toEqual({ visibility: "private", published: false })
+      })
+    ))
+
   test("another Learner's deck answers 404 and stays", () =>
     rt.runPromise(
       Effect.gen(function* () {

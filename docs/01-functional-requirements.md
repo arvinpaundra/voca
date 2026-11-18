@@ -101,7 +101,7 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 - Sign in with Google. The first sign-in creates the account, so there is no separate registration form.
 - The API issues an access token (15 min) and a refresh token (30 days, rotated on every use).
 - The frontend refreshes silently. If a refresh token is reused, its whole token family is revoked (theft detection).
-- Signing out revokes the current refresh token.
+- Signing out revokes the token's whole family ([08](08-auth.md)).
 - No cookies. See [08](08-auth.md).
 
 ## FR-11 Session size (M)
