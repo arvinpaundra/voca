@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Result } from "effect";
 import type { Learner } from "@voca/contract";
 import { Compass, Flame, Layers, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, Settings, X, type LucideIcon } from "lucide-react";
@@ -81,19 +81,11 @@ function NavLinks({ collapsed, due, onNavigate }: { collapsed: boolean; due: num
   );
 }
 
-function SideUser({
-  learner,
-  collapsed,
-  onNavigate,
-}: {
-  learner: Learner;
-  collapsed: boolean;
-  onNavigate?: () => void;
-}) {
+// Settings lives in the sidebar, so the account menu only holds sign-out.
+function SideUser({ learner, collapsed }: { learner: Learner; collapsed: boolean }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open) return;
@@ -125,18 +117,6 @@ function SideUser({
     <div ref={root} className="side-user" style={{ position: "relative", justifyContent: collapsed ? "center" : undefined }}>
       {open && (
         <div role="menu" aria-label="Account" className="menu" style={popup}>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onNavigate?.();
-              void navigate({ to: "/app/settings" });
-            }}
-          >
-            <Settings className="i" aria-hidden="true" />
-            Settings
-          </button>
           <button
             type="button"
             role="menuitem"
@@ -250,7 +230,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </IconButton>
             </div>
             <NavLinks collapsed={false} due={due} onNavigate={closeDrawer} />
-            {learner !== null && <SideUser learner={learner} collapsed={false} onNavigate={closeDrawer} />}
+            {learner !== null && <SideUser learner={learner} collapsed={false} />}
           </aside>
         </>
       )}
