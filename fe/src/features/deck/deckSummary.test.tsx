@@ -113,7 +113,16 @@ describe("DeckProgress", () => {
     render(<DeckProgress stats={stats()} />);
 
     expect(screen.getByLabelText("New 12, learning 30, mature 8")).not.toBeNull();
-    expect(screen.getByText("14")).not.toBeNull();
+
+    // Paired by label, because the forecast's first day shows 14 as well.
+    const counts = [...document.querySelectorAll(".kpi")].map((kpi) => [
+      kpi.querySelector(".l")?.textContent,
+      kpi.querySelector(".v")?.textContent,
+    ]);
+
+    for (const pair of [["due today", "14"], ["new", "12"], ["learning", "30"], ["mature", "8"]]) {
+      expect(counts).toContainEqual(pair);
+    }
   });
 });
 
