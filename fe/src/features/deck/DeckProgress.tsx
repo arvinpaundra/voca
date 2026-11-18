@@ -1,7 +1,10 @@
 import type { DeckStats } from "@voca/contract";
+import { weekdayLetter } from "../dashboard/dashboardModel";
 
 export function DeckProgress({ stats }: { stats: DeckStats }) {
-  const { maturity } = stats;
+  const { maturity, forecast, trueRetention } = stats;
+
+  const retention = trueRetention === null ? null : Math.round(trueRetention * 100);
 
   return (
     <section className="deck-stats-strip" aria-label="Deck progress">
@@ -24,15 +27,17 @@ export function DeckProgress({ stats }: { stats: DeckStats }) {
 
       <div className="wide" aria-label="Due next 7 study days">
         <div className="forecast">
-          <div>
-            <small>not implemented: LF</small>
-            <b>not implemented: LF</b>
-          </div>
+          {forecast.map((day) => (
+            <div key={day.date}>
+              <small>{weekdayLetter(day.date)}</small>
+              <b>{day.count}</b>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="wide" aria-label="True retention">
-        not implemented: LF
+        {retention === null ? "—" : `${retention}%`}
       </div>
 
       <div className="wide maturity">

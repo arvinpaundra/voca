@@ -1,6 +1,6 @@
 import { DateTime } from "effect";
 import { Pencil, Trash2 } from "lucide-react";
-import type { Deck, WordWithCards } from "@voca/contract";
+import { readingLang, type Deck, type WordWithCards } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { IconButton } from "../../components/IconButton";
 import { wordHref } from "../word/wordHref";
@@ -72,7 +72,7 @@ export function WordList({
                 ) : (
                   <ruby>
                     {word.term}
-                    <rt lang={"not implemented: LF"}>{word.reading}</rt>
+                    <rt lang={readingLang(deck.termLang)}>{word.reading}</rt>
                   </ruby>
                 )}
               </a>
