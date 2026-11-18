@@ -3,6 +3,7 @@ import { Result } from "effect";
 import {
   DRILLS,
   MAX_LATENCY_MS,
+  drillLabel,
   type AnswerResult,
   type Question,
   type Session,
@@ -21,7 +22,8 @@ import { Verdict } from "./Verdict";
 import { SessionSummary } from "./SessionSummary";
 import { advance } from "./queue";
 import { segments, tally } from "./progress";
-import { studyReturnHref } from "./returnTo";
+import { isHardStudy, studyReturnHref } from "./returnTo";
+import { SessionWords, type SessionWordItem } from "./SessionWords";
 
 // Marks and the tally count only first attempts, so a retry never adds a mark. The first word still to come is `cur`.
 const markClasses = (size: number, firstAttempts: readonly boolean[]): string[] => {
@@ -37,6 +39,28 @@ const markClasses = (size: number, firstAttempts: readonly boolean[]): string[] 
     return "cur";
   });
 };
+
+// The row for the question's word: the term and the other side of the pair, from the prompt and the right option.
+const wordItem = (question: Question, termLang: string, result: AnswerResult): SessionWordItem => {
+  const promptIsTerm = DRILLS[question.drill].prompt === "term";
+  const correctText = question.options.find((option) => option.wordSlug === result.correctWordSlug)?.text ?? "";
+
+  return {
+    wordSlug: question.wordSlug,
+    drill: question.drill,
+    term: promptIsTerm ? question.prompt.text : correctText,
+    meaning: promptIsTerm ? correctText : question.prompt.text,
+    lang: termLang,
+    correct: result.correct,
+    leech: result.leech,
+    // A hard session only asks hard cards.
+    hard: isHardStudy()
+  };
+};
+
+// One row per word: the first attempt stands.
+const withWord = (items: readonly SessionWordItem[], item: SessionWordItem): readonly SessionWordItem[] =>
+  items.some((existing) => existing.wordSlug === item.wordSlug) ? items : [...items, item];
 
 type LoadState =
   | { readonly kind: "loading" }
@@ -118,6 +142,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
   const [finished, setFinished] = useState(studySession.status !== "active");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [words, setWords] = useState<readonly SessionWordItem[]>([]);
 
   const startedAt = useRef(0);
   const head = queue[0];
@@ -148,7 +173,10 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     if (Result.isSuccess(result)) {
       setFeedback({ chosen: wordSlug, result: result.success });
       if (result.success.correct) setCleared((count) => count + 1);
-      if (question.attempt === 1) setFirstAttempts((previous) => [...previous, result.success.correct]);
+      if (question.attempt === 1) {
+        setFirstAttempts((previous) => [...previous, result.success.correct]);
+        setWords((previous) => withWord(previous, wordItem(question, studySession.termLang, result.success)));
+      }
       return;
     }
 
@@ -184,12 +212,39 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     setError("Could not end the session. Try again.");
   };
 
+  const toggleHard = async (item: SessionWordItem) => {
+    const params = { wordSlug: item.wordSlug as WordSlug, drill: item.drill };
+
+    const result = await session.call((client) =>
+      item.hard ? client.study.unmarkHard({ params }) : client.study.markHard({ params })
+    );
+
+    if (Result.isSuccess(result)) {
+      setWords((previous) =>
+        previous.map((word) => (word.wordSlug === item.wordSlug ? { ...word, hard: !item.hard } : word))
+      );
+      return;
+    }
+
+    setError("Could not change that word. Try again.");
+  };
+
   const summary = tally(firstAttempts);
 
   if (finished) {
     return (
-      <div className="mx-auto w-full max-w-[520px]">
-        <SessionSummary firstAttempts={firstAttempts} backHref={studyReturnHref()} />
+      <div className="mx-auto grid w-full max-w-[640px] gap-4">
+        <SessionSummary firstAttempts={firstAttempts} backHref={studyReturnHref()} tight={words.length > 0} />
+
+        {error !== null && <p className="text-center" style={{ color: "var(--bad)" }} role="alert">{error}</p>}
+
+        {words.length > 0 && (
+          <SessionWords
+            items={words}
+            drillLabel={[...new Set(words.map((word) => drillLabel(studySession.termLang, word.drill)))].join(" · ")}
+            onToggleHard={(item) => void toggleHard(item)}
+          />
+        )}
       </div>
     );
   }
