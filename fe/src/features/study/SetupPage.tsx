@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { Option, Result, Schema } from "effect";
 import { DeckSlug, type Drill, type DeckDrill, type SessionSize } from "@voca/contract";
 import { Button } from "../../components/Button";
+import { EmptyState } from "../../components/EmptyState";
+import { ErrorState } from "../../components/ErrorState";
+import { PageHeader } from "../../components/PageHeader";
+import { Skeleton } from "../../components/Skeleton";
 import { cx } from "../../components/cx";
 import { session } from "../../lib/appSession";
 import { failureTag } from "../deck/wordModel";
 import { rememberDrills, rememberedDrills } from "./queue";
 import { rememberStudyDeck } from "./returnTo";
-
-const SESSION_SIZES: readonly SessionSize[] = [7, 10, 15, 20];
+import { SessionSizeField } from "./SessionSizeField";
 
 const DEFAULT_SIZE: SessionSize = 10;
 
@@ -110,79 +113,71 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
 
   return (
     <div className="min-h-screen bg-neutral-100 px-4 py-6 lg:px-8 lg:py-10">
-      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6">
-        {state.kind === "loading" && <p className="text-sm text-stone-500">Loading…</p>}
-        {state.kind === "failed" && (
-          <p className="text-sm text-red-600" role="alert">The drills could not be loaded.</p>
-        )}
+      <div className="mx-auto flex w-full max-w-xl flex-col">
+        {state.kind === "loading" && <Skeleton label="Loading drills" rows={3} />}
+
+        {state.kind === "failed" && <ErrorState message="The drills could not be loaded." />}
+
         {state.kind === "ready" && state.drills.length === 0 && (
-          <p className="text-sm text-stone-500">This deck has no words to study yet.</p>
+          <EmptyState title="This deck has no words to study yet." />
         )}
+
         {state.kind === "ready" && state.drills.length > 0 && (
-          <section className="mx-auto flex w-full max-w-xl flex-col gap-7 rounded-card border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
-            <h1 className="font-montserrat text-2xl font-bold text-stone-900">Study this deck</h1>
+          <>
+            <PageHeader title="Study this deck" />
 
-            <fieldset className="flex flex-col gap-3">
-              <legend className="mb-1 text-sm font-semibold text-stone-900">Drills</legend>
-              {state.drills.map((drill) => {
-                const checked = selected.includes(drill.drill);
+            <div className="flex flex-col gap-8">
+              <fieldset className="flex flex-col gap-3">
+                <legend className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-stone-500">
+                  Drills
+                </legend>
+                {state.drills.map((drill) => {
+                  const checked = selected.includes(drill.drill);
 
-                return (
-                  <label
-                    key={drill.drill}
-                    className={cx(
-                      "flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-colors duration-150",
-                      checked ? "border-lime bg-lime/15" : "border-stone-200 bg-white hover:border-stone-400",
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      className="size-4 shrink-0 accent-lime"
-                      checked={checked}
-                      onChange={() => toggle(drill.drill)}
-                    />
-                    <span dir="auto" className="min-w-0 flex-1 text-sm font-medium text-stone-900">
-                      {drill.label}
-                    </span>
-                    <span className="shrink-0 text-xs text-stone-500">{`${drill.due} due · ${drill.new} new`}</span>
-                  </label>
-                );
-              })}
-            </fieldset>
+                  return (
+                    <label
+                      key={drill.drill}
+                      className={cx(
+                        "flex min-h-11 cursor-pointer items-center gap-3 rounded-card border bg-white px-4 py-3 transition-colors duration-150",
+                        checked ? "border-navy" : "border-stone-200 hover:border-stone-400",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        className="size-4 shrink-0 accent-lime"
+                        checked={checked}
+                        onChange={() => toggle(drill.drill)}
+                      />
+                      <span dir="auto" className="min-w-0 flex-1 text-sm font-medium text-stone-900">
+                        {drill.label}
+                      </span>
+                      <span className="shrink-0 font-mono text-xs tabular-nums text-stone-500">
+                        {`${drill.due} due · ${drill.new} new`}
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
 
-            <fieldset className="flex flex-col gap-3">
-              <legend className="mb-1 text-sm font-semibold text-stone-900">Session size</legend>
-              <div className="grid grid-cols-4 gap-2">
-                {SESSION_SIZES.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    aria-pressed={option === size}
-                    onClick={() => setSize(option)}
-                    className={cx(
-                      "rounded-2xl border py-3 text-base font-semibold transition-colors duration-150",
-                      option === size
-                        ? "border-lime bg-lime text-stone-900"
-                        : "border-stone-200 bg-white text-stone-600 hover:border-stone-400",
-                    )}
-                  >
-                    {option}
-                  </button>
-                ))}
+              <SessionSizeField value={size} onChange={setSize} />
+
+              {error !== null && <p className="text-sm text-red-600" role="alert">{error}</p>}
+
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <Button variant="ghost" href={`/app/decks/${deckSlug}`}>
+                  Back to deck
+                </Button>
+                <Button
+                  variant="primary"
+                  busy={busy}
+                  disabled={selected.length === 0}
+                  onClick={() => void start()}
+                >
+                  Start
+                </Button>
               </div>
-            </fieldset>
-
-            {error !== null && <p className="text-sm text-red-600" role="alert">{error}</p>}
-
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <Button variant="ghost" href={`/app/decks/${deckSlug}`}>
-                Back to deck
-              </Button>
-              <Button variant="primary" disabled={busy || selected.length === 0} onClick={() => void start()}>
-                Start session
-              </Button>
             </div>
-          </section>
+          </>
         )}
       </div>
     </div>
