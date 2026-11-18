@@ -121,4 +121,6 @@ export class InsightRepo extends Context.Service<InsightRepo, {
   pickedWords(ids: ReadonlyArray<bigint>): Effect.Effect<ReadonlyArray<PickedWord>>
   /** The Learner's due cards per live deck and drill, due before `end`. */
   dueByDeck(learnerId: bigint, start: DateTime.Utc, end: DateTime.Utc): Effect.Effect<ReadonlyArray<DeckDue>>
+  /** Seconds per first attempt in each of the Learner's latest 20 sessions with more than one first attempt, newest first. */
+  sessionPaces(learnerId: bigint): Effect.Effect<ReadonlyArray<number>>
 }>()("voca/insight/InsightRepo") {}

@@ -1,7 +1,13 @@
 import { DateTime, Effect, Option, Random, Schema } from "effect"
 import { CurrentLearner, SLUG_LENGTH, SessionSlug, slug as slugOf } from "@voca/contract"
 import type { Drill, LangTag, Session, SessionSize } from "@voca/contract"
-import { DeckNotFound, DeckTooSmallError, DrillNotAvailableError, SessionNotFound } from "../domain/errors.ts"
+import {
+  DeckNotFound,
+  DeckTooSmallError,
+  DrillNotAvailableError,
+  NothingToStudyError,
+  SessionNotFound
+} from "../domain/errors.ts"
 import { questionOf } from "../domain/questions.ts"
 import { cardKey, pickDue, pickHard, pickNew, pickOptions } from "../domain/selection.ts"
 import { studyDay } from "../domain/studyDay.ts"
@@ -31,7 +37,7 @@ const newSessionSlug: Effect.Effect<SessionSlug> = Effect.gen(function* () {
 export const startSession = (
   deckSlug: string,
   request: StartRequest
-): Effect.Effect<Session, DeckNotFound | DeckTooSmallError | DrillNotAvailableError, Needs> =>
+): Effect.Effect<Session, DeckNotFound | DeckTooSmallError | DrillNotAvailableError | NothingToStudyError, Needs> =>
   Effect.gen(function* () {
     const { id: learnerId } = yield* CurrentLearner
     const repo = yield* StudyRepo
@@ -73,9 +79,11 @@ export const startSession = (
         // Shuffled, so the due words don't always come first on the screen.
         const picks = yield* Random.shuffle([...due.map(({ pick }) => pick), ...fresh])
 
+        // Failing here rolls the transaction back, so an active session the Learner had is left alone.
         if (picks.length === 0) {
-          return yield* Effect.die("not implemented: QUEUE")
+          return yield* Effect.fail(new NothingToStudyError())
         }
+
         const questions: Array<{
           readonly position: number
           readonly drill: Drill
@@ -139,7 +147,7 @@ export const startSession = (
  */
 export const startHardSession = (
   request: StartRequest
-): Effect.Effect<Session, DeckTooSmallError | DrillNotAvailableError, Needs> =>
+): Effect.Effect<Session, DeckTooSmallError | DrillNotAvailableError | NothingToStudyError, Needs> =>
   Effect.gen(function* () {
     const { id: learnerId } = yield* CurrentLearner
     const repo = yield* StudyRepo
@@ -168,6 +176,10 @@ export const startHardSession = (
           dueBefore: DateTime.toEpochMillis(day.end),
           size: request.size
         })
+
+        if (picks.length === 0) {
+          return yield* Effect.fail(new NothingToStudyError())
+        }
 
         const decks = yield* Effect.forEach([...new Set(picks.map((pick) => pick.deckId))], (deckId) =>
           repo.deckWords(deckId).pipe(Effect.map((words) => [deckId, words] as const))

@@ -377,14 +377,15 @@ describe("GET /notifications", () => {
         yield* seedCard(id, behind.wordIds[1]!, "term_meaning", { due: "2026-11-13T04:00:00Z" })
         yield* seedCard(id, idle.wordIds[0]!, "term_meaning", { due: "2026-11-14T04:00:00Z", isHard: true })
 
-        // Two words were studied for the first time today: 20 − 2 new words remain.
+        // Two words were studied for the first time today, so the allowance is 18, but only 11 (word, drill)
+        // pairs have no card yet.
         yield* seedReview(id, calm.wordIds[0]!, { at: "2026-11-13T09:00:00Z", stateBefore: "new" })
         yield* seedReview(id, behind.wordIds[1]!, { at: "2026-11-13T09:00:00Z", stateBefore: "new" })
 
         const panel = yield* notifications(token)
 
         expect(panel.hardDue).toBe(1)
-        expect(panel.newAvailable).toBe(18)
+        expect(panel.newAvailable).toBe(11)
         expect(panel.decks.map((deck) => [deck.deckSlug, deck.title, deck.due, deck.overdue])).toEqual([
           [behind.deckSlug, "Behind", 3, 1],
           [calm.deckSlug, "Calm", 1, 0]

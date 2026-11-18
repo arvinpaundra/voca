@@ -91,6 +91,8 @@ const WordAttemptDbRow = Schema.Struct({
 
 const PickedWordRow = Schema.Struct({ id: Id, slug: WordSlug, term: Schema.String })
 
+const SessionPaceRow = Schema.Struct({ secondsPerCard: Count })
+
 /**
  * Study dates are computed in SQL as the wall-clock time less the day start hour, then the calendar date:
  * the same rule `studyDay` applies in TypeScript, so both sides name a review's study date alike.
@@ -320,6 +322,20 @@ export const InsightRepoLive = Layer.effect(
         GROUP BY d.id, d.slug, d.title, d.term_lang, c.drill`
     })
 
+    const sessionPacesOf = SqlSchema.findAll({
+      Request: Schema.Struct({ learnerId: Schema.BigInt }),
+      Result: SessionPaceRow,
+      execute: ({ learnerId }) => sql`
+        SELECT (EXTRACT(epoch FROM max(r.reviewed_at) - min(r.reviewed_at)) / (count(*) - 1))::float8
+          AS "secondsPerCard"
+        FROM reviews r
+        WHERE r.learner_id = ${learnerId} AND r.session_id IS NOT NULL
+        GROUP BY r.session_id
+        HAVING count(*) > 1
+        ORDER BY max(r.reviewed_at) DESC
+        LIMIT 20`
+    })
+
     return InsightRepo.of({
       learnerSettings: (learnerId): Effect.Effect<LearnerSettings> => settingsOf(learnerId).pipe(Effect.orDie),
 
@@ -391,7 +407,13 @@ export const InsightRepoLive = Layer.effect(
         ids.length === 0 ? Effect.succeed([]) : pickedWordsOf(ids).pipe(Effect.orDie),
 
       dueByDeck: (learnerId, start, end): Effect.Effect<ReadonlyArray<DeckDue>> =>
-        dueByDeckOf({ learnerId, start, end }).pipe(Effect.orDie)
+        dueByDeckOf({ learnerId, start, end }).pipe(Effect.orDie),
+
+      sessionPaces: (learnerId): Effect.Effect<ReadonlyArray<number>> =>
+        sessionPacesOf({ learnerId }).pipe(
+          Effect.map((rows) => rows.map((row) => row.secondsPerCard)),
+          Effect.orDie
+        )
     })
   })
 )
