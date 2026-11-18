@@ -4,8 +4,10 @@ import type { Deck } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import { Modal } from "../../components/Modal";
+import { Select } from "../../components/Select";
 import { session } from "../../lib/appSession";
 import { failureTag } from "../deck/wordModel";
+import { languageOptions, pickerValue } from "./languages";
 
 // Accepts a deck of either list or detail shape: only these fields are read.
 type EditableDeck = Pick<Deck, "slug" | "title" | "description" | "termLang" | "meaningLang">;
@@ -30,6 +32,57 @@ const languageCodePattern = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
 const languageCodeMessage = "Use a language code like ja or en";
 
 type LanguageErrors = { termLang: string | null; meaningLang: string | null };
+
+const OTHER = "other";
+
+const pickerOptions = [
+  ...languageOptions(),
+  { value: OTHER, label: "Other…" },
+];
+
+type LanguageFieldProps = {
+  label: string;
+  value: string;
+  error: string | null;
+  onChange: (value: string) => void;
+};
+
+// A picker of the offered languages. "Other…" reveals the free-text tag, so any BCP-47 tag stays reachable.
+function LanguageField({ label, value, error, onChange }: LanguageFieldProps) {
+  // Stays on "Other…" while the tag is being typed, even when the typed tag matches an offered language.
+  const [otherOpen, setOtherOpen] = useState(() => pickerValue(value) === OTHER);
+
+  const choose = (choice: string) => {
+    if (choice === OTHER) {
+      setOtherOpen(true);
+      return;
+    }
+
+    setOtherOpen(false);
+    onChange(choice);
+  };
+
+  return (
+    <div className="field">
+      <span className="lbl">{label}</span>
+      <Select
+        label={label}
+        value={otherOpen ? OTHER : pickerValue(value)}
+        options={pickerOptions}
+        onChange={choose}
+      />
+      {otherOpen && (
+        <Input
+          label={`${label} code`}
+          placeholder="ja"
+          value={value}
+          error={error ?? undefined}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      )}
+    </div>
+  );
+}
 
 type DeckEditorProps = {
   deck?: EditableDeck | undefined;
@@ -139,22 +192,18 @@ function DeckEditor({ deck, onClose, onSaved }: DeckEditorProps) {
           />
         </div>
 
-        <Input
+        <LanguageField
           label="Term language"
-          required
-          placeholder="ja"
           value={termLang}
-          error={languageErrors.termLang ?? undefined}
-          onChange={(event) => changeTermLang(event.target.value)}
+          error={languageErrors.termLang}
+          onChange={changeTermLang}
         />
 
-        <Input
+        <LanguageField
           label="Meaning language"
-          required
-          placeholder="en"
           value={meaningLang}
-          error={languageErrors.meaningLang ?? undefined}
-          onChange={(event) => changeMeaningLang(event.target.value)}
+          error={languageErrors.meaningLang}
+          onChange={changeMeaningLang}
         />
 
         {error !== null && (
