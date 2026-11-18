@@ -38,7 +38,7 @@ export const StudyHandlers = HttpApiBuilder.group(
       start: ({ payload }) => {
         // The Hard Words place is a later feature, so its scope has no session yet.
         if (payload.scope.kind === "hard") {
-          return Effect.die("not implemented: hard words")
+          return Effect.die("not implemented: B-H")
         }
 
         return startSession(payload.scope.deckSlug, { drills: payload.drills, size: payload.size }).pipe(
@@ -72,9 +72,9 @@ export const StudyHandlers = HttpApiBuilder.group(
           Effect.catchTag("SessionNotFound", notFound("Session"))
         ),
 
-      hardWords: () => Effect.die("not implemented: hard words"),
-      markHard: () => Effect.die("not implemented: hard words"),
-      unmarkHard: () => Effect.die("not implemented: hard words")
+      hardWords: () => Effect.die("not implemented: B-H"),
+      markHard: () => Effect.die("not implemented: B-H"),
+      unmarkHard: () => Effect.die("not implemented: B-H")
     })
   })
 )
