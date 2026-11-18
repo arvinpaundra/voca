@@ -28,7 +28,11 @@ export const LibraryHandlers = HttpApiBuilder.group(
 
       createDeck: ({ payload }) => createDeck(payload).pipe(Effect.provideContext(ports)),
 
-      getDeck: () => Effect.die("not implemented: B-L"),
+      getDeck: ({ params }) =>
+        getDeck(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
 
       updateDeck: ({ params, payload }) =>
         updateDeck(params.deckSlug, payload).pipe(

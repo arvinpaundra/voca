@@ -8,6 +8,12 @@ export interface OwnedDeck {
   readonly deck: Deck
 }
 
+/** The counts a deck page shows: live words, and the owner's live cards of live words that are due. */
+export interface DeckCounts {
+  readonly wordCount: number
+  readonly dueCount: number
+}
+
 /** A deck to insert: the slug, trimmed text and clock time are already decided. `forkedFromId` is set for a fork. */
 export interface NewDeck {
   readonly slug: string
@@ -56,6 +62,8 @@ export class DeckRepo extends Context.Service<DeckRepo, {
   /** The owner's live decks, newest first; counts are taken at `now` (epoch millis). */
   listOwned(learnerId: bigint, now: number): Effect.Effect<ReadonlyArray<DeckSummary>>
   findOwned(learnerId: bigint, slug: string): Effect.Effect<Option.Option<OwnedDeck>>
+  /** The live word count and the owner's due card count of one deck, the same numbers `listOwned` shows; `now` is epoch millis. */
+  counts(deckId: bigint, learnerId: bigint, now: number): Effect.Effect<DeckCounts>
   insert(learnerId: bigint, deck: NewDeck): Effect.Effect<OwnedDeck>
   /** Changes only the fields `patch` sends, and sets `updatedAt` (epoch millis). */
   update(deckId: bigint, patch: typeof UpdateDeck.Type, updatedAt: number): Effect.Effect<Deck>
