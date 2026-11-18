@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
 import { DeckTooSmall, DrillNotAvailable, NotFound, QuestionAlreadyAnswered, SessionNotActive } from "./errors.ts"
-import { Count, Drill, Instant, LangTag, Mode, Page, PageQuery, SessionSize } from "./primitives.ts"
+import { Count, DeckTitle, Drill, Instant, LangTag, Mode, Page, PageQuery, SessionSize } from "./primitives.ts"
 import { DeckDrill, WordWithCards } from "./library.ts"
 import { DeckSlug, SessionSlug, WordSlug } from "./slug.ts"
 
@@ -73,6 +73,16 @@ export type AnswerResult = typeof AnswerResult.Type
 
 const deckParams = { deckSlug: DeckSlug }
 const sessionParams = { sessionSlug: SessionSlug }
+/**
+ * A word with at least one hard Card, and the deck it lives in (the Hard Words list spans decks).
+ * `deck` is optional only while the server rolls out; it is always sent once hard words ship.
+ */
+export const HardWord = Schema.Struct({
+  ...WordWithCards.fields,
+  deck: Schema.optionalKey(Schema.Struct({ slug: DeckSlug, title: DeckTitle, termLang: LangTag, meaningLang: LangTag }))
+})
+export type HardWord = typeof HardWord.Type
+
 const cardParams = { wordSlug: WordSlug, drill: Drill }
 
 export class StudyGroup extends HttpApiGroup.make("study").add(
@@ -98,7 +108,7 @@ export class StudyGroup extends HttpApiGroup.make("study").add(
   HttpApiEndpoint.post("abandon", "/sessions/:sessionSlug/abandon", { params: sessionParams, error: NotFound }),
   HttpApiEndpoint.get("hardWords", "/hard-words", {
     query: { drill: Schema.optionalKey(Drill), ...PageQuery },
-    success: Page(WordWithCards)
+    success: Page(HardWord)
   }),
   /** NotFound when the word has no Card in that drill yet (never studied there). */
   HttpApiEndpoint.put("markHard", "/words/:wordSlug/drills/:drill/hard", { params: cardParams, error: NotFound }),

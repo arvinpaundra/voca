@@ -166,7 +166,65 @@ const studySession = (state: string) => ({
   questions: state === "complete" ? [] : [question],
 })
 
-type Handler = (url: URL, state: string) => unknown
+// The word page's sample (design screen "word"): 食べる, studied in two of its drills.
+const drillStats = (drill: string, label: string, maturity: string, overrides: Record<string, unknown>) => ({
+  drill,
+  label,
+  maturity,
+  recallNow: 0.82,
+  stabilityDays: 12.4,
+  difficulty: 5.6,
+  reps: 14,
+  lapses: 4,
+  leech: true,
+  isHard: false,
+  accuracy: { overall: 0.78, last10: 0.9, easy: 0.84, hard: 0.61 },
+  streak: 5,
+  medianLatencyMs: 2100,
+  attemptsToCorrect: 1.3,
+  nextDue: "2026-11-21T00:00:00.000Z",
+  intervalDays: 12,
+  firstSeen: "2026-10-03T09:00:00.000Z",
+  lastReviewed: "2026-11-18T14:04:00.000Z",
+  confusedWith: [
+    { wordSlug: wordSlug(2), term: "飲む", count: 6 },
+    { wordSlug: wordSlug(4), term: "見る", count: 2 },
+    { wordSlug: wordSlug(9), term: "寝る", count: 1 },
+  ],
+  history: [
+    { at: "2026-11-18T14:04:00.000Z", correct: true, rating: 3, latencyMs: 1800, predictedRecall: 0.86, intervalDays: 12 },
+    { at: "2026-11-14T01:12:00.000Z", correct: false, rating: 1, latencyMs: 4200, predictedRecall: 0.71, intervalDays: 1 },
+    { at: "2026-11-09T12:40:00.000Z", correct: true, rating: 2, latencyMs: 6000, predictedRecall: 0.8, intervalDays: 5 },
+  ],
+  ...overrides,
+})
+
+const wordStats = {
+  word: (({ cards: _c, ...w }) => w)(words[0]!),
+  drills: [
+    drillStats("term_meaning", "Term → Meaning", "learning", {}),
+    drillStats("reading_term", "Reading → Term", "learning", { leech: false, lapses: 1, recallNow: 0.93 }),
+  ],
+}
+
+const hardDeck = (n: number) => {
+  const d = decks.find((x) => x.slug === deckSlug(n))!
+  return { slug: d.slug, title: d.title, termLang: d.termLang, meaningLang: d.meaningLang }
+}
+
+const hardCard = (drill: string, due: string) => ({ drill, due, stabilityDays: 4, isHard: true })
+
+// The Hard words sample (design screen "hard").
+const hardWords = [
+  { ...word(1, "食べる", "たべる", "to eat", "", [hardCard("term_meaning", "2026-11-18T00:00:00.000Z")]), example: null, deck: hardDeck(1) },
+  { ...word(6, "学习", "xuéxí", "to study", "", [hardCard("reading_term", "2026-11-25T00:00:00.000Z")]), example: null, deck: hardDeck(4) },
+  { ...word(7, "مَدْرَسَة", "", "school", "", [hardCard("meaning_term", "2026-11-18T00:00:00.000Z")]), reading: null, example: null, deck: hardDeck(3) },
+]
+
+/** Answer with an empty 204 (mark and unmark hard). */
+export const NO_CONTENT = Symbol("no content")
+
+type Handler = (url: URL, state: string, method: string) => unknown
 
 /** Matched in order against the request path; the first hit answers. `state` is the spec's extra word. */
 export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
@@ -196,8 +254,7 @@ export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
   [/^\/api\/decks$/, () => decks],
   [/^\/api\/decks\/[0-9A-Z]{10}$/, (url) => {
     const slug = url.pathname.split("/").pop()
-    const { wordCount: _w, dueCount: _d, ...found } = decks.find((d) => d.slug === slug) ?? decks[0]!
-    return found
+    return decks.find((d) => d.slug === slug) ?? decks[0]!
   }],
   [/^\/api\/decks\/[0-9A-Z]{10}\/words$/, () => ({ items: words, nextCursor: "next" })],
   [/^\/api\/decks\/[0-9A-Z]{10}\/stats$/, () => deckStats],
@@ -207,14 +264,20 @@ export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
     { drill: "meaning_term", label: "Meaning → Term", due: 0, new: 10 },
   ]],
   [/^\/api\/sessions\/active$/, (_url, state) => studySession(state)],
-  [/^\/api\/sessions\/[0-9A-Z]{14}\/answers$/, () => ({
-    correct: false,
-    correctWordSlug: wordSlug(1),
-    nextDue: "2026-11-19T00:00:00.000Z",
-    retry: { ...question, position: 12, attempt: 2 },
-    completed: false,
-    leech: false,
-  })],
+  [/^\/api\/sessions\/[0-9A-Z]{14}\/answers$/, (_url, state) =>
+    state === "finish"
+      ? { correct: true, correctWordSlug: wordSlug(1), nextDue: "2026-11-19T00:00:00.000Z", retry: null, completed: true, leech: true }
+      : {
+          correct: false,
+          correctWordSlug: wordSlug(1),
+          nextDue: "2026-11-19T00:00:00.000Z",
+          retry: { ...question, position: 12, attempt: 2 },
+          completed: false,
+          leech: false,
+        }],
+  [/^\/api\/words\/[0-9A-Z]{12}\/drills\/[a-z_]+\/hard$/, () => NO_CONTENT],
+  [/^\/api\/words\/[0-9A-Z]{12}\/stats$/, () => wordStats],
+  [/^\/api\/hard-words$/, () => ({ items: hardWords, nextCursor: null })],
   [/^\/api\/community\/decks$/, () => ({ items: publicDecks, nextCursor: null })],
   [/^\/api\/community\/decks\/[0-9A-Z]{10}$/, () => ({ ...publicDecks[0]!, preview: previewWords })],
 ]

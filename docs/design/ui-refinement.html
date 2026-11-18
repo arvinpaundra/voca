@@ -532,6 +532,9 @@ body[data-opt="console"] .pub .deck-tags { order: 2; }
 body[data-opt="console"] .pub .deck-tags .badge:not(.lang) { display: none; }
 body[data-opt="console"] .pub .deck-foot > span { order: 3; justify-self: end; }
 body[data-opt="console"] .pub .deck-foot > .btn { order: 4; }
+/* .pub-grid and .pub come after the Console .deck-grid and .deck rules, so Console restates what they override. */
+body[data-opt="console"] .pub-grid { grid-template-columns: 1fr; }
+body[data-opt="console"] .pub { grid-template-rows: none; gap: 16px; }
 body[data-opt="console"] .pub-head { grid-template-columns: minmax(0, 1fr) 160px 160px 96px 64px; }
 body[data-opt="console"] .pub-head span:nth-child(3) { text-align: left; }
 body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
