@@ -1,4 +1,4 @@
-import type { Word } from "@voca/contract";
+import { readingLang, type Word } from "@voca/contract";
 
 export function WordHero({ word, termLang, meaningLang }: { word: Word; termLang: string; meaningLang: string }) {
   return (
@@ -9,7 +9,7 @@ export function WordHero({ word, termLang, meaningLang }: { word: Word; termLang
         ) : (
           <ruby>
             {word.term}
-            <rt>{word.reading}</rt>
+            <rt lang={readingLang(termLang)}>{word.reading}</rt>
           </ruby>
         )}
       </p>

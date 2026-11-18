@@ -1,6 +1,6 @@
 import { DateTime } from "effect";
 import { X } from "lucide-react";
-import { drillLabel, type HardWord } from "@voca/contract";
+import { drillLabel, readingLang, type HardWord } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { IconButton } from "../../components/IconButton";
 import { termLangOf } from "./hardDrills";
@@ -29,7 +29,7 @@ export function HardWordList({
           ) : (
             <ruby>
               {word.term}
-              <rt>{word.reading}</rt>
+              <rt lang={readingLang(lang)}>{word.reading}</rt>
             </ruby>
           );
 
