@@ -4,6 +4,7 @@ import {
   DRILLS,
   MAX_LATENCY_MS,
   drillLabel,
+  readingLang,
   type AnswerResult,
   type Question,
   type Session,
@@ -23,6 +24,9 @@ import { SessionSummary } from "./SessionSummary";
 import { advance } from "./queue";
 import { segments, tally } from "./progress";
 import { isHardStudy, studyReturnHref } from "./returnTo";
+import { answerLang, promptLang } from "./scriptLang";
+import { requestedSize, shortSessionNotice } from "./shortSession";
+import { SessionNotice } from "./SessionNotice";
 import { SessionWords, type SessionWordItem } from "./SessionWords";
 import { SfxToggle } from "./SfxToggle";
 import { sfx, unlock } from "./sfx";
@@ -145,6 +149,9 @@ function StudyFlow({ studySession }: { studySession: Session }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [words, setWords] = useState<readonly SessionWordItem[]>([]);
+  const [notice] = useState(() =>
+    shortSessionNotice(requestedSize(window.localStorage), studySession.size)
+  );
 
   const startedAt = useRef(0);
   const head = queue[0];
@@ -270,7 +277,6 @@ function StudyFlow({ studySession }: { studySession: Session }) {
 
   if (head === undefined) return null;
 
-  const answerIsTerm = DRILLS[head.drill].answer !== "meaning";
   const promptIsTerm = DRILLS[head.drill].prompt !== "meaning";
 
   const correctText =
@@ -297,15 +303,17 @@ function StudyFlow({ studySession }: { studySession: Session }) {
           <SfxToggle />
         </div>
 
+        <SessionNotice notice={notice} />
+
         <section className="prompt">
           <span className="drill" dir="auto">{head.drillLabel}</span>
 
           {promptIsTerm ? (
-            <p className="term" lang={studySession.termLang}>
+            <p className="term" lang={promptLang(head.drill, studySession.termLang)}>
               {head.prompt.ruby ? (
                 <ruby>
                   {head.prompt.text}
-                  <rt>{head.prompt.ruby}</rt>
+                  <rt lang={readingLang(studySession.termLang)}>{head.prompt.ruby}</rt>
                 </ruby>
               ) : (
                 head.prompt.text
@@ -320,7 +328,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
             correctSlug={feedback?.result.correctWordSlug ?? null}
             chosenSlug={feedback?.chosen ?? null}
             disabled={busy}
-            lang={answerIsTerm ? studySession.termLang : undefined}
+            lang={answerLang(head.drill, studySession.termLang)}
             onChoose={(wordSlug) => {
               const option = head.options.find((candidate) => candidate.wordSlug === wordSlug);
               if (option !== undefined) void choose(head, option.wordSlug);

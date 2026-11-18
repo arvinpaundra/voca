@@ -12,6 +12,7 @@ import { session } from "../../lib/appSession";
 import { failureTag } from "../deck/wordModel";
 import { rememberDrills, rememberedDrills } from "./queue";
 import { rememberStudyDeck } from "./returnTo";
+import { rememberRequestedSize } from "./shortSession";
 import { SessionSizeField } from "./SessionSizeField";
 
 const DEFAULT_SIZE: SessionSize = 10;
@@ -109,6 +110,7 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
     if (Result.isSuccess(result)) {
       rememberDrills(window.localStorage, parsedSlug, selected);
       rememberStudyDeck(parsedSlug);
+      rememberRequestedSize(window.localStorage, size);
       window.location.assign("/app/study");
       return;
     }
