@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
 import { cx } from "./cx";
+import { MoreIcon } from "./MoreIcon";
 
 export type MenuItem = { label: string; onSelect: () => void; danger?: boolean };
 
@@ -53,7 +53,7 @@ export function Menu({
         className={trigger === "secondary" ? "btn btn-secondary" : "btn-icon"}
         onClick={() => setOpen((value) => !value)}
       >
-        <MoreHorizontal className="i" aria-hidden="true" />
+        <MoreIcon />
       </button>
       {open && (
         <div

@@ -41,7 +41,9 @@ test.each([
 test.each([
   ["/app", true],
   ["/app/decks", true],
-  ["/app/decks/TQ7KM2PV9X/study", true],
+  ["/app/decks/TQ7KM2PV9X/study", false],
+  ["/app/decks/TQ7KM2PV9X/words/AB12CD34EF56", true],
+  ["/app/hard", true],
   ["/app/discover", true],
   ["/app/study", false],
   ["/login", false]

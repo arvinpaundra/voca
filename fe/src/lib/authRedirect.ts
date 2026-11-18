@@ -3,9 +3,9 @@ export const isAppPath = (path: string): boolean => {
   return path === "/app" || path.startsWith("/app/");
 }
 
-/** App pages framed by the sidebar. A study session takes the whole screen. */
-export const hasShell = (path: string): boolean => {
-  return isAppPath(path) && path !== "/app/study";
+/** App pages framed by the sidebar. Study setup and the session take the whole screen. */
+export const hasShell = (_path: string): boolean => {
+  throw new Error("not implemented: F-0")
 }
 
 /**
