@@ -186,7 +186,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
   const summary = tally(firstAttempts);
 
   if (finished) {
-    return <SessionSummary right={summary.right} wrong={summary.wrong} backHref={studyReturnHref()} />;
+    return <SessionSummary firstAttempts={firstAttempts} backHref={studyReturnHref()} />;
   }
 
   if (head === undefined) return null;
