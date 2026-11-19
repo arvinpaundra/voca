@@ -98,12 +98,11 @@ export const startSession = (
           questions.push({ position: index + 1, drill: pick.drill, word: pick.word, options })
         }
 
-        // ponytail: Hard mode is out of scope, so every session runs as easy.
         const sessionId = yield* repo.insertSession(learnerId, {
           slug,
           deckId: deck.id,
           drills: request.drills,
-          mode: "easy",
+          mode: request.mode,
           // What was found, not what was asked for: the progress bar counts the words of this session.
           size: picks.length,
           createdAt: now
@@ -123,7 +122,7 @@ export const startSession = (
           slug,
           drills: request.drills,
           termLang: deck.termLang,
-          mode: "easy",
+          mode: request.mode,
           size: picks.length,
           status: "active",
           cleared: 0,
@@ -218,7 +217,7 @@ export const startHardSession = (
           slug,
           deckId: null,
           drills: request.drills,
-          mode: "easy",
+          mode: request.mode,
           size: ordered.length,
           createdAt: now
         })
@@ -239,7 +238,7 @@ export const startHardSession = (
           slug,
           drills: request.drills,
           termLang: lead.termLang,
-          mode: "easy",
+          mode: request.mode,
           size: ordered.length,
           status: "active",
           cleared: 0,
