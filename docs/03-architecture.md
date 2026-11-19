@@ -137,12 +137,12 @@ Environment variables are read through Effect `Config`, so a missing variable fa
 
 ```
 DATABASE_URL, JWT_SECRET (≥32 bytes, base64), GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-PORT=5000, LOG_LEVEL=Info
+PORT=8000, LOG_LEVEL=Info
 ```
 
 ## Cross-cutting
 
-- **No CORS:** the SPA and the API share one origin. In production a Pages Function proxies `/api/*`; locally, Vite's `server.proxy` sends `/api` to `localhost:5000`. See [12](12-deployment.md).
+- **No CORS:** the SPA and the API share one origin. In production a Pages Function proxies `/api/*`; locally, Vite's `server.proxy` sends `/api` to `localhost:8000`. See [12](12-deployment.md).
 - **Logging:** Effect `Logger.json` to stdout, with a request ID annotation. Tokens and CSV contents are never logged.
 - **Rate limiting:** a Traefik `RateLimit` middleware on the ingress (platform feature), applied to `/auth/*` and the import endpoint. There is no rate limiting in the application.
 - **Health:** `GET /api/healthz` returns `SELECT 1`. It is used for both the readiness and liveness probes.

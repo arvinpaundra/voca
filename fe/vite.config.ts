@@ -7,6 +7,6 @@ export default defineConfig({
   plugins: [tanstackRouter(), react(), tailwindcss()],
   server: {
     // Same-origin in production; the Vite proxy mirrors /api locally.
-    proxy: { "/api": "http://localhost:5000" },
+    proxy: { "/api": "http://localhost:8000" },
   },
 });
