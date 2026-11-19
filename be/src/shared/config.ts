@@ -5,7 +5,7 @@ export const AppConfig = Config.all({
   jwtSecret: Config.Redacted("JWT_SECRET"),
   googleClientId: Config.String("GOOGLE_CLIENT_ID"),
   googleClientSecret: Config.Redacted("GOOGLE_CLIENT_SECRET"),
-  port: Config.Int("PORT").pipe(Config.withDefault(3000)),
+  port: Config.Int("PORT").pipe(Config.withDefault(5000)),
   logLevel: Config.LogLevel("LOG_LEVEL").pipe(Config.withDefault("Info"))
 })
 

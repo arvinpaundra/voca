@@ -38,7 +38,7 @@ export const onRequest = ({ request, env }: { request: Request; env: { API_ORIGI
 - `API_ORIGIN = https://voca-origin.arvinpaundra.dev` is a Pages environment variable.
 - **Client IP:** Traefik sees Cloudflare's addresses, so the rate limit is keyed on `X-Real-IP` (`sourceCriterion.requestHeaderName`). Someone calling the origin host directly could spoof it; accepted for the MVP, and fixable by locking the origin to Cloudflare later.
 - **Cost ceiling:** each API call is one Worker request. The free plan allows 100k a day, about 2,500 daily learners at ~40 calls each. Beyond that, Workers Paid is $5/month for 10M requests.
-- **Local development:** `vite.config.ts` sets `server.proxy: { "/api": "http://localhost:3000" }`, so local paths match production.
+- **Local development:** `vite.config.ts` sets `server.proxy: { "/api": "http://localhost:5000" }`, so local paths match production.
 
 ## Backend: kube-oci
 
@@ -58,7 +58,7 @@ FROM alpine:3.22
 RUN adduser -D -u 10001 app
 COPY --from=build /voca-api /voca-api
 USER 10001
-EXPOSE 3000
+EXPOSE 5000
 ENTRYPOINT ["/voca-api"]
 ```
 
@@ -72,7 +72,7 @@ The node `mio-vnc` is **arm64** (verified: 4 vCPU, 24 GiB RAM, about 20% memory 
 | `namespace.yaml` | `voca` |
 | `secret.example.yaml` | `DATABASE_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (the real values are applied by hand and never committed) |
 | `deployment.yaml` | 1 replica; resources `requests: 100m/128Mi`, `limits: 512Mi`; `readinessProbe` and `livenessProbe`; `securityContext` with `runAsNonRoot` and `readOnlyRootFilesystem`; config from env vars (`LOG_LEVEL`); probes on `GET /api/healthz` |
-| `service.yaml` | ClusterIP 80 → 3000 |
+| `service.yaml` | ClusterIP 80 → 5000 |
 | `ingress.yaml` | Traefik, with the same `external-dns` and Cloudflare-proxied annotations as the current deployment; host `voca-origin.arvinpaundra.dev`. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.dev/api` |
 | `ratelimit.yaml` | A Traefik `Middleware` (`rateLimit`: average 10 req/s, burst 20, keyed on `X-Real-IP`) attached to the ingress |
 
