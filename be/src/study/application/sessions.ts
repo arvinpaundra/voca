@@ -1,6 +1,6 @@
 import { DateTime, Effect, Option, Random, Schema } from "effect"
 import { CurrentLearner, SLUG_LENGTH, SessionSlug, slug as slugOf } from "@voca/contract"
-import type { Drill, LangTag, Session, SessionSize } from "@voca/contract"
+import type { Drill, LangTag, Mode, Session, SessionSize } from "@voca/contract"
 import {
   DeckNotFound,
   DeckTooSmallError,
@@ -21,6 +21,7 @@ type Needs = CurrentLearner | StudyRepo | Transaction
 export interface StartRequest {
   readonly drills: Drills
   readonly size: SessionSize
+  readonly mode: Mode
 }
 
 /** A new public id for a session, drawn from Effect's `Random` so a test can seed it. */
@@ -92,17 +93,16 @@ export const startSession = (
         }> = []
 
         for (const [index, pick] of picks.entries()) {
-          const options = yield* pickOptions(words, pick.drill, pick.word)
+          const options = yield* pickOptions(words, pick.drill, pick.word, request.mode)
 
           questions.push({ position: index + 1, drill: pick.drill, word: pick.word, options })
         }
 
-        // ponytail: Hard mode is out of scope, so every session runs as easy.
         const sessionId = yield* repo.insertSession(learnerId, {
           slug,
           deckId: deck.id,
           drills: request.drills,
-          mode: "easy",
+          mode: request.mode,
           // What was found, not what was asked for: the progress bar counts the words of this session.
           size: picks.length,
           createdAt: now
@@ -122,7 +122,7 @@ export const startSession = (
           slug,
           drills: request.drills,
           termLang: deck.termLang,
-          mode: "easy",
+          mode: request.mode,
           size: picks.length,
           status: "active",
           cleared: 0,
@@ -201,7 +201,7 @@ export const startHardSession = (
           const word = yield* Effect.fromNullishOr(words.find((candidate) => candidate.id === pick.wordId)).pipe(
             Effect.orDie
           )
-          const options = yield* pickOptions(words, pick.drill, word)
+          const options = yield* pickOptions(words, pick.drill, word, request.mode)
 
           questions.push({
             position: index + 1,
@@ -217,7 +217,7 @@ export const startHardSession = (
           slug,
           deckId: null,
           drills: request.drills,
-          mode: "easy",
+          mode: request.mode,
           size: ordered.length,
           createdAt: now
         })
@@ -238,7 +238,7 @@ export const startHardSession = (
           slug,
           drills: request.drills,
           termLang: lead.termLang,
-          mode: "easy",
+          mode: request.mode,
           size: ordered.length,
           status: "active",
           cleared: 0,

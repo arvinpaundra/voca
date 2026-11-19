@@ -39,7 +39,7 @@ export const StudyHandlers = HttpApiBuilder.group(
 
       start: ({ payload }) => {
         if (payload.scope.kind === "hard") {
-          return startHardSession({ drills: payload.drills, size: payload.size }).pipe(
+          return startHardSession({ drills: payload.drills, size: payload.size, mode: payload.mode }).pipe(
             Effect.provideContext(ports),
             Effect.catchTag(
               "DeckTooSmallError",
@@ -56,7 +56,11 @@ export const StudyHandlers = HttpApiBuilder.group(
           )
         }
 
-        return startSession(payload.scope.deckSlug, { drills: payload.drills, size: payload.size }).pipe(
+        return startSession(payload.scope.deckSlug, {
+          drills: payload.drills,
+          size: payload.size,
+          mode: payload.mode
+        }).pipe(
           Effect.provideContext(ports),
           Effect.catchTag("DeckNotFound", notFound("Deck")),
           Effect.catchTag(
