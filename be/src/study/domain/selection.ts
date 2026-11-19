@@ -1,6 +1,7 @@
 import { Effect, Random } from "effect"
 import { OPTIONS_PER_QUESTION, type Drill, type Mode } from "@voca/contract"
 import { DeckTooSmallError } from "./errors.ts"
+import { scoreFor } from "./similarity.ts"
 import { appliesTo, answerKey, type StudyWord } from "./words.ts"
 
 /**
@@ -119,9 +120,69 @@ export const pickNew = (input: {
   return picks
 }
 
+/** Hard distractors are drawn from this many of the most similar candidates. */
+const SIMILAR_POOL = 6
+
+/**
+ * The words a prompt's options can come from: the deck's other words that have the drill's answer, one per answer key
+ * that the prompt's answer doesn't share.
+ */
+const candidatesOf = (words: ReadonlyArray<StudyWord>, drill: Drill, prompt: StudyWord): Array<StudyWord> => {
+  const promptKey = answerKey(prompt, drill)
+  const seen = new Set<string>()
+  const candidates: Array<StudyWord> = []
+
+  for (const word of words) {
+    if (word.id === prompt.id || !appliesTo(drill, word)) {
+      continue
+    }
+
+    const key = answerKey(word, drill)
+
+    if (key === promptKey || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    candidates.push(word)
+  }
+
+  return candidates
+}
+
+/**
+ * The most similar distractors: rank the candidates by score and take the top 6, then choose 3 of them at random. When
+ * fewer than 3 candidates score above 0, keep those and fill the rest at random.
+ */
+const similarDistractors = (
+  candidates: ReadonlyArray<StudyWord>,
+  drill: Drill,
+  prompt: StudyWord
+): Effect.Effect<ReadonlyArray<StudyWord>> =>
+  Effect.gen(function* () {
+    const needed = OPTIONS_PER_QUESTION - 1
+    const ranked = candidates
+      .map((word) => ({ word, score: scoreFor(drill, prompt, word) }))
+      .sort((a, b) => b.score - a.score)
+    const similar = ranked.filter(({ score }) => score > 0).length
+
+    if (similar < needed) {
+      const kept = ranked.slice(0, similar).map(({ word }) => word)
+      const rest = ranked.slice(similar).map(({ word }) => word)
+      const filler = (yield* Random.shuffle(rest)).slice(0, needed - similar)
+
+      return [...kept, ...filler]
+    }
+
+    const pool = ranked.slice(0, SIMILAR_POOL).map(({ word }) => word)
+
+    return (yield* Random.shuffle(pool)).slice(0, needed)
+  })
+
 /**
  * The 4 options of a question: the prompt word and 3 distractors in random order. A distractor comes from the deck, has
- * the drill's answer, and has an answer key the prompt's answer doesn't share, one per key.
+ * the drill's answer, and has an answer key the prompt's answer doesn't share, one per key. An easy distractor is random;
+ * a hard one is among the most similar of those candidates.
  */
 export const pickOptions = (
   words: ReadonlyArray<StudyWord>,
@@ -130,31 +191,16 @@ export const pickOptions = (
   mode: Mode
 ): Effect.Effect<ReadonlyArray<StudyWord>, DeckTooSmallError> =>
   Effect.gen(function* () {
-    if (mode === "hard") {
-      return yield* Effect.die("not implemented: SB")
-    }
-
-    const promptKey = answerKey(prompt, drill)
-    const seen = new Set<string>()
-    const candidates: Array<StudyWord> = []
-
-    for (const word of words) {
-      if (word.id === prompt.id || !appliesTo(drill, word)) {
-        continue
-      }
-
-      const key = answerKey(word, drill)
-
-      if (key === promptKey || seen.has(key)) {
-        continue
-      }
-
-      seen.add(key)
-      candidates.push(word)
-    }
+    const candidates = candidatesOf(words, drill, prompt)
 
     if (candidates.length < OPTIONS_PER_QUESTION - 1) {
       return yield* Effect.fail(new DeckTooSmallError())
+    }
+
+    if (mode === "hard") {
+      const similar = yield* similarDistractors(candidates, drill, prompt)
+
+      return yield* Random.shuffle([prompt, ...similar])
     }
 
     const distractors = (yield* Random.shuffle(candidates)).slice(0, OPTIONS_PER_QUESTION - 1)
