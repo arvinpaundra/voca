@@ -1,5 +1,5 @@
 import { Effect, Random } from "effect"
-import { OPTIONS_PER_QUESTION, type Drill } from "@voca/contract"
+import { OPTIONS_PER_QUESTION, type Drill, type Mode } from "@voca/contract"
 import { DeckTooSmallError } from "./errors.ts"
 import { appliesTo, answerKey, type StudyWord } from "./words.ts"
 
@@ -126,9 +126,14 @@ export const pickNew = (input: {
 export const pickOptions = (
   words: ReadonlyArray<StudyWord>,
   drill: Drill,
-  prompt: StudyWord
+  prompt: StudyWord,
+  mode: Mode
 ): Effect.Effect<ReadonlyArray<StudyWord>, DeckTooSmallError> =>
   Effect.gen(function* () {
+    if (mode === "hard") {
+      return yield* Effect.die("not implemented: SB")
+    }
+
     const promptKey = answerKey(prompt, drill)
     const seen = new Set<string>()
     const candidates: Array<StudyWord> = []

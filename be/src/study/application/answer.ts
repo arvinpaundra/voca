@@ -125,7 +125,7 @@ const askAgain = (input: {
     // The options come from the word's own deck, which is the session's deck for a deck session.
     const deck = yield* repo.deckOfWord(question.wordId)
     const words = yield* repo.deckWords(deck.id)
-    const options = yield* pickOptions(words, question.drill, prompt).pipe(
+    const options = yield* pickOptions(words, question.drill, prompt, session.mode).pipe(
       Effect.catchTag("DeckTooSmallError", () => Effect.succeed(input.previousOptions))
     )
     const position = (yield* repo.maxPosition(session.id)) + 1

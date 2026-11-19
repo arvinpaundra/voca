@@ -1,6 +1,6 @@
 import { DateTime, Effect, Option, Random, Schema } from "effect"
 import { CurrentLearner, SLUG_LENGTH, SessionSlug, slug as slugOf } from "@voca/contract"
-import type { Drill, LangTag, Session, SessionSize } from "@voca/contract"
+import type { Drill, LangTag, Mode, Session, SessionSize } from "@voca/contract"
 import {
   DeckNotFound,
   DeckTooSmallError,
@@ -21,6 +21,7 @@ type Needs = CurrentLearner | StudyRepo | Transaction
 export interface StartRequest {
   readonly drills: Drills
   readonly size: SessionSize
+  readonly mode: Mode
 }
 
 /** A new public id for a session, drawn from Effect's `Random` so a test can seed it. */
@@ -92,7 +93,7 @@ export const startSession = (
         }> = []
 
         for (const [index, pick] of picks.entries()) {
-          const options = yield* pickOptions(words, pick.drill, pick.word)
+          const options = yield* pickOptions(words, pick.drill, pick.word, request.mode)
 
           questions.push({ position: index + 1, drill: pick.drill, word: pick.word, options })
         }
@@ -201,7 +202,7 @@ export const startHardSession = (
           const word = yield* Effect.fromNullishOr(words.find((candidate) => candidate.id === pick.wordId)).pipe(
             Effect.orDie
           )
-          const options = yield* pickOptions(words, pick.drill, word)
+          const options = yield* pickOptions(words, pick.drill, word, request.mode)
 
           questions.push({
             position: index + 1,
