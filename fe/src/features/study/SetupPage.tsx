@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Option, Result, Schema } from "effect";
-import { DeckSlug, type Drill, type DeckDrill, type SessionSize } from "@voca/contract";
+import { DeckSlug, type Drill, type DeckDrill, type Mode, type SessionSize } from "@voca/contract";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
@@ -14,6 +14,7 @@ import { startFailure } from "./startFailure";
 import { rememberDrills, rememberedDrills } from "./queue";
 import { rememberStudyDeck } from "./returnTo";
 import { rememberRequestedSize } from "./shortSession";
+import { ModeField } from "./ModeField";
 import { SessionSizeField } from "./SessionSizeField";
 
 const DEFAULT_SIZE: SessionSize = 10;
@@ -24,12 +25,13 @@ const isDrillSet = (drills: readonly Drill[]): drills is [Drill, ...Drill[]] => 
 type SetupState =
   | { readonly kind: "loading" }
   | { readonly kind: "failed" }
-  | { readonly kind: "ready"; readonly drills: readonly DeckDrill[]; readonly defaultSize: SessionSize; readonly deckTitle: string };
+  | { readonly kind: "ready"; readonly drills: readonly DeckDrill[]; readonly defaultSize: SessionSize; readonly defaultMode: Mode; readonly deckTitle: string };
 
 export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
   const [state, setState] = useState<SetupState>({ kind: "loading" });
   const [selected, setSelected] = useState<readonly Drill[]>([]);
   const [size, setSize] = useState<SessionSize>(DEFAULT_SIZE);
+  const [mode, setMode] = useState<Mode>("easy");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,12 +63,16 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
       const defaultSize = Result.isSuccess(learnerResult)
         ? learnerResult.success.settings.defaultSessionSize
         : DEFAULT_SIZE;
+      const defaultMode = Result.isSuccess(learnerResult)
+        ? learnerResult.success.settings.defaultMode
+        : "easy";
 
       // The title only labels the way back; without it the link says "Deck".
       const deckTitle = Result.isSuccess(deckResult) ? deckResult.success.title : "Deck";
 
-      setState({ kind: "ready", drills, defaultSize, deckTitle });
+      setState({ kind: "ready", drills, defaultSize, defaultMode, deckTitle });
       setSize(defaultSize);
+      setMode(defaultMode);
       setSelected(
         rememberedDrills(window.localStorage, parsedSlug, drills.map((drill) => drill.drill))
       );
@@ -94,9 +100,14 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
       void session.call((client) => client.me.updateSettings({ payload: { defaultSessionSize: size } }));
     }
 
+    if (mode !== state.defaultMode) {
+      // The mode is a preference for next time; a failed save must not block the session.
+      void session.call((client) => client.me.updateSettings({ payload: { defaultMode: mode } }));
+    }
+
     const result = await session.call((client) =>
       client.study.start({
-        payload: { scope: { kind: "deck", deckSlug: parsedSlug }, drills: selected, size, mode: "easy" }
+        payload: { scope: { kind: "deck", deckSlug: parsedSlug }, drills: selected, size, mode }
       })
     );
 
@@ -157,6 +168,12 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
               <span className="lbl">Session size</span>
 
               <SessionSizeField value={size} onChange={setSize} />
+            </div>
+
+            <div className="field">
+              <span className="lbl">Mode</span>
+
+              <ModeField value={mode} onChange={setMode} />
             </div>
 
             {error !== null && <p role="alert" style={{ color: "var(--bad)", fontSize: 13 }}>{error}</p>}
