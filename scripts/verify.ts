@@ -28,8 +28,11 @@ const run = (cmd: string[], cwd = ".") => {
 const fail = (step: string, out: string): never => {
   // The full output survives even when the console is cut (`| tail`), so an intermittent failure can be diagnosed.
   writeFileSync(".verify-last.log", `${new Date().toISOString()} ✗ ${step}\n${out}\n`)
-  // Stack frames of library internals cost a reader tokens and never point at the fix.
-  const lines = out.split("\n").filter((line) => !/^\s+at /.test(line))
+  // Stack frames of library internals cost a reader tokens and never point at the fix. Passing tests, and the file
+  // headers they leave empty, would push the failure itself past the 80-line cut.
+  const kept = out.split("\n").filter((line) => !/^\s+at |^\(pass\) |^##\[endgroup\]|^\s*$/.test(line))
+  const header = (line?: string) => line !== undefined && /^(##\[group\])?\S+\.test\.tsx?:$/.test(line)
+  const lines = kept.filter((line, i) => !header(line) || (i + 1 < kept.length && !header(kept[i + 1])))
   console.log(`✗ ${step}\n${lines.slice(0, 80).join("\n")}${lines.length > 80 ? `\n… ${lines.length - 80} more lines` : ""}`)
   console.log(`\nFix the FIRST error above, then re-run: bun run verify ${process.argv.slice(2).join(" ")}`)
   process.exit(1)

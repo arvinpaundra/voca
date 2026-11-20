@@ -8,11 +8,13 @@ How the decision thread turns a feature into merged code with cheap implementer 
 |---|---|---|
 | Product | the session's model, in a **fresh session per goal** | what to build and why: `docs/01-functional-requirements.md` (goal, behaviour, acceptance criteria, priority). Never the how |
 | Decision thread (architect) | the session's model, in a **fresh session per feature** | how to build it: decisions, the rest of `docs/`, `contract/`, task issues, locked tests and stubs, `scripts/`, `lint/`, `.claude/`. Never rewrites an FR |
-| Worker | Haiku; Sonnet after 2 failed rounds; Opus last | the files in its task's `allow` list |
-| Re-check | **no agent**: CI plus one shell command | |
-| Review | **no agent**: diff coverage in VERIFY, then `merge-gate` routes the PR | the owner reviews critical or oversized PRs |
+| Dispatcher | **no agent**: `scripts/dispatch.ts` | worktrees, sessions, replies, repair rounds |
+| Implementer | Haiku, a **fresh headless session per task** (`.claude/agents/implementer.md`) | the files in its task's `allow` list |
+| Repairer | a **fresh headless session per finding** (`.claude/agents/repairer.md`); rounds 1–2 Haiku, 3 Sonnet, 4 Opus, then the owner | the same files, on the same branch |
+| Router | **no agent**: `scripts/next.ts` (re-check, merge gate, first CI error, rounds) | the next step for every PR |
+| Review | **no agent**: diff coverage in VERIFY, the locked tests | the owner reviews what the router sends them |
 
-Never use Opus for review or re-check. Every workflow agent gets an explicit `model` and `effort`.
+Implementers and repairers are not subagents: each is a `claude -p` session with only the project's settings, four tools and no MCP servers, which starts at about 7k tokens of context instead of about 39k. The decision thread spends nothing while they run.
 
 ## Loop
 
@@ -24,16 +26,15 @@ Never use Opus for review or re-check. Every workflow agent gets an explicit `mo
 3. spec       → locked tests + stubs on one dispatch branch per task. Every stub fails with `not implemented: <TASK>`
 4. pre-check  → `bun scripts/precheck.ts <TASK> <locked test files>`: red, and every failure is the task's own stub
 5. issues     → limits block + context pack; `verify --body draft.md --print-hash`, hash on the VERIFY line, created once
-6. workflow   → the saved `agent-loop` workflow with the task list: one worker per task, explicit model and effort, own worktree
-7. re-check   → `bun scripts/recheck.ts <PR…>`: CI green with the path guard, no stubs left in the task's files
-8. review     → `bun scripts/merge-gate.ts <pr>` routes: critical paths or over 8 files / 300 lines → the owner reviews;
-                behind master only → `gh pr update-branch <pr> --rebase`, then gate again; otherwise no review agent.
-                Every finding goes back to the worker that wrote the code ("Self-healing")
-9. merge      → `bun scripts/merge-gate.ts <pr>` says `merge: ok` and the reply flags nothing → the decision thread merges;
-                otherwise the owner merges. `Closes #N` closes the issue. Then remove the worktree and branch
+6. dispatch   → `bun scripts/dispatch.ts tasks.json` in the background: one fresh implementer session per task, own worktree
+7. route      → `bun scripts/next.ts --feature F <PR…>`: wait · owner (disputes, critical paths, over 8 files / 300 lines)
+                · heal (red CI, conflict, stubs) · stopped (4 rounds) · rebase (done by the script) · merge
+8. repair     → `bun scripts/dispatch.ts heals.json`: one fresh repairer session per finding, model by round; then 7 again
+9. merge      → the router says merge → the decision thread merges; the owner merges what they reviewed.
+                `Closes #N` closes the issue. Then remove the worktree and branch
 ```
 
-**Stop and ask the owner when:** a task needs a change to `contract/`, `docs/` or a locked test; a worker replies `disputed: …`; Opus also fails.
+**Stop and ask the owner when:** a task needs a change to `contract/`, `docs/` or a locked test; a worker replies `disputed: …`; a PR is `stopped`.
 
 ## Spending few tokens
 
@@ -42,7 +43,9 @@ Never use Opus for review or re-check. Every workflow agent gets an explicit `mo
 | Fewer cold starts | Cohesive tasks, not one per endpoint. A worker's fixed cost (rules, issue, reference files) is paid once per task. |
 | No wasted runs | Pre-check before dispatch; workers fail fast on their locked tests before writing code. |
 | Small context | The issue's **context pack** lists the exact files to read and pastes the 10–20 spec lines that matter, instead of whole docs. |
-| Cheap models | Haiku workers; `effort: low` for small mechanical tasks, `high` only for tricky logic. |
+| Cheap models | Haiku workers; a stronger model only for a repair round that Haiku failed twice. |
+| Lean sessions | Workers are fresh `claude -p` sessions: project settings only, four tools, no MCP, a role prompt. About 7k tokens at the start instead of about 39k, paid again on every turn. |
+| Rules, not agents | Dispatch, routing, rebases, CI-log triage, re-check and review are scripts or CI. |
 | No duplicate verification | CI is the independent re-check; the decision thread reads it with a script, not an agent. |
 | Small replies | Workers reply `{pr, green, disputed, couldNotDo}`. |
 | Narrow heals | A heal gets only the finding and the 2–3 files involved. |
@@ -73,7 +76,7 @@ VERIFY: bun run verify --issue <this issue> --hash <hash>
 
 ## Self-healing
 
-The decision thread never edits or pushes to a worker's branch. Findings go to the worker that wrote the code; in a workflow, a heal agent gets the finding, the worktree and the 2–3 files involved.
+The decision thread never edits or pushes to a worker's branch. Findings go to a repairer session on the same branch and worktree, with only the finding and the 2–3 files involved; `next.ts` writes them for red CI, conflicts and stubs left.
 
 | Finding | Message |
 |---|---|
@@ -81,7 +84,7 @@ The decision thread never edits or pushes to a worker's branch. Findings go to t
 | conflict with `master` | "PR #P conflicts with master. Rebase onto `origin/master`, run VERIFY again, push with `--force-with-lease`." |
 | the owner's review | "The owner reviewed PR #P. Address every comment (`gh pr view P --comments`), run VERIFY again, push." |
 
-After 2 failed rounds on the same finding, move the task to the next model tier. A finding the owner makes that could recur becomes a rule: a lint rule when mechanical, an `AGENTS.md` line when it needs judgment.
+Repair rounds count per PR in `/tmp/dispatch/<feature>/rounds.json`: rounds 1–2 run Haiku, 3 Sonnet, 4 Opus; after that the PR is `stopped` and goes to the owner. A finding the owner makes that could recur becomes a rule: a lint rule when mechanical, an `AGENTS.md` line when it needs judgment.
 
 ## Definition of done
 
@@ -107,4 +110,5 @@ After 2 failed rounds on the same finding, move the task to the next model tier.
 | typecheck | contract mismatches, missing handlers, invented Effect APIs |
 | tests | behaviour against the spec |
 | diff coverage | added behaviour no test runs |
+| router | the next step for each PR, without a model reading CI logs |
 | the owner's review | spec intent the tests miss, anything no rule covers yet |

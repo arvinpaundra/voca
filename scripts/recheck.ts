@@ -4,8 +4,6 @@
 //
 //   bun scripts/recheck.ts 60 61 62
 
-export {}
-
 interface Pr {
   readonly headRefName: string
   readonly headRefOid: string
@@ -22,7 +20,8 @@ const run = (cmd: Array<string>) => {
 const isTaskIssue = (issue: number) =>
   run(["gh", "issue", "view", String(issue), "--json", "labels", "-q", ".labels[].name"]).out.split("\n").includes("task")
 
-const recheck = (pr: string): Array<string> => {
+/** What keeps the PR from being done; empty when it is. `next.ts` routes on the same list. */
+export const recheck = (pr: string): Array<string> => {
   const view = run(["gh", "pr", "view", pr, "--json", "headRefName,headRefOid,statusCheckRollup,closingIssuesReferences,files"])
   if (!view.ok) return [`cannot read PR #${pr}`]
 
@@ -48,23 +47,25 @@ const recheck = (pr: string): Array<string> => {
   return problems
 }
 
-const prs = process.argv.slice(2)
-if (prs.length === 0) {
-  console.error("usage: bun scripts/recheck.ts <PR number>...")
-  process.exit(2)
-}
-
-let failed = false
-
-for (const pr of prs) {
-  const problems = recheck(pr)
-
-  if (problems.length === 0) {
-    console.log(`✓ #${pr}`)
-  } else {
-    failed = true
-    console.log(`✗ #${pr}\n${problems.map((problem) => `  - ${problem}`).join("\n")}`)
+if (import.meta.main) {
+  const prs = process.argv.slice(2)
+  if (prs.length === 0) {
+    console.error("usage: bun scripts/recheck.ts <PR number>...")
+    process.exit(2)
   }
-}
 
-process.exit(failed ? 1 : 0)
+  let failed = false
+
+  for (const pr of prs) {
+    const problems = recheck(pr)
+
+    if (problems.length === 0) {
+      console.log(`✓ #${pr}`)
+    } else {
+      failed = true
+      console.log(`✗ #${pr}\n${problems.map((problem) => `  - ${problem}`).join("\n")}`)
+    }
+  }
+
+  process.exit(failed ? 1 : 0)
+}
