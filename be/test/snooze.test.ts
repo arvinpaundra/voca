@@ -62,7 +62,7 @@ describe("POST /decks/snooze", () => {
 
         const snoozed = yield* snooze(token, [deck.deckSlug], days)
 
-        expect(snoozed.map((each) => [each.slug, snoozeOf(each)])).toEqual([[deck.deckSlug, { until }]])
+        expect(snoozed.map((each) => [String(each.slug), snoozeOf(each)])).toEqual([[deck.deckSlug, { until }]])
         expect(yield* listedSnooze(token, deck.deckSlug)).toEqual({ until })
         expect(snoozeOf(yield* getDeck(token, deck.deckSlug))).toEqual({ until })
       })
@@ -149,7 +149,7 @@ describe("POST /decks/snooze", () => {
 
         const snoozed = yield* snooze(token, [first.deckSlug, second.deckSlug], 7)
 
-        expect(snoozed.map((deck) => deck.slug).sort()).toEqual([first.deckSlug, second.deckSlug].sort())
+        expect(snoozed.map((deck) => String(deck.slug)).sort()).toEqual([first.deckSlug, second.deckSlug].sort())
         expect(yield* listedSnooze(token, first.deckSlug)).toEqual({ until: "2026-11-21T04:00:00.000Z" })
         expect(yield* listedSnooze(token, second.deckSlug)).toEqual({ until: "2026-11-21T04:00:00.000Z" })
         expect(yield* listedSnooze(token, third.deckSlug)).toBeNull()
