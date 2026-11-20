@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test"
 import { Effect } from "effect"
 import { SqlClient } from "effect/sql"
+import { TokenSigner } from "../src/identity/application/ports.ts"
 import { at, call, makeIdentityRuntime } from "./identity.ts"
 import { seedCard, seedDeck, signedIn, wordList } from "./seed.ts"
 import { resetDb } from "./setup.ts"
@@ -13,6 +14,15 @@ afterAll(() => rt.dispose())
 beforeEach(() => rt.runPromise(Effect.andThen(resetDb, at("2026-11-14T10:00:00Z"))))
 
 const DUE = "2026-11-13T04:00:00Z"
+
+/** Moves the clock and signs a fresh access token: the old one would have expired. */
+const later = (iso: string, slug = "AAAAAAA1") =>
+  Effect.gen(function* () {
+    yield* at(iso)
+    const signer = yield* TokenSigner
+
+    return (yield* signer.sign(slug as never)).token
+  })
 
 const snoozeDeck = (deckId: bigint, until: string | null) =>
   Effect.gen(function* () {
@@ -102,9 +112,9 @@ describe("GET /hard-words", () => {
         yield* snoozeDeck(sleepy.deckId, "2026-11-15T04:00:00Z")
         expect(yield* hardWordSlugs(token)).toEqual(slugsOf(awake))
 
-        yield* at("2026-11-15T04:00:00Z")
+        const fresh = yield* later("2026-11-15T04:00:00Z")
 
-        expect(yield* hardWordSlugs(token)).toEqual([...slugsOf(sleepy), ...slugsOf(awake)].sort())
+        expect(yield* hardWordSlugs(fresh)).toEqual([...slugsOf(sleepy), ...slugsOf(awake)].sort())
       })
     ))
 })
