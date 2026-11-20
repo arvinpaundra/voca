@@ -17,7 +17,11 @@ const word = (n: number) =>
 
 const cards = [word(1), word(2), word(3)];
 
-const slugOf = (run: Run) => currentCard(run)?.slug ?? null;
+const slugOf = (run: Run): string | null => {
+  const card = currentCard(run);
+
+  return card === null ? null : String(card.slug);
+};
 
 describe("a run", () => {
   test("starts on the first card, front up, with nothing marked", () => {
