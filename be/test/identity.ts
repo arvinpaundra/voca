@@ -1,3 +1,4 @@
+import { BunFileSystem } from "@effect/platform-bun"
 import { Effect, Layer, ManagedRuntime, Redacted } from "effect"
 import { HttpClientRequest, HttpServer } from "effect/http"
 import { HttpApiMiddleware, HttpApiTest } from "effect/http-api"
@@ -57,7 +58,9 @@ export const makeIdentityRuntime = (google = googleStub({})) => {
     Layer.provideMerge(infra)
   )
 
-  return ManagedRuntime.make(Layer.mergeAll(api, HttpServer.layerServices, TestClock.layer()))
+  // layerServices brings a no-op FileSystem; a multipart upload is written to disk before its handler runs, so the
+  // tests need the real one, as the Bun server provides in production. Merged after it, it replaces the no-op.
+  return ManagedRuntime.make(Layer.mergeAll(api, HttpServer.layerServices, BunFileSystem.layer, TestClock.layer()))
 }
 
 /** Calls the API through the in-memory typed client, optionally with a bearer access token. */
