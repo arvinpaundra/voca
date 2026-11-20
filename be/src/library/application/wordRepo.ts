@@ -71,4 +71,6 @@ export class WordRepo extends Context.Service<WordRepo, {
   listLive(deckId: bigint): Effect.Effect<ReadonlyArray<WordCopy>>
   /** Inserts words with no cards; a fork's words, which cannot collide with each other. */
   insertMany(deckId: bigint, words: ReadonlyArray<NewWord>): Effect.Effect<void>
+  /** Inserts the words whose keys no live word of the deck holds, later rows of the same keys included. Returns how many were written. */
+  insertNew(deckId: bigint, words: ReadonlyArray<NewWord>): Effect.Effect<number>
 }>()("voca/library/WordRepo") {}

@@ -50,9 +50,9 @@ describe("served API", () => {
     expect(await response.json()).toMatchObject({ slug: "ABCDEFGH" })
   })
 
-  test("an endpoint that isn't built yet answers 500, and the server keeps serving", async () => {
+  test("a handler's failure answers its contract status, and the server keeps serving", async () => {
     const token = await signedIn("JKMNPQRS")
-    expect((await get("/api/decks/TQ7KM2PV9X/export", token)).status).toBe(500)
+    expect((await get("/api/decks/TQ7KM2PV9X/export", token)).status).toBe(404)
     expect((await get("/api/healthz")).status).toBe(204)
   })
 

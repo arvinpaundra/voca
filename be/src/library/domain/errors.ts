@@ -14,3 +14,17 @@ export class TermLangLocked extends Data.TaggedError("TermLangLocked")<{}> {}
 
 /** Only a public deck can be forked. Over HTTP it answers 404 like a missing deck, so a private one does not reveal itself. */
 export class DeckNotPublic extends Data.TaggedError("DeckNotPublic")<{}> {}
+
+/** One problem in an import: the row it is on (the header is 1), the column if one is to blame, and the reason. */
+export interface CsvRowError {
+  readonly row: number
+  readonly column: string | null
+  readonly message: string
+}
+
+/** The file imports nothing. `errors` holds every problem found; `totalErrors` counts them all. */
+export class CsvRejected extends Data.TaggedError("CsvRejected")<{
+  readonly message: string
+  readonly errors: ReadonlyArray<CsvRowError>
+  readonly totalErrors: number
+}> {}
