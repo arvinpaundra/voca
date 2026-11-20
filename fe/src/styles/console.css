@@ -200,6 +200,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .modal-head p { font-size: var(--small); color: var(--muted); margin-top: 4px; }
 .modal-body { padding: 20px var(--card-pad); display: grid; gap: 16px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px var(--card-pad); background: var(--sunken); border-top: 1px solid var(--line); }
+/* The word form scrolls inside the dialog instead of growing it, so the footer stays in reach on a phone. */
+.word-form { display: grid; gap: 16px; padding: 2px; max-height: min(calc(100dvh - 220px), 560px); overflow-y: auto; }
+.word-form .pair { display: grid; gap: 16px; }
+@media (min-width: 560px) { .word-form .pair { grid-template-columns: 1fr 1fr; } }
 .maturity { display: grid; gap: 10px; }
 .mbar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: #f0efee; gap: 2px; }
 .mbar { border-radius: 2px; height: 6px; }

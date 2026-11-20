@@ -1,5 +1,6 @@
 import type { Activity } from "@voca/contract";
 import { cx } from "./cx";
+import { dayLabel } from "./dateLabel";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"] as const;
 
@@ -8,15 +9,6 @@ type HeatmapProps = {
   days: Activity["days"]; // only days with reviews (sparse)
   today: string; // "YYYY-MM-DD", the study date: days after it are drawn as future
 };
-
-// Dates are formatted in UTC so that a calendar day never shifts with the browser's timezone.
-const dayFormat = new Intl.DateTimeFormat("en-GB", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
 
 const monthFormat = new Intl.DateTimeFormat("en-US", {
   month: "long",
@@ -48,7 +40,7 @@ export function Heatmap({ month, days, today }: HeatmapProps) {
   const cells = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1;
     const date = month + "-" + String(day).padStart(2, "0");
-    const dayLabel = dayFormat.format(new Date(Date.UTC(year, monthIndex, day)));
+    const label = dayLabel(date, true);
     const isFuture = date > today;
     const reviews = byDate.get(date) ?? 0;
     const countLabel = reviews === 0 ? "No reviews" : reviews + " review" + (reviews === 1 ? "" : "s");
@@ -57,7 +49,7 @@ export function Heatmap({ month, days, today }: HeatmapProps) {
       <span
         key={day}
         className={cx("d", isFuture ? "fut" : "l" + level(reviews), date === today && "is-today")}
-        title={isFuture ? dayLabel : countLabel + " · " + dayLabel}
+        title={isFuture ? label : countLabel + " · " + label}
       />
     );
   });

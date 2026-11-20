@@ -1,4 +1,5 @@
 import type { DeckStats } from "@voca/contract";
+import { dayLabel } from "../../components/dateLabel";
 
 /** "About 12 minutes" for the queue, or null when no pace has been measured yet. */
 export const estimateText = (minutes: number | null): string | null => {
@@ -16,20 +17,5 @@ export const nextDueDate = (forecast: DeckStats["forecast"]): string | null => {
   return day?.date ?? null;
 };
 
-/**
- * "Thu 19 Nov" for a "YYYY-MM-DD" date.
- * Joined from parts: en-GB short patterns differ between ICU builds ("Thu 19 Nov" vs "Thu, 19 Nov").
- */
-export const nextReviewLabel = (date: string): string => {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).formatToParts(new Date(`${date}T00:00:00.000Z`));
-
-  const part = (type: Intl.DateTimeFormatPartTypes): string =>
-    parts.find((entry) => entry.type === type)?.value ?? "";
-
-  return [part("weekday"), part("day"), part("month")].join(" ");
-};
+/** "Thu 19 Nov" for a "YYYY-MM-DD" date. */
+export const nextReviewLabel = (date: string): string => dayLabel(date);
