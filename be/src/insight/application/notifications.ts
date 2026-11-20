@@ -11,6 +11,9 @@ export const notifications = Effect.gen(function* () {
   const { id: learnerId } = yield* CurrentLearner
   const repo = yield* InsightRepo
   const calendar = yield* learnerCalendar(learnerId)
+
+  // Stub: leave out decks whose snooze is live, from every count below.
+  yield* Effect.die("not implemented: BI")
   const rows = yield* repo.dueByDeck(learnerId, calendar.day.start, calendar.day.end)
   const newToday = yield* repo.newReviewsBetween(learnerId, calendar.day.start, calendar.day.end)
 
