@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test"
 import { DateTime, Effect } from "effect"
 import { SqlClient } from "effect/sql"
 import type { Deck, SnoozeDays } from "@voca/contract"
+import { TokenSigner } from "../src/identity/application/ports.ts"
 import { at, call, makeIdentityRuntime } from "./identity.ts"
 import { seedCard, seedDeck, signedIn, wordList } from "./seed.ts"
 import { resetDb } from "./setup.ts"
@@ -12,6 +13,15 @@ import { resetDb } from "./setup.ts"
 const rt = makeIdentityRuntime()
 afterAll(() => rt.dispose())
 beforeEach(() => rt.runPromise(Effect.andThen(resetDb, at("2026-11-14T10:00:00Z"))))
+
+/** Moves the clock and signs a fresh access token: the old one would have expired. */
+const later = (iso: string, slug = "AAAAAAA1") =>
+  Effect.gen(function* () {
+    yield* at(iso)
+    const signer = yield* TokenSigner
+
+    return (yield* signer.sign(slug as never)).token
+  })
 
 const snooze = (token: string, deckSlugs: ReadonlyArray<string>, days: SnoozeDays | null) =>
   call((c) => c.library.snoozeDecks({ payload: { deckSlugs: deckSlugs as never, days } }), token)
@@ -76,11 +86,11 @@ describe("POST /decks/snooze", () => {
   test("before the day start, today is still the previous study date", () =>
     rt.runPromise(
       Effect.gen(function* () {
-        const { id, token } = yield* signedIn("AAAAAAA1")
+        const { id } = yield* signedIn("AAAAAAA1")
         const deck = yield* seedDeck(id, wordList(4))
-        yield* at("2026-11-14T02:00:00Z")
+        const early = yield* later("2026-11-14T02:00:00Z")
 
-        const [snoozed] = yield* snooze(token, [deck.deckSlug], 1)
+        const [snoozed] = yield* snooze(early, [deck.deckSlug], 1)
 
         expect(snoozeOf(snoozed!)).toEqual({ until: "2026-11-14T04:00:00.000Z" })
       })
@@ -95,8 +105,8 @@ describe("POST /decks/snooze", () => {
         const [snoozed] = yield* snooze(token, [deck.deckSlug], null)
         expect(snoozeOf(snoozed!)).toEqual({ until: null })
 
-        yield* at("2027-03-01T10:00:00Z")
-        expect(yield* listedSnooze(token, deck.deckSlug)).toEqual({ until: null })
+        const fresh = yield* later("2027-03-01T10:00:00Z")
+        expect(yield* listedSnooze(fresh, deck.deckSlug)).toEqual({ until: null })
       })
     ))
 
@@ -107,12 +117,12 @@ describe("POST /decks/snooze", () => {
         const deck = yield* seedDeck(id, wordList(4))
         yield* snooze(token, [deck.deckSlug], 1)
 
-        yield* at("2026-11-15T03:59:00Z")
-        expect(yield* listedSnooze(token, deck.deckSlug)).toEqual({ until: "2026-11-15T04:00:00.000Z" })
+        const before = yield* later("2026-11-15T03:59:00Z")
+        expect(yield* listedSnooze(before, deck.deckSlug)).toEqual({ until: "2026-11-15T04:00:00.000Z" })
 
-        yield* at("2026-11-15T04:00:00Z")
-        expect(yield* listedSnooze(token, deck.deckSlug)).toBeNull()
-        expect(snoozeOf(yield* getDeck(token, deck.deckSlug))).toBeNull()
+        const after = yield* later("2026-11-15T04:00:00Z")
+        expect(yield* listedSnooze(after, deck.deckSlug)).toBeNull()
+        expect(snoozeOf(yield* getDeck(after, deck.deckSlug))).toBeNull()
       })
     ))
 
