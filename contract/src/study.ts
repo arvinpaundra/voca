@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
 import { DeckTooSmall, DrillNotAvailable, NothingToStudy, NotFound, QuestionAlreadyAnswered, SessionNotActive } from "./errors.ts"
-import { Count, DeckTitle, Drill, Instant, LangTag, Mode, Page, PageQuery, SessionSize } from "./primitives.ts"
+import { Count, DeckTitle, Drill, Instant, LangTag, Mode, Page, PageQuery, Reading, SessionSize } from "./primitives.ts"
 import { DeckDrill, WordWithCards } from "./library.ts"
 import { DeckSlug, SessionSlug, WordSlug } from "./slug.ts"
 
@@ -28,7 +28,8 @@ export const Question = Schema.Struct({
   drillLabel: Schema.String, // e.g. "Word → Hiragana"
   prompt: Schema.Struct({
     text: Schema.String,
-    ruby: Schema.NullOr(Schema.String) // the reading over the term, only in term_meaning
+    // Always null: a question never hints the reading (FR-17). Kept until the frontend stops reading it.
+    ruby: Schema.NullOr(Schema.String)
   }),
   options: Schema.Array(Schema.Struct({ wordSlug: WordSlug, text: Schema.String })).check(
     Schema.isMinLength(OPTIONS_PER_QUESTION),
@@ -66,7 +67,9 @@ export const AnswerResult = Schema.Struct({
   nextDue: Schema.NullOr(Instant), // set on attempt 1 only: retries don't reschedule
   retry: Schema.NullOr(Question), // the same word again, new options, when wrong
   completed: Schema.Boolean,
-  leech: Schema.Boolean // suggest adding to Hard Words
+  leech: Schema.Boolean, // suggest adding to Hard Words
+  // The answered word's reading, for the feedback; null when it has none. Optional only while the server rolls out.
+  reading: Schema.optionalKey(Schema.NullOr(Reading))
 })
 export type AnswerResult = typeof AnswerResult.Type
 

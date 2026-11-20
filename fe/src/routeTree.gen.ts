@@ -20,6 +20,7 @@ import { Route as AppDecksIndexRouteImport } from './routes/app/decks/index'
 import { Route as AppDecksDeckSlugRouteImport } from './routes/app/decks/$deckSlug'
 import { Route as AppDiscoverIndexRouteImport } from './routes/app/discover/index'
 import { Route as AppDiscoverDeckSlugRouteImport } from './routes/app/discover/$deckSlug'
+import { Route as AppDecksDeckSlugFlashcardsRouteImport } from './routes/app/decks/$deckSlug_.flashcards'
 import { Route as AppDecksDeckSlugStudyRouteImport } from './routes/app/decks/$deckSlug_.study'
 import { Route as AppDecksDeckSlugWordsWordSlugRouteImport } from './routes/app/decks/$deckSlug_.words.$wordSlug'
 
@@ -78,6 +79,12 @@ const AppDiscoverDeckSlugRoute = AppDiscoverDeckSlugRouteImport.update({
   path: '/app/discover/$deckSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppDecksDeckSlugFlashcardsRoute =
+  AppDecksDeckSlugFlashcardsRouteImport.update({
+    id: '/app/decks/$deckSlug_/flashcards',
+    path: '/app/decks/$deckSlug/flashcards',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppDecksDeckSlugStudyRoute = AppDecksDeckSlugStudyRouteImport.update({
   id: '/app/decks/$deckSlug_/study',
   path: '/app/decks/$deckSlug/study',
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/app/discover/$deckSlug': typeof AppDiscoverDeckSlugRoute
   '/app/decks/': typeof AppDecksIndexRoute
   '/app/discover/': typeof AppDiscoverIndexRoute
+  '/app/decks/$deckSlug/flashcards': typeof AppDecksDeckSlugFlashcardsRoute
   '/app/decks/$deckSlug/study': typeof AppDecksDeckSlugStudyRoute
   '/app/decks/$deckSlug/words/$wordSlug': typeof AppDecksDeckSlugWordsWordSlugRoute
 }
@@ -117,6 +125,7 @@ export interface FileRoutesByTo {
   '/app/discover/$deckSlug': typeof AppDiscoverDeckSlugRoute
   '/app/decks': typeof AppDecksIndexRoute
   '/app/discover': typeof AppDiscoverIndexRoute
+  '/app/decks/$deckSlug/flashcards': typeof AppDecksDeckSlugFlashcardsRoute
   '/app/decks/$deckSlug/study': typeof AppDecksDeckSlugStudyRoute
   '/app/decks/$deckSlug/words/$wordSlug': typeof AppDecksDeckSlugWordsWordSlugRoute
 }
@@ -133,6 +142,7 @@ export interface FileRoutesById {
   '/app/discover/$deckSlug': typeof AppDiscoverDeckSlugRoute
   '/app/decks/': typeof AppDecksIndexRoute
   '/app/discover/': typeof AppDiscoverIndexRoute
+  '/app/decks/$deckSlug_/flashcards': typeof AppDecksDeckSlugFlashcardsRoute
   '/app/decks/$deckSlug_/study': typeof AppDecksDeckSlugStudyRoute
   '/app/decks/$deckSlug_/words/$wordSlug': typeof AppDecksDeckSlugWordsWordSlugRoute
 }
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/app/discover/$deckSlug'
     | '/app/decks/'
     | '/app/discover/'
+    | '/app/decks/$deckSlug/flashcards'
     | '/app/decks/$deckSlug/study'
     | '/app/decks/$deckSlug/words/$wordSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/app/discover/$deckSlug'
     | '/app/decks'
     | '/app/discover'
+    | '/app/decks/$deckSlug/flashcards'
     | '/app/decks/$deckSlug/study'
     | '/app/decks/$deckSlug/words/$wordSlug'
   id:
@@ -180,6 +192,7 @@ export interface FileRouteTypes {
     | '/app/discover/$deckSlug'
     | '/app/decks/'
     | '/app/discover/'
+    | '/app/decks/$deckSlug_/flashcards'
     | '/app/decks/$deckSlug_/study'
     | '/app/decks/$deckSlug_/words/$wordSlug'
   fileRoutesById: FileRoutesById
@@ -196,6 +209,7 @@ export interface RootRouteChildren {
   AppDiscoverDeckSlugRoute: typeof AppDiscoverDeckSlugRoute
   AppDecksIndexRoute: typeof AppDecksIndexRoute
   AppDiscoverIndexRoute: typeof AppDiscoverIndexRoute
+  AppDecksDeckSlugFlashcardsRoute: typeof AppDecksDeckSlugFlashcardsRoute
   AppDecksDeckSlugStudyRoute: typeof AppDecksDeckSlugStudyRoute
   AppDecksDeckSlugWordsWordSlugRoute: typeof AppDecksDeckSlugWordsWordSlugRoute
 }
@@ -279,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoverDeckSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/decks/$deckSlug_/flashcards': {
+      id: '/app/decks/$deckSlug_/flashcards'
+      path: '/app/decks/$deckSlug/flashcards'
+      fullPath: '/app/decks/$deckSlug/flashcards'
+      preLoaderRoute: typeof AppDecksDeckSlugFlashcardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/decks/$deckSlug_/study': {
       id: '/app/decks/$deckSlug_/study'
       path: '/app/decks/$deckSlug/study'
@@ -308,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppDiscoverDeckSlugRoute: AppDiscoverDeckSlugRoute,
   AppDecksIndexRoute: AppDecksIndexRoute,
   AppDiscoverIndexRoute: AppDiscoverIndexRoute,
+  AppDecksDeckSlugFlashcardsRoute: AppDecksDeckSlugFlashcardsRoute,
   AppDecksDeckSlugStudyRoute: AppDecksDeckSlugStudyRoute,
   AppDecksDeckSlugWordsWordSlugRoute: AppDecksDeckSlugWordsWordSlugRoute,
 }

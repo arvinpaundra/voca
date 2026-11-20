@@ -103,6 +103,7 @@ describe("endpoint inventory", () => {
     "get /api/decks/{deckSlug}/words", "post /api/decks/{deckSlug}/words",
     "patch /api/words/{wordSlug}", "delete /api/words/{wordSlug}",
     "post /api/decks/{deckSlug}/import", "get /api/decks/{deckSlug}/export",
+    "post /api/decks/snooze", "post /api/decks/unsnooze", "get /api/decks/{deckSlug}/flashcards",
     "get /api/community/decks", "get /api/community/decks/{deckSlug}", "post /api/community/decks/{deckSlug}/fork",
     "post /api/sessions", "get /api/sessions/active", "post /api/sessions/{sessionSlug}/answers",
     "post /api/sessions/{sessionSlug}/abandon",
