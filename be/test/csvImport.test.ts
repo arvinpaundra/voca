@@ -247,7 +247,7 @@ describe("POST /decks/:deckSlug/import", () => {
         const bob = yield* signedIn("JKMNPQRS")
 
         const theirs = yield* upload(bob, deckSlug, "term,meaning\n水,water\n").pipe(Effect.flip)
-        const unknown = yield* upload(bob, "zzzzzzzzzz", "term,meaning\n水,water\n").pipe(Effect.flip)
+        const unknown = yield* upload(bob, "ZZZZZZZZZZ", "term,meaning\n水,water\n").pipe(Effect.flip)
 
         expect(theirs._tag).toBe("NotFound")
         expect(unknown._tag).toBe("NotFound")
