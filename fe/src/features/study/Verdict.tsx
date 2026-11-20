@@ -7,11 +7,16 @@ export function Verdict({
   correct,
   term,
   answer,
+  reading = null,
+  readingLang,
   onNext,
 }: {
   correct: boolean;
   term: string;
   answer: string;
+  // The answered word's reading, shown once the question is answered; null when it has none.
+  reading?: string | null;
+  readingLang?: string;
   onNext: () => void;
 }) {
   // A focused button already turns Enter into a click; handling it here too would advance twice.
@@ -31,6 +36,8 @@ export function Verdict({
   return (
     <div className={correct ? "verdict ok" : "verdict no"} role="status">
       {correct ? <Check className="i" aria-hidden="true" /> : <AlertCircle className="i" aria-hidden="true" />}
+
+      {reading !== null && <span className="reading" lang={readingLang}>not implemented: FS</span>}
 
       <span className="grow">
         {correct ? (
