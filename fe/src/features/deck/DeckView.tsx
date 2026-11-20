@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DateTime, Result } from "effect";
-import type { DeckDetail, DeckStats, Word, WordWithCards } from "@voca/contract";
+import type { DeckDetail, DeckStats, ImportResult, Word, WordWithCards } from "@voca/contract";
 import { wordLabels } from "@voca/contract";
 import { ArrowRight, Plus } from "lucide-react";
 import { Badge } from "../../components/Badge";
@@ -15,9 +15,11 @@ import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
 import { DeckModal } from "../decks/DeckModal";
 import { DeleteDeckModal } from "../decks/DeleteDeckModal";
+import { CsvImportModal } from "./CsvImportModal";
 import { deckCounts } from "./deckCounts";
 import { DeckProgress } from "./DeckProgress";
 import { DeleteWordModal } from "./DeleteWordModal";
+import { exportFileName } from "./csvModel";
 import { matchesWordFilter, type WordFilter } from "./wordFilter";
 import { WordModal } from "./WordModal";
 import { WordList } from "./WordList";
@@ -56,6 +58,8 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -160,6 +164,35 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     setVisibilityError(isPublic ? "Could not unpublish the deck. Try again." : "Could not publish the deck. Try again.");
   };
 
+  // Imported words change the word list and the counts, so the same reloads a single add or delete triggers run here.
+  // The dialog stays open so its summary stays visible until the user closes it.
+  const wordsImported = (result: ImportResult) => {
+    setReloadKey((key) => key + 1);
+    setStatsVersion((version) => version + 1);
+    setWordDelta((delta) => delta + result.imported);
+  };
+
+  const exportDeck = async () => {
+    setExportError(null);
+
+    const result = await session.call((client) => client.library.exportCsv({ params: { deckSlug: deck.slug } }));
+
+    if (Result.isFailure(result)) {
+      setExportError("Could not export the deck. Try again.");
+      return;
+    }
+
+    const url = URL.createObjectURL(new Blob([result.success], { type: "text/csv" }));
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = exportFileName(deck.slug);
+    link.click();
+
+    // Some browsers cancel the download when the URL is revoked in the same tick as the click.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const now = DateTime.nowUnsafe();
   const shown = words?.filter((word) => matchesWordFilter(word, filter, now)) ?? null;
   const unfiltered = query === "" && filter === "all";
@@ -214,6 +247,8 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
                     label: deck.visibility === "public" ? "Unpublish" : "Publish",
                     onSelect: () => void toggleVisibility(),
                   },
+                  { label: "Import CSV", onSelect: () => setImporting(true) },
+                  { label: "Export CSV", onSelect: () => void exportDeck() },
                   { label: "Delete deck", danger: true, onSelect: () => setConfirmingDelete(true) },
                 ]}
               />
@@ -225,6 +260,8 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
       </div>
 
       {visibilityError !== null && <ErrorState message={visibilityError} />}
+
+      {exportError !== null && <ErrorState message={exportError} />}
 
       <div className="grid gap-3">
         <div className="toolbar">
@@ -287,6 +324,13 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
         word={wordEditor?.kind === "edit" ? wordEditor.word : undefined}
         onClose={() => setWordEditor(null)}
         onSaved={wordSaved}
+      />
+
+      <CsvImportModal
+        open={importing}
+        deckSlug={deck.slug}
+        onClose={() => setImporting(false)}
+        onImported={wordsImported}
       />
 
       <DeckModal
