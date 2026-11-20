@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { type Facts, firstError, route } from "./next.ts"
+import { ciState, type Facts, firstError, route } from "./next.ts"
 
 // Run with `bun test scripts/`.
 const clean: Facts = {
@@ -73,4 +73,14 @@ test("test failures print paths inside the workspace; they are mapped to the rep
 
   expect(result.files).toEqual(["fe/src/lib/a.test.ts", "fe/src/lib/a.ts"])
   expect(result.finding).not.toContain("(pass)")
+})
+
+test("CI is one state over verify and the optional e2e check", () => {
+  const ok = { name: "verify", conclusion: "SUCCESS" }
+  const e2eRed = { name: "e2e", conclusion: "FAILURE", detailsUrl: "https://github.com/o/r/actions/runs/7/job/8" }
+
+  expect(ciState([ok]).ci).toBe("success")
+  expect(ciState([]).ci).toBe("pending")
+  expect(ciState([ok, { name: "e2e", conclusion: "" }]).ci).toBe("pending")
+  expect(ciState([{ name: "verify", conclusion: "" }, e2eRed])).toEqual({ ci: "failure", failedUrl: e2eRed.detailsUrl })
 })
