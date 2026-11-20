@@ -111,4 +111,5 @@ Repair rounds count per PR in `/tmp/dispatch/<feature>/rounds.json`: rounds 1–
 | tests | behaviour against the spec |
 | diff coverage | added behaviour no test runs |
 | router | the next step for each PR, without a model reading CI logs |
+| e2e (CI job, PRs touching the app) | the tasks broken together: sign-in, decks and words, a study session, through a real browser |
 | the owner's review | spec intent the tests miss, anything no rule covers yet |
