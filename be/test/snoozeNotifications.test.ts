@@ -54,7 +54,7 @@ const seedDecks = (learnerId: bigint) =>
 const panel = (token: string) =>
   call((c) => c.insight.notifications(), token).pipe(
     Effect.map((value) => ({
-      decks: value.decks.map((deck) => [deck.deckSlug, deck.due, deck.overdue]),
+      decks: value.decks.map((deck) => [String(deck.deckSlug), deck.due, deck.overdue]),
       hardDue: value.hardDue,
       newAvailable: value.newAvailable
     }))
