@@ -2,12 +2,14 @@
 //
 //   bun run verify                      scope = workspaces touched since origin/master
 //   bun run verify --issue 12 --hash 3fa9c1d2  + path guard: only the issue's `allow` globs may change, `locked` files never
+//                                              + diff coverage: the tests must run the lines the branch adds
 //   bun run verify --body task.md --print-hash prints the hash of a draft issue body's limits block, before the issue exists
 //   bun run verify --print-locked a.test.ts    prints `path: hash` lines for the issue's `locked` map
 //   bun run verify --scope all          or a list: --scope be,fe
 //   bun run verify --fast               skip Testcontainers tests and the fe build (pre-push)
 import { Glob } from "bun"
-import { writeFileSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { addedLines, check as checkCoverage, parseLcov, report as coverageReport } from "./diff-coverage.ts"
 import { parseArgs } from "node:util"
 
 const { values: opt } = parseArgs({
@@ -115,10 +117,39 @@ console.log(`scope: ${scope.join(", ")}${opt.fast ? " (fast)" : ""}`)
 const tsc = `${process.cwd()}/node_modules/.bin/tsc`
 step("lint (ast-grep, rules in lint/)", ["bun", "x", "ast-grep", "scan", "--report-style", "short"])
 for (const ws of scope) step(`typecheck ${ws}`, [tsc, "-p", ws])
+// A task's tests also write coverage, so the diff-coverage step can see which added lines they ran.
+const coverageDir = (ws: Ws) => `/tmp/voca-coverage/${ws}`
+const covered: Array<Ws> = []
 for (const ws of scope) {
   if (opt.fast && ws === "be") continue // Testcontainers: CI runs them
   const tests = [...new Glob("**/*.test.{ts,tsx}").scanSync({ cwd: ws })].filter((f) => !f.includes("node_modules"))
-  if (tests.length) step(`test ${ws}`, ["bun", "test"], ws)
+  if (!tests.length) continue
+
+  const coverage = task ? ["--coverage", "--coverage-reporter=lcov", `--coverage-dir=${coverageDir(ws)}`] : []
+  step(`test ${ws}`, ["bun", "test", ...coverage], ws)
+  if (task) covered.push(ws)
+}
+
+if (task && base.ok && covered.length) {
+  // Committed and uncommitted changes since master; an untracked file is added in full.
+  const added = addedLines(run(["git", "diff", "-U0", base.out]).out)
+  for (const f of run(["git", "ls-files", "--others", "--exclude-standard"]).out.split("\n").filter(Boolean)) {
+    added.set(f, readFileSync(f, "utf8").split("\n").map((_, i) => i + 1))
+  }
+
+  // Only workspaces whose tests ran here can be judged (--fast skips be).
+  for (const f of added.keys()) {
+    if (!covered.some((ws) => f.startsWith(`${ws}/`))) added.delete(f)
+  }
+
+  const coverage = new Map(covered.flatMap((ws) => {
+    const lcov = `${coverageDir(ws)}/lcov.info`
+    return existsSync(lcov) ? [...parseLcov(readFileSync(lcov, "utf8"), ws)] : []
+  }))
+
+  const result = checkCoverage(added, coverage)
+  if (!result.ok) fail("diff coverage", coverageReport(result))
+  console.log(`✓ diff coverage (${coverageReport(result)})`)
 }
 if (scope.includes("fe") && !opt.fast) step("build fe", ["bun", "run", "build"], "fe")
 console.log("\nverify: all green")
