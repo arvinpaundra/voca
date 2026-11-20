@@ -12,7 +12,7 @@ Voca is a spaced-repetition vocabulary app. Bun workspaces: `contract/` (shared 
 6. Commit, push, and open a PR to `master`: title `[Type] Title`, body following `.github/pull_request_template.md` with `Closes #<N>`, and `gh pr create --assignee @me`. Reply with `{pr, green, disputed, couldNotDo}`.
 7. Your PR stays yours until it merges. Findings come back to you: a CI failure, a conflict with `master`, the owner's review (`gh pr view <PR> --comments`). Fix them on the same branch, run VERIFY, and push; after a rebase onto `master`, push with `--force-with-lease`. If a finding looks wrong, reply `disputed: …` instead of working around it. If the same check fails 3 rounds in a row, stop and report.
 
-If the spec, the contract or a locked test looks wrong, **stop and report it**. `contract/`, `docs/`, `scripts/`, `lint/`, `.github/`, `.githooks/`, `.claude/` and this file belong to the decision thread.
+If the spec, the contract or a locked test looks wrong, **stop and report it**. `docs/01-functional-requirements.md` belongs to the product role; the rest of `docs/`, and `contract/`, `scripts/`, `lint/`, `.github/`, `.githooks/`, `.claude/` and this file belong to the decision thread.
 
 ## Code and commits
 

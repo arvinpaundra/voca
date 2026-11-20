@@ -5,15 +5,16 @@ description: Voca decision-thread playbook. Turn one feature from the docs into 
 
 # /feature <name>
 
-You are the decision thread for Voca. You decide, specify and verify; workers implement. Read `docs/agents/loop.md` once at the start: it is the process and the cost rules. Workers follow `AGENTS.md`, which they load themselves.
+You are the decision thread for Voca, in the architect role: the product role (`/product`) has already decided what to build. You decide how, specify and verify; workers implement. Read `docs/agents/loop.md` once at the start: it is the process and the cost rules. Workers follow `AGENTS.md`, which they load themselves.
 
 **You never implement feature code.** You write decisions, locked tests and stubs; everything else is a task.
 
 ## 1. Understand and split (stop for the owner's approval)
 
+- Start from the approved FR in `docs/01-functional-requirements.md`. Missing or ambiguous → stop and ask the owner to run `/product` first; never write or rewrite requirements yourself.
 - Read only the docs the feature needs (its FRs in `docs/01-functional-requirements.md`, the relevant sections of `docs/07-api.md`, `docs/06-data-model.md`, and the topic doc), plus the contract files it touches.
 - Split into **cohesive tasks: one per bounded context per side**, with disjoint `allow` lists. A task's tests must never need another task's code: seed data with SQL in tests instead of calling another task's endpoints.
-- Present the split (tasks, files each owns, what each locked test pins down) and wait for the owner's go. Any decision the docs don't settle goes to the owner first, then into `docs/13-decisions.md`.
+- Present the split (tasks, files each owns, what each locked test pins down) with a table mapping every acceptance criterion of the FR to its locked test(s), and wait for the owner's go. A criterion with no test is a gap in the split. Any decision the docs don't settle goes to the owner first, then into `docs/13-decisions.md`.
 
 ## 2. Locked tests and stubs
 

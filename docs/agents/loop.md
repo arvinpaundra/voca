@@ -1,12 +1,13 @@
 # Agent loop
 
-How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). A fresh session runs all of this with `/feature <name>` (`.claude/skills/feature/SKILL.md`).
+How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). A fresh session defines the requirement with `/product <goal>` (`.claude/skills/product/SKILL.md`); another fresh session runs the rest with `/feature <name>` (`.claude/skills/feature/SKILL.md`).
 
 ## Roles
 
 | Role | Model | Owns |
 |---|---|---|
-| Decision thread | the session's model, in a **fresh session per feature** | decisions, `docs/`, `contract/`, task issues, locked tests and stubs, `scripts/`, `lint/`, `.claude/` |
+| Product | the session's model, in a **fresh session per goal** | what to build and why: `docs/01-functional-requirements.md` (goal, behaviour, acceptance criteria, priority). Never the how |
+| Decision thread (architect) | the session's model, in a **fresh session per feature** | how to build it: decisions, the rest of `docs/`, `contract/`, task issues, locked tests and stubs, `scripts/`, `lint/`, `.claude/`. Never rewrites an FR |
 | Worker | Haiku; Sonnet after 2 failed rounds; Opus last | the files in its task's `allow` list |
 | Re-check | **no agent**: CI plus one shell command | |
 | Review | the owner | |
@@ -16,8 +17,9 @@ Never use Opus for review or re-check. Every workflow agent gets an explicit `mo
 ## Loop
 
 ```
+0. product    → `/product`: the FR with its acceptance criteria, approved by the owner and merged; the handoff to the architect
 1. decision   → ADR / contract change committed to master
-2. split      → cohesive tasks: one per bounded context per side (e.g. library backend, library frontend), with disjoint `allow` lists;
+2. split      → every acceptance criterion maps to a locked test; cohesive tasks: one per bounded context per side (e.g. library backend, library frontend), with disjoint `allow` lists;
                 no task's tests may need another task's code
 3. spec       → locked tests + stubs on one dispatch branch per task. Every stub fails with `not implemented: <TASK>`
 4. pre-check  → `bun scripts/precheck.ts <TASK> <locked test files>`: red, and every failure is the task's own stub
