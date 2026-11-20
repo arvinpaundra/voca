@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { Result } from "effect";
+import type { Loadable } from "../../lib/loadable";
 
-export type Loadable<T> =
-  | { readonly kind: "loading" }
-  | { readonly kind: "failed" }
-  | { readonly kind: "loaded"; readonly value: T };
+export type { Loadable };
 
 /**
  * Runs one API call when the deps change. Each dashboard section owns its call, so one failing call

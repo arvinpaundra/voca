@@ -12,6 +12,7 @@ import {
   type WordWithCards,
 } from "@voca/contract";
 import { Button } from "../../components/Button";
+import { useAppData } from "../../components/appData";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { Menu } from "../../components/Menu";
@@ -28,7 +29,6 @@ type Loaded = {
   deck: DeckDetail;
   stats: WordStats;
   drills: readonly DeckDrill[];
-  timezone: string;
 };
 
 type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: Loaded };
@@ -42,6 +42,7 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
   const [hardError, setHardError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { learner } = useAppData();
 
   useEffect(() => {
     let active = true;
@@ -58,23 +59,16 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
       session.call((client) => client.library.getDeck({ params: { deckSlug: deck.value } })),
       session.call((client) => client.insight.wordStats({ params: { wordSlug: word.value } })),
       session.call((client) => client.study.deckDrills({ params: { deckSlug: deck.value } })),
-      session.call((client) => client.me.get()),
-    ]).then(([deckResult, statsResult, drillsResult, meResult]) => {
+    ]).then(([deckResult, statsResult, drillsResult]) => {
       if (!active) return;
 
-      if (
-        Result.isSuccess(deckResult) &&
-        Result.isSuccess(statsResult) &&
-        Result.isSuccess(drillsResult) &&
-        Result.isSuccess(meResult)
-      ) {
+      if (Result.isSuccess(deckResult) && Result.isSuccess(statsResult) && Result.isSuccess(drillsResult)) {
         setState({
           kind: "ready",
           data: {
             deck: deckResult.success,
             stats: statsResult.success,
             drills: drillsResult.success,
-            timezone: meResult.success.settings.timezone,
           },
         });
       } else {
@@ -115,7 +109,7 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
     </a>
   );
 
-  if (state.kind === "loading") {
+  if (state.kind === "loading" || learner.kind === "loading") {
     return (
       <>
         {back}
@@ -124,7 +118,7 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
     );
   }
 
-  if (state.kind === "failed") {
+  if (state.kind === "failed" || learner.kind === "failed") {
     return (
       <>
         {back}
@@ -133,7 +127,8 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
     );
   }
 
-  const { deck, stats, drills, timezone } = state.data;
+  const { deck, stats, drills } = state.data;
+  const { timezone } = learner.value.settings;
   const tabs = wordTabs(drills, stats.drills);
   const current = selected !== null && tabs.some((tab) => tab.value === selected) ? selected : (tabs[0]?.value ?? null);
   const panel = stats.drills.find((entry) => entry.drill === current);

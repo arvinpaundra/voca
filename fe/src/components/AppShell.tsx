@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Result } from "effect";
 import type { Learner } from "@voca/contract";
 import { Compass, Flame, Layers, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, Settings, X, type LucideIcon } from "lucide-react";
-import { session, tokenStore } from "../lib/appSession";
-import { loadCurrentLearner } from "../lib/signIn";
+import { session } from "../lib/appSession";
 import { Avatar } from "./Avatar";
+import { useAppData } from "./appData";
 import { cx } from "./cx";
 import { IconButton } from "./IconButton";
 import { Logo } from "./Logo";
@@ -153,37 +152,17 @@ function SideUser({ learner, collapsed }: { learner: Learner; collapsed: boolean
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const [learner, setLearner] = useState<Learner | null>(null);
-  const [due, setDue] = useState(0);
+  const { learner: learnerState, notifications } = useAppData();
   const [collapsed, setCollapsed] = useState<boolean>(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    let active = true;
+  const learner = learnerState.kind === "loaded" ? learnerState.value : null;
 
-    loadCurrentLearner(session, tokenStore).then((found) => {
-      if (active) setLearner(found);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // The Decks badge is a hint: when the call fails it just stays hidden.
-  useEffect(() => {
-    let active = true;
-
-    void session.call((client) => client.insight.notifications()).then((result) => {
-      if (!active || !Result.isSuccess(result)) return;
-
-      setDue(result.success.decks.reduce((sum, deck) => sum + deck.due, 0));
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  // The Decks badge is a hint: when the counts fail to load it just stays hidden.
+  const due =
+    notifications.kind === "loaded"
+      ? notifications.value.decks.reduce((sum, deck) => sum + deck.due, 0)
+      : 0;
 
   const toggleCollapsed = () => {
     const next = !collapsed;

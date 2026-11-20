@@ -2,6 +2,7 @@ import { DateTime } from "effect";
 import { ErrorState } from "../../components/ErrorState";
 import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
+import { useAppData } from "../../components/appData";
 import { session } from "../../lib/appSession";
 import { ActivitySection } from "./ActivitySection";
 import { localHour, longDate, studyDate } from "./dashboardModel";
@@ -19,9 +20,8 @@ const greetingFor = (hour: number) => {
 
 export function DashboardPage() {
   // Every section loads its own data: a failed call shows its own message and the rest of the page still renders.
-  const learner = useLoadable(() => session.call((client) => client.me.get()), []);
+  const { learner, notifications } = useAppData();
   const stats = useLoadable(() => session.call((client) => client.insight.learnerStats()), []);
-  const notifications = useLoadable(() => session.call((client) => client.insight.notifications()), []);
   const decks = useLoadable(() => session.call((client) => client.library.listDecks()), []);
 
   if (learner.kind === "loading") return <Skeleton label="Loading dashboard" rows={4} />;

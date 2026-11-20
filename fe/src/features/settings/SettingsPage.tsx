@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Result } from "effect";
 import { Check } from "lucide-react";
 import type { Learner, LearnerSettings, Mode, SessionSize } from "@voca/contract";
@@ -10,15 +10,11 @@ import { PageHeader } from "../../components/PageHeader";
 import { SegmentedControl } from "../../components/SegmentedControl";
 import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
+import { useAppData } from "../../components/appData";
 import { session } from "../../lib/appSession";
 import { changedSettings, draftFrom, parseDraft, type DraftErrors, type SettingsDraft } from "./settingsModel";
 import { SettingsRow } from "./SettingsRow";
 import { SettingsSection } from "./SettingsSection";
-
-type LoadState =
-  | { readonly kind: "loading" }
-  | { readonly kind: "failed" }
-  | { readonly kind: "loaded"; readonly learner: Learner };
 
 type Notice = { readonly kind: "saved" } | { readonly kind: "failed" } | null;
 
@@ -234,38 +230,21 @@ function StudyPreferences({
 }
 
 export function SettingsPage() {
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
-
-  useEffect(() => {
-    let active = true;
-
-    void session.call((client) => client.me.get()).then((result) => {
-      if (!active) return;
-
-      setState(Result.isSuccess(result) ? { kind: "loaded", learner: result.success } : { kind: "failed" });
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { learner, setLearner } = useAppData();
 
   return (
     <>
       <PageHeader title="Settings" description="Your account and how study sessions start." />
 
-      {state.kind === "loading" && <Skeleton label="Loading settings" rows={3} />}
+      {learner.kind === "loading" && <Skeleton label="Loading settings" rows={3} />}
 
-      {state.kind === "failed" && <ErrorState message="Couldn't load your settings." />}
+      {learner.kind === "failed" && <ErrorState message="Couldn't load your settings." />}
 
-      {state.kind === "loaded" && (
+      {learner.kind === "loaded" && (
         <div className="settings">
-          <ProfileSection learner={state.learner} />
+          <ProfileSection learner={learner.value} />
 
-          <StudyPreferences
-            settings={state.learner.settings}
-            onSaved={(learner) => setState({ kind: "loaded", learner })}
-          />
+          <StudyPreferences settings={learner.value.settings} onSaved={setLearner} />
         </div>
       )}
     </>

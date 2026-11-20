@@ -1,5 +1,6 @@
 import { Outlet, createRootRoute, redirect, useRouterState } from "@tanstack/react-router";
 import { AppShell } from "../components/AppShell";
+import { AppDataProvider } from "../components/appData";
 import { tokenStore } from "../lib/appSession";
 import { authRedirect, hasShell } from "../lib/authRedirect";
 
@@ -20,8 +21,10 @@ function RootComponent() {
   if (!hasShell(pathname)) return <Outlet />;
 
   return (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <AppDataProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </AppDataProvider>
   );
 }

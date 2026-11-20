@@ -3,6 +3,7 @@ import { DateTime, Option, Result, Schema } from "effect";
 import { Drill, type HardWord, type SessionSize } from "@voca/contract";
 import { ArrowRight, Flame } from "lucide-react";
 import { Button } from "../../components/Button";
+import { useAppData } from "../../components/appData";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { PageHeader } from "../../components/PageHeader";
@@ -48,11 +49,12 @@ export function HardWordsPage() {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [filter, setFilter] = useState<Filter>(filterFromUrl);
   const [studying, setStudying] = useState(false);
-  const [defaultSize, setDefaultSize] = useState<SessionSize>(DEFAULT_SIZE);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const now = useMemo(() => DateTime.nowUnsafe(), []);
+  const { learner, reloadNotifications } = useAppData();
+  const defaultSize: SessionSize = learner.kind === "loaded" ? learner.value.settings.defaultSessionSize : DEFAULT_SIZE;
 
   useEffect(() => {
     let active = true;
@@ -78,10 +80,6 @@ export function HardWordsPage() {
     void load().then((words) => {
       if (!active) return;
       setState(words === null ? { kind: "failed" } : { kind: "ready", words });
-    });
-
-    void session.call((client) => client.me.get()).then((result) => {
-      if (active && Result.isSuccess(result)) setDefaultSize(result.success.settings.defaultSessionSize);
     });
 
     return () => {
@@ -132,6 +130,9 @@ export function HardWordsPage() {
           : item,
       ),
     });
+
+    // Unmarking changes the queue, so the shell's hard count has to be fetched again.
+    reloadNotifications();
   };
 
   const start = async (chosen: readonly Drill[], size: SessionSize) => {
