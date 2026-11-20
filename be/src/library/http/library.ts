@@ -4,6 +4,8 @@ import { DuplicateWord, Forbidden, IMPORT_MAX_BYTES, ImportRejected, NotFound, P
 import { createDeck, deleteDeck, getDeck, listDecks, publishDeck, unpublishDeck, updateDeck } from "../application/decks.ts"
 import type { DeckRepo } from "../application/deckRepo.ts"
 import { exportCsv as exportWords, importCsv as importWords } from "../application/csv.ts"
+import { flashcards } from "../application/flashcards.ts"
+import { snoozeDecks, unsnoozeDecks } from "../application/snooze.ts"
 import { createWord, deleteWord, listWords, updateWord } from "../application/words.ts"
 import type { WordRepo } from "../application/wordRepo.ts"
 import type { Transaction } from "../../shared/transaction.ts"
@@ -81,6 +83,24 @@ export const LibraryHandlers = HttpApiBuilder.group(
 
       unpublishDeck: ({ params }) =>
         unpublishDeck(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
+      snoozeDecks: ({ payload }) =>
+        snoozeDecks(payload).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
+      unsnoozeDecks: ({ payload }) =>
+        unsnoozeDecks(payload).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
+
+      flashcards: ({ params, query }) =>
+        flashcards(params.deckSlug, query.size).pipe(
           Effect.provideContext(ports),
           Effect.catchTag("DeckNotFound", notFound("Deck"))
         ),

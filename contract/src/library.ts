@@ -4,11 +4,15 @@ import { Multipart } from "effect/http"
 import { DuplicateWord, Forbidden, ImportRejected, NotFound, PayloadTooLarge } from "./errors.ts"
 import {
   Count, DeckDescription, DeckTitle, Drill, Example, Instant, LangTag, Meaning, NonNegative, Notes, Page, PageQuery,
-  Reading, SearchQuery, Term, Visibility
+  Reading, SearchQuery, SessionSize, Term, Visibility
 } from "./primitives.ts"
 import { DeckSlug, WordSlug } from "./slug.ts"
 
 // ───── Schemas ─────
+
+/** A snoozed deck's snooze. `until: null` lasts until the Learner unsnoozes; a snooze whose end has passed is no snooze. */
+export const DeckSnooze = Schema.Struct({ until: Schema.NullOr(Instant) })
+export type DeckSnooze = typeof DeckSnooze.Type
 
 export const Deck = Schema.Struct({
   slug: DeckSlug,
@@ -21,7 +25,9 @@ export const Deck = Schema.Struct({
   forkedFrom: Schema.NullOr(Schema.Struct({ slug: DeckSlug, title: DeckTitle, deleted: Schema.Boolean })),
   forkCount: Count,
   createdAt: Instant,
-  updatedAt: Instant
+  updatedAt: Instant,
+  // null when the deck is not snoozed. Optional only while the server rolls out; always sent once snooze ships.
+  snooze: Schema.optionalKey(Schema.NullOr(DeckSnooze))
 })
 export type Deck = typeof Deck.Type
 
@@ -86,6 +92,17 @@ export const UpdateWord = Schema.Struct({
   notes: Schema.optionalKey(Schema.NullOr(Notes))
 })
 
+/** How long a snooze lasts, in study days; `null` lasts until unsnoozed. */
+export const SnoozeDays = Schema.Literals([1, 3, 7, 14])
+export type SnoozeDays = typeof SnoozeDays.Type
+
+/** The decks one snooze or unsnooze acts on: the deck page sends one, the library's selection several. */
+export const DeckSlugs = Schema.NonEmptyArray(DeckSlug).check(Schema.isMaxLength(200), Schema.isUnique())
+
+export const SnoozeDecks = Schema.Struct({ deckSlugs: DeckSlugs, days: Schema.NullOr(SnoozeDays) })
+
+export const UnsnoozeDecks = Schema.Struct({ deckSlugs: DeckSlugs })
+
 export const IMPORT_MAX_BYTES = 5 * 1024 * 1024
 
 export const ImportCsv = Schema.Struct({ file: Multipart.SingleFileSchema }).pipe(
@@ -113,6 +130,16 @@ export class LibraryGroup extends HttpApiGroup.make("library").add(
   HttpApiEndpoint.delete("deleteDeck", "/decks/:deckSlug", { params: deckParams, error: NotFound }),
   HttpApiEndpoint.post("publishDeck", "/decks/:deckSlug/publish", { params: deckParams, success: Deck, error: NotFound }),
   HttpApiEndpoint.post("unpublishDeck", "/decks/:deckSlug/unpublish", { params: deckParams, success: Deck, error: NotFound }),
+  /** All or nothing: a deck the Learner doesn't own fails the whole batch. A snoozed deck gets the new end. */
+  HttpApiEndpoint.post("snoozeDecks", "/decks/snooze", { payload: SnoozeDecks, success: Schema.Array(Deck), error: NotFound }),
+  HttpApiEndpoint.post("unsnoozeDecks", "/decks/unsnooze", { payload: UnsnoozeDecks, success: Schema.Array(Deck), error: NotFound }),
+  /** The deck's words in a fresh random order: `size` of them, or all when `size` is absent. Reads only. */
+  HttpApiEndpoint.get("flashcards", "/decks/:deckSlug/flashcards", {
+    params: deckParams,
+    query: { size: Schema.optionalKey(SessionSize) },
+    success: Schema.Array(Word),
+    error: NotFound
+  }),
   HttpApiEndpoint.get("listWords", "/decks/:deckSlug/words", {
     params: deckParams,
     query: { q: Schema.optionalKey(SearchQuery), ...PageQuery },

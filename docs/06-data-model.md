@@ -90,6 +90,8 @@ CREATE TABLE decks (
   published_at   timestamptz,                          -- set iff public (Deck domain)
   forked_from_id bigint REFERENCES decks,
   fork_count     integer NOT NULL,
+  snoozed_at     timestamptz,                          -- set while snoozed (FR-20)
+  snoozed_until  timestamptz,                          -- NULL with snoozed_at set: until unsnoozed; past: over
   created_at     timestamptz NOT NULL,
   updated_at     timestamptz NOT NULL,
   deleted_at     timestamptz

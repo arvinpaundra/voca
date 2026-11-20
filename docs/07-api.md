@@ -37,12 +37,17 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | DELETE | `/decks/:deckSlug` | → `204` |
 | POST | `/decks/:deckSlug/publish` | → `Deck` |
 | POST | `/decks/:deckSlug/unpublish` | → `Deck` |
+| POST | `/decks/snooze` | `{deckSlugs: DeckSlug[1..200], days: 1\|3\|7\|14\|null}` → `Deck[]`: all or nothing; `null` = until unsnoozed (FR-20) |
+| POST | `/decks/unsnooze` | `{deckSlugs: DeckSlug[1..200]}` → `Deck[]` |
+| GET | `/decks/:deckSlug/flashcards` | `?size=7\|10\|15\|20` (absent: all) → `Word[]` in a fresh random order; reads only (FR-21) |
 | GET | `/decks/:deckSlug/words` | `?q&cursor&limit` → `Page<WordWithCard>` |
 | POST | `/decks/:deckSlug/words` | `{term, meaning, reading?, example?, notes?}` → `Word` |
 | PATCH | `/words/:wordSlug` | partial Word → `Word` |
 | DELETE | `/words/:wordSlug` | → `204` |
 | POST | `/decks/:deckSlug/import` | `multipart/form-data` field `file` (≤ 5 MB) → `{imported, skippedDuplicates}` |
 | GET | `/decks/:deckSlug/export` | → `text/csv` |
+
+Every `Deck` carries `snooze: {until: Instant | null} | null`: `null` when the deck is not snoozed or a timed snooze has ended. A snoozed deck's words are left out of `/notifications`, `/hard-words` and hard-words sessions; its own deck page and sessions are unchanged.
 
 ## Community
 
@@ -58,7 +63,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 |---|---|---|
 | POST | `/sessions` | `{scope: {kind:"deck",deckSlug} \| {kind:"hard"}, drills: ("term_meaning"\|"meaning_term"\|"term_reading"\|"reading_term")[] (1–4, unique), size: 7\|10\|15\|20, mode: "easy"\|"hard"}` → `Session` |
 | GET | `/sessions/active` | → `Session \| null` (resume after reload) |
-| POST | `/sessions/:sessionSlug/answers` | `{position, chosenWordSlug, latencyMs}` → `{correct, correctWordSlug, nextDue \| null, retry: Question \| null, completed, leech}` |
+| POST | `/sessions/:sessionSlug/answers` | `{position, chosenWordSlug, latencyMs}` → `{correct, correctWordSlug, nextDue \| null, retry: Question \| null, completed, leech, reading \| null}` (`reading`: the answered word's, for the feedback) |
 | POST | `/sessions/:sessionSlug/abandon` | → `204` (end early; uncleared words were already rescheduled on attempt 1) |
 | GET | `/hard-words` | `?drill&cursor` → `Page<WordWithCard & {deck: {slug, title, termLang, meaningLang}}>` (the list spans decks) |
 | PUT | `/words/:wordSlug/drills/:drill/hard` | → `204` (mark that card) |
@@ -69,7 +74,7 @@ Question = {
   position, attempt,                                // attempt ≥ 2 ⇒ retry
   wordSlug: "4HNCR8WYK2JD",
   drill, drillLabel,                                // per question: sessions can mix directions
-  prompt: { text, ruby: string | null },            // ruby = reading, only in term_meaning
+  prompt: { text, ruby: null },                     // always null: no reading hints (FR-17)
   options: ReadonlyArray<{ wordSlug: "4HNCR8WYK2JD", text }> // 4, shuffled; text = word's drill.answer value
 }
 Session = {

@@ -101,8 +101,7 @@ Mode   [Easy] [Hard]
 - **Rendering:**
   - Term, hiragana, and hanzi text uses the term font with `lang = termLang`.
   - Pinyin and jyutping use `lang = zh-Latn-pinyin` and `yue-Latn-jyutping`, so screen readers handle them properly.
-  - In `term_meaning`, the reading is shown as ruby above the term.
-  - In `term_reading` it is hidden, because it is the answer.
+  - No question shows the reading as a hint (FR-17): it appears only as the prompt of `reading_term` or the answer of `term_reading`. Once a question is answered, the feedback shows the word's reading, which the answer response carries.
 
 ## Examples
 
