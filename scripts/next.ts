@@ -59,24 +59,6 @@ export const route = (f: Facts): Action => {
   return { kind: "merge" }
 }
 
-type Check = { readonly name?: string; readonly conclusion?: string; readonly detailsUrl?: string }
-
-/**
- * CI as one state: `verify` always runs; `e2e` runs only on PRs touching the app, so a missing `e2e` is no signal.
- * A failure wins over a pending check, so a repair can start while the other check still runs.
- */
-export const ciState = (rollup: ReadonlyArray<Check>): { ci: Facts["ci"]; failedUrl: string | undefined } => {
-  const verify = rollup.find((c) => c.name === "verify")
-  const checks = [verify, rollup.find((c) => c.name === "e2e")].filter((c): c is Check => c !== undefined)
-
-  const passing = ["", "SUCCESS", "SKIPPED", "NEUTRAL"]
-  const failed = checks.find((c) => c.conclusion !== undefined && !passing.includes(c.conclusion))
-  if (failed) return { ci: "failure", failedUrl: failed.detailsUrl }
-
-  const pending = verify === undefined || checks.some((c) => !c.conclusion)
-  return { ci: pending ? "pending" : "success", failedUrl: undefined }
-}
-
 /** The first failing verify step from `gh run view --log-failed`, and up to 3 repo files it names. */
 export const firstError = (log: string): { finding: string; files: Array<string> } => {
   // Each row is "<job>\t<step>\t<timestamp> <text>".
@@ -149,11 +131,12 @@ if (import.meta.main) {
     const pr = JSON.parse(view.out) as Pr
     if (pr.state !== "OPEN") continue
 
-    const { ci, failedUrl } = ciState(pr.statusCheckRollup)
+    const verify = pr.statusCheckRollup.find((c) => c.name === "verify")
+    const ci = verify?.conclusion === "SUCCESS" ? "success" : !verify?.conclusion ? "pending" : "failure"
     const issue = taskIssue(pr)
     const replyFile = issue ? `${dir}/replies/${issue.number}.json` : ""
 
-    const runId = /\/runs\/(\d+)/.exec(failedUrl ?? "")?.[1]
+    const runId = /\/runs\/(\d+)/.exec(verify?.detailsUrl ?? "")?.[1]
     const failure = ci === "failure" && runId ? firstError(sh(["gh", "run", "view", runId, "--log-failed"]).out) : undefined
 
     const action = route({
