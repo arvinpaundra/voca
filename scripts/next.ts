@@ -2,7 +2,7 @@
 // merge gate, the worker's reply, the first CI error and the repair round count. Runs the rebases itself and writes
 // the repairs as a ready dispatch file.
 //
-//   bun scripts/next.ts --feature <name> 60 61 62
+//   bun scripts/next.ts --feature <fr> 60 61 62
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import type { Heal, Reply } from "./dispatch.ts"
@@ -110,7 +110,7 @@ const taskIssue = (pr: Pr) => {
 if (import.meta.main) {
   const { values, positionals } = parseArgs({ options: { feature: { type: "string" } }, allowPositionals: true })
   if (!values.feature || positionals.length === 0) {
-    console.error("usage: bun scripts/next.ts --feature <name> <PR number>...")
+    console.error("usage: bun scripts/next.ts --feature <fr> <PR number>...")
     process.exit(2)
   }
 

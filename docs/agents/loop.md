@@ -1,6 +1,6 @@
 # Agent loop
 
-How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). A fresh session defines the requirement with `/product <goal>` (`.claude/skills/product/SKILL.md`); another fresh session runs the rest with `/feature <name>` (`.claude/skills/feature/SKILL.md`).
+How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). Both roles take the FR code: `/product FR-<id>` defines or refines the requirement (`.claude/skills/product/SKILL.md`; a new goal in words gets the next code), and `/feature FR-<id>` runs the rest (`.claude/skills/feature/SKILL.md`). The code, lower-cased (`fr-4`), names the dispatch folder and the branches.
 
 ## Roles
 
@@ -19,7 +19,7 @@ Implementers and repairers are not subagents: each is a `claude -p` session with
 ## Loop
 
 ```
-0. product    → `/product`: the FR with its acceptance criteria, approved by the owner and merged; the handoff to the architect
+0. product    → `/product FR-<id>`: the FR with its acceptance criteria, approved by the owner and merged; the handoff to the architect
 1. decision   → ADR / contract change committed to master
 2. split      → every acceptance criterion maps to a locked test; cohesive tasks: one per bounded context per side (e.g. library backend, library frontend), with disjoint `allow` lists;
                 no task's tests may need another task's code
@@ -84,7 +84,7 @@ The decision thread never edits or pushes to a worker's branch. Findings go to a
 | conflict with `master` | "PR #P conflicts with master. Rebase onto `origin/master`, run VERIFY again, push with `--force-with-lease`." |
 | the owner's review | "The owner reviewed PR #P. Address every comment (`gh pr view P --comments`), run VERIFY again, push." |
 
-Repair rounds count per PR in `/tmp/dispatch/<feature>/rounds.json`: rounds 1–2 run Haiku, 3 Sonnet, 4 Opus; after that the PR is `stopped` and goes to the owner. A finding the owner makes that could recur becomes a rule: a lint rule when mechanical, an `AGENTS.md` line when it needs judgment.
+Repair rounds count per PR in `/tmp/dispatch/<fr>/rounds.json`: rounds 1–2 run Haiku, 3 Sonnet, 4 Opus; after that the PR is `stopped` and goes to the owner. A finding the owner makes that could recur becomes a rule: a lint rule when mechanical, an `AGENTS.md` line when it needs judgment.
 
 ## Definition of done
 

@@ -1,13 +1,13 @@
 // Starts one fresh headless Claude session per task (implementer) or per finding (repairer), all in parallel, each in
 // its own worktree, and collects their replies. No LLM decides anything here.
 //
-//   bun scripts/dispatch.ts /tmp/dispatch/<feature>/tasks.json
+//   bun scripts/dispatch.ts /tmp/dispatch/<fr>/tasks.json
 //
-// The file: { "feature": "<name>",
+// The file: { "feature": "<fr>",
 //             "tasks": [{ "issue", "hash", "base", "branch", "title" }],              base = the dispatch commit
 //             "heals": [{ "issue", "hash", "pr", "branch", "finding", "files" }] }    `next.ts` writes these
 //
-// State and logs live in /tmp/dispatch/<feature>/: rounds.json (repair rounds per PR), replies/<issue>.json,
+// State and logs live in /tmp/dispatch/<fr>/: rounds.json (repair rounds per PR), replies/<issue>.json,
 // and each session's raw output in logs/.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 

@@ -1,9 +1,11 @@
 ---
 name: product
-description: Voca product role. Turn the owner's goal into an approved functional requirement in docs/01-functional-requirements.md, before any technical design. Use when the owner says "/product <goal>" or asks to define, refine or prioritise a feature.
+description: Voca product role. Turn the owner's goal into an approved functional requirement in docs/01-functional-requirements.md, before any technical design. Use when the owner says "/product FR-<id>" (refine an existing FR) or "/product <goal>" (a new one), or asks to define, refine or prioritise a feature.
 ---
 
-# /product <goal>
+# /product FR-<id> | <goal>
+
+`FR-<id>` (e.g. `FR-4`): refine that existing FR. A goal in words: a new FR, numbered with the next free `FR-<id>`. Either way the FR code is the feature's name from here on: `/feature FR-<id>`, its dispatch folder and its branches.
 
 You are the product role for Voca. You decide **what** the app does and why; the architect (`/feature`) decides how. Your only output is the FR, approved by the owner and committed to master.
 
@@ -40,4 +42,4 @@ Present the FR and the open questions. Change it until the owner approves.
 
 ## 4. Commit
 
-On a branch from the latest `master`: `docs(fr): FR-<id> <name>`, a PR, and the owner merges it. Then tell the owner the next step is `/feature <name>` in a fresh session.
+On a branch from the latest `master`: `docs(fr): FR-<id> <name>`, a PR, and the owner merges it. Then tell the owner the next step is `/feature FR-<id>`: in this session when the FR only needed a short confirmation, in a fresh one after a long discussion.

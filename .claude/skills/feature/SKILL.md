@@ -1,9 +1,11 @@
 ---
 name: feature
-description: Voca decision-thread playbook. Turn one feature from the docs into merged code through the agent loop (split, locked tests, pre-check, task issues, dispatch to fresh worker sessions, routing and repair), spending as few tokens as possible. Use when the owner says "/feature <name>" or asks to build the next feature.
+description: Voca decision-thread playbook. Turn one feature from the docs into merged code through the agent loop (split, locked tests, pre-check, task issues, dispatch to fresh worker sessions, routing and repair), spending as few tokens as possible. Use when the owner says "/feature FR-<id>" or asks to build the next feature.
 ---
 
-# /feature <name>
+# /feature FR-<id>
+
+The FR code (e.g. `FR-4`) names everything for this feature; below, `<fr>` is its lower-case form (`fr-4`): the dispatch folder `/tmp/dispatch/<fr>/`, the dispatch branches `dispatch/<fr>-<task>` and the task branches `feat/<fr>-<task>`.
 
 You are the decision thread for Voca, in the architect role: the product role (`/product`) has already decided what to build. You decide how, specify and verify; workers implement. Read `docs/agents/loop.md` once at the start: it is the process and the cost rules. Workers follow `AGENTS.md`, which they load themselves.
 
@@ -11,14 +13,14 @@ You are the decision thread for Voca, in the architect role: the product role (`
 
 ## 1. Understand and split (stop for the owner's approval)
 
-- Start from the approved FR in `docs/01-functional-requirements.md`. Missing or ambiguous → stop and ask the owner to run `/product` first; never write or rewrite requirements yourself.
+- Start from `FR-<id>` in `docs/01-functional-requirements.md`, approved. Missing or ambiguous → stop and ask the owner to run `/product FR-<id>` first; never write or rewrite requirements yourself.
 - Read only the docs the feature needs (its FRs in `docs/01-functional-requirements.md`, the relevant sections of `docs/07-api.md`, `docs/06-data-model.md`, and the topic doc), plus the contract files it touches.
 - Split into **cohesive tasks: one per bounded context per side**, with disjoint `allow` lists. A task's tests must never need another task's code: seed data with SQL in tests instead of calling another task's endpoints.
 - Present the split (tasks, files each owns, what each locked test pins down) with a table mapping every acceptance criterion of the FR to its locked test(s), and wait for the owner's go. A criterion with no test is a gap in the split. Any decision the docs don't settle goes to the owner first, then into `docs/13-decisions.md`.
 
 ## 2. Locked tests and stubs
 
-- One dispatch branch per task from the latest `master`: `dispatch/<task>`.
+- One dispatch branch per task from the latest `master`: `dispatch/<fr>-<task>`.
 - Write the locked tests in the style of `be/test/me.test.ts` (backend, through `be/test/identity.ts`) or `fe/src/lib/*.test.ts` (frontend). Blank lines between steps; no doc references in comments.
 - Stubs make the tests compile. Every stub fails or returns with the task's marker: `Effect.die("not implemented: <TASK>")`, `Promise.reject(new Error("not implemented: <TASK>"))`, or a return value containing `not implemented: <TASK>`.
 - Shared wiring that several tasks would edit means the split is wrong; merge those tasks.
@@ -57,19 +59,19 @@ Then `H=$(bun scripts/verify.ts --body draft.md --print-hash)`, write `H` on the
 
 ## 5. Dispatch
 
-After the owner's go on the split. Write `/tmp/dispatch/<feature>/tasks.json`:
+After the owner's go on the split. Write `/tmp/dispatch/<fr>/tasks.json`:
 
 ```
-{ "feature": "<feature>",
-  "tasks": [{ "issue": N, "hash": "H", "base": "<dispatch commit sha>", "branch": "feat/<feature>-<task>", "title": "…" }] }
+{ "feature": "<fr>",
+  "tasks": [{ "issue": N, "hash": "H", "base": "<dispatch commit sha>", "branch": "feat/<fr>-<task>", "title": "…" }] }
 ```
 
-Run `bun scripts/dispatch.ts /tmp/dispatch/<feature>/tasks.json` as a **background** command and wait for it to finish (`t3_background_wait`); don't poll it. It creates each task's worktree on its branch, installs dependencies, and starts one fresh headless implementer session per task (`.claude/agents/implementer.md`, Haiku, project settings only), all in parallel. It prints one line per task; replies land in `/tmp/dispatch/<feature>/replies/`.
+Run `bun scripts/dispatch.ts /tmp/dispatch/<fr>/tasks.json` as a **background** command and wait for it to finish (`t3_background_wait`); don't poll it. It creates each task's worktree on its branch, installs dependencies, and starts one fresh headless implementer session per task (`.claude/agents/implementer.md`, Haiku, project settings only), all in parallel. It prints one line per task; replies land in `/tmp/dispatch/<fr>/replies/`.
 
 ## 6. Route, repair, report
 
 ```
-bun scripts/next.ts --feature <feature> <PR numbers>
+bun scripts/next.ts --feature <fr> <PR numbers>
 ```
 
 It decides every PR by rule and prints them grouped:
@@ -90,6 +92,6 @@ There is no review agent: VERIFY's diff coverage and the locked tests pin the be
 
 ## 7. After the feature
 
-- Remove merged worktrees and branches, and `/tmp/dispatch/<feature>/`.
+- Remove merged worktrees and branches, and `/tmp/dispatch/<fr>/`.
 - Add the Effect idioms workers had to discover to `docs/agents/effect-cheatsheet.md`.
 - A finding the owner made that could recur becomes a lint rule or an `AGENTS.md` line.
