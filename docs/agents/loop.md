@@ -10,7 +10,7 @@ How the decision thread turns a feature into merged code with cheap implementer 
 | Decision thread (architect) | the session's model, in a **fresh session per feature** | how to build it: decisions, the rest of `docs/`, `contract/`, task issues, locked tests and stubs, `scripts/`, `lint/`, `.claude/`. Never rewrites an FR |
 | Worker | Haiku; Sonnet after 2 failed rounds; Opus last | the files in its task's `allow` list |
 | Re-check | **no agent**: CI plus one shell command | |
-| Review | the owner | |
+| Review | **no agent**: diff coverage in VERIFY, then `merge-gate` routes the PR | the owner reviews critical or oversized PRs |
 
 Never use Opus for review or re-check. Every workflow agent gets an explicit `model` and `effort`.
 
@@ -26,7 +26,9 @@ Never use Opus for review or re-check. Every workflow agent gets an explicit `mo
 5. issues     → limits block + context pack; `verify --body draft.md --print-hash`, hash on the VERIFY line, created once
 6. workflow   → the saved `agent-loop` workflow with the task list: one worker per task, explicit model and effort, own worktree
 7. re-check   → `bun scripts/recheck.ts <PR…>`: CI green with the path guard, no stubs left in the task's files
-8. review     → the owner reviews; every finding goes back to the worker that wrote the code ("Self-healing")
+8. review     → `bun scripts/merge-gate.ts <pr>` routes: critical paths or over 8 files / 300 lines → the owner reviews;
+                behind master only → `gh pr update-branch <pr> --rebase`, then gate again; otherwise no review agent.
+                Every finding goes back to the worker that wrote the code ("Self-healing")
 9. merge      → `bun scripts/merge-gate.ts <pr>` says `merge: ok` and the reply flags nothing → the decision thread merges;
                 otherwise the owner merges. `Closes #N` closes the issue. Then remove the worktree and branch
 ```
@@ -104,4 +106,5 @@ After 2 failed rounds on the same finding, move the task to the next model tier.
 | lint | throw/try/async, layer imports, raw SQL |
 | typecheck | contract mismatches, missing handlers, invented Effect APIs |
 | tests | behaviour against the spec |
+| diff coverage | added behaviour no test runs |
 | the owner's review | spec intent the tests miss, anything no rule covers yet |

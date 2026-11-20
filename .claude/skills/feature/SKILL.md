@@ -76,7 +76,10 @@ bun scripts/recheck.ts <PR numbers>
 - A `disputed` reply: check it. If the worker is right, fix the test or the split (new issue, new hash) and tell the owner.
 - A failing PR: run `agent-loop` with `{ heals: [{ issue, hash, pr, branch, worktree, finding, files, model: "haiku" }] }`, one narrow round each. After 2 failed rounds on the same finding, use `model: "sonnet"`.
 - UI tasks: on the PR's branch, `bun scripts/shots.ts --mock <specs>` and `bun scripts/shots.ts --design`; compare each page with its design screen, heal every mismatch, then give the owner both sets of paths.
-- `bun scripts/merge-gate.ts <pr>`: merge it yourself only on `merge: ok` with a clean reply; otherwise the owner merges.
+- `bun scripts/merge-gate.ts <pr>` on each ✓ PR routes it; there is no review agent (VERIFY's diff coverage and the locked tests already pin the behaviour):
+  - a `3.` (critical paths) or `4.` (size) reason → the owner reviews and merges it;
+  - only a `1.` behind-master reason → `gh pr update-branch <pr> --rebase`, wait for CI, gate again; a conflict becomes a heal;
+  - `merge: ok` with a clean reply → merge it yourself.
 - Report to the owner: one line per task (PR, state), the disputes, and what waits for them.
 
 ## 7. After the feature
