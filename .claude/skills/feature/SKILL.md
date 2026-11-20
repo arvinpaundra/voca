@@ -1,6 +1,6 @@
 ---
 name: feature
-description: Voca decision-thread playbook. Turn one feature from the docs into merged code through the agent loop (split, locked tests, pre-check, task issues, the agent-loop workflow, CI re-check), spending as few tokens as possible. Use when the owner says "/feature <name>" or asks to build the next feature.
+description: Voca decision-thread playbook. Turn one feature from the docs into merged code through the agent loop (split, locked tests, pre-check, task issues, dispatch to fresh worker sessions, routing and repair), spending as few tokens as possible. Use when the owner says "/feature <name>" or asks to build the next feature.
 ---
 
 # /feature <name>
@@ -55,35 +55,41 @@ VERIFY: bun run verify --issue <this issue> --hash HASH
 
 Then `H=$(bun scripts/verify.ts --body draft.md --print-hash)`, write `H` on the VERIFY line, and `gh issue create --label task --body-file draft.md`. Never edit an issue after creating it. Check `bun scripts/verify.ts --issue N --hash H --fast` prints `✓ path guard` on the dispatch branch.
 
-## 5. Run the workflow
+## 5. Dispatch
 
-Only after the owner says "use a workflow" (or "run the agent-loop workflow"). Then call the saved `agent-loop` workflow:
-
-```
-{ tasks: [{ issue, hash, base: <dispatch commit sha>, branch: "feat/<feature>-<task>", title,
-            model: "haiku", effort: "low" | "medium" | "high" }] }
-```
-
-Every agent gets an explicit model: workers start on Haiku. Never Opus for routine work, review or re-check. `effort: "low"` for small mechanical tasks, `"high"` only for tricky logic. If the owner set a time limit, start a background `sleep <seconds>` timer and stop the workflow when it fires.
-
-## 6. Re-check, heal, report
+After the owner's go on the split. Write `/tmp/dispatch/<feature>/tasks.json`:
 
 ```
-bun scripts/recheck.ts <PR numbers>
+{ "feature": "<feature>",
+  "tasks": [{ "issue": N, "hash": "H", "base": "<dispatch commit sha>", "branch": "feat/<feature>-<task>", "title": "…" }] }
 ```
 
-- `✓`: CI is green with the path guard and no stub is left.
-- A `disputed` reply: check it. If the worker is right, fix the test or the split (new issue, new hash) and tell the owner.
-- A failing PR: run `agent-loop` with `{ heals: [{ issue, hash, pr, branch, worktree, finding, files, model: "haiku" }] }`, one narrow round each. After 2 failed rounds on the same finding, use `model: "sonnet"`.
-- UI tasks: on the PR's branch, `bun scripts/shots.ts --mock <specs>` and `bun scripts/shots.ts --design`; compare each page with its design screen, heal every mismatch, then give the owner both sets of paths.
-- `bun scripts/merge-gate.ts <pr>` on each ✓ PR routes it; there is no review agent (VERIFY's diff coverage and the locked tests already pin the behaviour):
-  - a `3.` (critical paths) or `4.` (size) reason → the owner reviews and merges it;
-  - only a `1.` behind-master reason → `gh pr update-branch <pr> --rebase`, wait for CI, gate again; a conflict becomes a heal;
-  - `merge: ok` with a clean reply → merge it yourself.
-- Report to the owner: one line per task (PR, state), the disputes, and what waits for them.
+Run `bun scripts/dispatch.ts /tmp/dispatch/<feature>/tasks.json` as a **background** command and wait for it to finish (`t3_background_wait`); don't poll it. It creates each task's worktree on its branch, installs dependencies, and starts one fresh headless implementer session per task (`.claude/agents/implementer.md`, Haiku, project settings only), all in parallel. It prints one line per task; replies land in `/tmp/dispatch/<feature>/replies/`.
+
+## 6. Route, repair, report
+
+```
+bun scripts/next.ts --feature <feature> <PR numbers>
+```
+
+It decides every PR by rule and prints them grouped:
+
+| Group | What it means | You |
+|---|---|---|
+| `wait` | CI still running | run `next.ts` again once CI is done |
+| `owner` | a `disputed` or `couldNotDo` reply, critical paths, over 8 files / 300 lines, a PR not linked to its task | a dispute: check it; if the worker is right, fix the test or the split (new issue, new hash). The rest: tell the owner |
+| `heal` | red CI (its first error), a conflict, stubs left | run the printed `bun scripts/dispatch.ts …/heals.json` in the background, then `next.ts` again |
+| `stopped` | 4 repair rounds failed (haiku, haiku, sonnet, opus) | tell the owner |
+| `rebase` | only behind master: `next.ts` already ran `gh pr update-branch --rebase` | run `next.ts` again once CI is done |
+| `merge` | green, small, no critical path, clean reply | merge it |
+
+There is no review agent: VERIFY's diff coverage and the locked tests pin the behaviour, and the owner reviews what `next.ts` sends them. For the owner's own review comments, write a `heals.json` by hand (finding: "Address every comment: `gh pr view P --comments`") and dispatch it.
+
+- UI tasks: on the PR's branch, `bun scripts/shots.ts --mock <specs>` and `bun scripts/shots.ts --design`; compare each page with its design screen, send every mismatch as a heal, then give the owner both sets of paths.
+- Report to the owner: one line per task (PR, group), the disputes, and what waits for them.
 
 ## 7. After the feature
 
-- Remove merged worktrees and branches.
+- Remove merged worktrees and branches, and `/tmp/dispatch/<feature>/`.
 - Add the Effect idioms workers had to discover to `docs/agents/effect-cheatsheet.md`.
 - A finding the owner made that could recur becomes a lint rule or an `AGENTS.md` line.

@@ -4,7 +4,7 @@ Voca is a spaced-repetition vocabulary app. Bun workspaces: `contract/` (shared 
 
 ## If you were given a task (a GitHub issue)
 
-1. In your worktree, run `bun install --frozen-lockfile`, then create your branch from the dispatch commit named in your task message (`git switch -c <branch> <commit>`), never from `master`.
+1. The dispatcher has prepared your worktree: your branch, created from the dispatch commit (never from `master`), with dependencies installed. Don't switch branches.
 2. Read the issue (`gh issue view <N>`) and its context pack. Read the `locked` tests: they are the spec. Make them pass; never edit them.
 3. **Fail fast:** run the locked tests before writing code. Every failure must come from your own stubs (`not implemented: <your task>`). If one fails for any other reason (a 401, another task's stub, a wrong expectation), stop and reply `disputed: <test>: <why>`.
 4. Change only files matching the issue's `allow` globs. Never edit the issue.
