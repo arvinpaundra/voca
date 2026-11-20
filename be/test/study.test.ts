@@ -288,7 +288,7 @@ describe("POST /sessions", () => {
             attempt: 1,
             drill: "term_meaning",
             drillLabel: "Word → Meaning",
-            prompt: { text: word.term, ruby: word.reading }
+            prompt: { text: word.term, ruby: null }
           })
           expect(new Set(optionSlugs).size).toBe(4)
           expect(optionSlugs).toContain(word.slug)
