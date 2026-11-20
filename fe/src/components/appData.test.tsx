@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Learner, Notifications } from "@voca/contract";
 import { AppDataProvider, useAppData, type AppDataLoaders } from "./appData";
@@ -77,7 +77,7 @@ describe("AppDataProvider", () => {
       </AppDataProvider>,
     );
 
-    await screen.findByText("Ada · 3", { exact: false });
+    await waitFor(() => expect(text("one")).toBe("Ada · 3"));
 
     expect(calls).toEqual({ learner: 1, notifications: 1 });
     expect(text("one")).toBe("Ada · 3");
@@ -110,7 +110,7 @@ describe("AppDataProvider", () => {
       </AppDataProvider>,
     );
 
-    await screen.findByText("Ada · 3", { exact: false });
+    await waitFor(() => expect(text("one")).toBe("Ada · 3"));
     await user.click(screen.getByRole("button", { name: "rename" }));
 
     expect(text("one")).toBe("Grace · 3");
