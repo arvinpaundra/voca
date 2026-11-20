@@ -78,7 +78,7 @@ It decides every PR by rule and prints them grouped:
 |---|---|---|
 | `wait` | CI still running | run `next.ts` again once CI is done |
 | `owner` | a `disputed` or `couldNotDo` reply, critical paths, over 8 files / 300 lines, a PR not linked to its task | a dispute: check it; if the worker is right, fix the test or the split (new issue, new hash). The rest: tell the owner |
-| `heal` | red CI, `verify` or `e2e` (its first error), a conflict, stubs left | run the printed `bun scripts/dispatch.ts …/heals.json` in the background, then `next.ts` again |
+| `heal` | red CI (its first error), a conflict, stubs left | run the printed `bun scripts/dispatch.ts …/heals.json` in the background, then `next.ts` again |
 | `stopped` | 4 repair rounds failed (haiku, haiku, sonnet, opus) | tell the owner |
 | `rebase` | only behind master: `next.ts` already ran `gh pr update-branch --rebase` | run `next.ts` again once CI is done |
 | `merge` | green, small, no critical path, clean reply | merge it |
