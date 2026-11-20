@@ -16,7 +16,6 @@ const termLangLocked = () =>
   Effect.fail(new Forbidden({ message: "The term language can't change once the deck has words" }))
 
 // Each endpoint calls its use case and maps the domain errors to the contract's.
-// CSV import/export belongs to a later feature and still answers 500.
 export const LibraryHandlers = HttpApiBuilder.group(
   VocaApi,
   "library",
@@ -85,8 +84,8 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("DeckNotFound", notFound("Deck"))
         ),
 
-      importCsv: () => Effect.die("not implemented"),
-      exportCsv: () => Effect.die("not implemented")
+      importCsv: () => Effect.die("not implemented: CSVB"),
+      exportCsv: () => Effect.die("not implemented: CSVB")
     })
   })
 )
