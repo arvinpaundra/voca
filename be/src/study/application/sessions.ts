@@ -165,6 +165,9 @@ export const startHardSession = (
           yield* repo.setSessionStatus(active.value.id, "abandoned", now)
         }
 
+        // Stub: leave out the cards of decks whose snooze is live.
+        yield* Effect.die("not implemented: BS")
+
         const cards = yield* repo.hardCards(learnerId, request.drills)
 
         if (cards.length === 0) {

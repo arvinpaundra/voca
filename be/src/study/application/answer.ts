@@ -225,7 +225,8 @@ export const answerQuestion = (
           nextDue,
           retry,
           completed,
-          leech
+          leech,
+          reading: "not implemented: BS"
         } satisfies AnswerResult
       })
     )

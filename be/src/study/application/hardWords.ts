@@ -18,6 +18,9 @@ export const listHardWords = (query: {
     const { id: learnerId } = yield* CurrentLearner
     const repo = yield* StudyRepo
 
+    // Stub: leave out the words of decks whose snooze is live.
+    yield* Effect.die("not implemented: BS")
+
     return yield* repo.hardWords(learnerId, {
       drill: query.drill ?? null,
       cursor: query.cursor ?? null,

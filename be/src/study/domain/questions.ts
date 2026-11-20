@@ -20,8 +20,7 @@ export const questionOf = (input: {
     drillLabel: drillLabel(input.termLang, drill),
     prompt: {
       text: textOf(word, DRILLS[drill].prompt),
-      // The reading sits over the term only when the term is the prompt.
-      ruby: drill === "term_meaning" ? word.reading : null
+      ruby: "not implemented: BS"
     },
     options: input.options.map((option) => ({
       wordSlug: option.slug,
