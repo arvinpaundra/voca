@@ -41,12 +41,8 @@ const gh = (...args: Array<string>) => {
   return p.stdout.toString()
 }
 
-if (import.meta.main) {
-  const n = process.argv[2]
-  if (!n) {
-    console.error("usage: bun scripts/merge-gate.ts <pr number>")
-    process.exit(2)
-  }
+/** The PR's facts from GitHub; exits 2 when `gh` fails. */
+export const prFacts = (n: string): PrFacts => {
   type Pr = {
     headRefOid: string
     baseRefName: string
@@ -69,13 +65,22 @@ if (import.meta.main) {
     locked.push(...Object.keys(parsed?.locked ?? {}))
   }
 
-  const reasons = assess({
+  return {
     ciGreen: pr.statusCheckRollup.some((c) => c.name === "verify" && c.conclusion === "SUCCESS"),
     behindMaster: behind,
     linkedTaskIssue,
     files: pr.files.map((f) => ({ path: f.path, lines: f.additions + f.deletions })),
     locked
-  })
+  }
+}
+
+if (import.meta.main) {
+  const n = process.argv[2]
+  if (!n) {
+    console.error("usage: bun scripts/merge-gate.ts <pr number>")
+    process.exit(2)
+  }
+  const reasons = assess(prFacts(n))
   console.log(reasons.length ? `merge: needs the owner\n${reasons.map((r) => `  - ${r}`).join("\n")}` : "merge: ok")
   process.exit(reasons.length ? 1 : 0)
 }
