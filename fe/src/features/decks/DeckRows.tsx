@@ -7,11 +7,22 @@ export function DeckRows({
   decks,
   onEdit,
   onDelete,
+  timezone = "UTC",
+  selected,
+  onToggleSelect,
 }: {
   decks: readonly DeckSummary[];
   onEdit: (deck: DeckSummary) => void;
   onDelete: (deck: DeckSummary) => void;
+  // The Learner's timezone, for the date a snooze ends.
+  timezone?: string;
+  // Selection for snoozing several decks at once; rows have no checkbox without `onToggleSelect`.
+  selected?: ReadonlySet<string>;
+  onToggleSelect?: (deck: DeckSummary) => void;
 }) {
+  void timezone;
+  void selected;
+
   return (
     <div>
       <div className="list-head">
@@ -28,6 +39,8 @@ export function DeckRows({
           <li key={deck.slug}>
             <article className="deck">
               <div className="deck-top">
+                {onToggleSelect !== undefined && <span>not implemented: FD</span>}
+
                 <a className="deck-title" href={`/app/decks/${deck.slug}`} dir="auto">
                   {deck.title}
                 </a>
@@ -47,6 +60,7 @@ export function DeckRows({
                   {`${deck.termLang} → ${deck.meaningLang}`}
                 </Badge>
                 {deck.visibility === "public" && <Badge variant="lime">Public</Badge>}
+                {deck.snooze != null && <span>not implemented: FD</span>}
               </div>
 
               <div className="deck-stats">
