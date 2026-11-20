@@ -152,6 +152,11 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 - Only drills that apply to at least one word in the deck are listed, each with today's due and new counts. The default is the set last used for that deck.
 - **Each (word, drill) is scheduled independently.** The daily new-word limit is shared across drills.
 - **Mixed sessions:** each question shows its own direction label. A word appears in only one direction per session, so one question never reveals another's answer. Full design: [14](14-drills.md).
+- **No reading hints:** a question's prompt and its options never show a word's reading as ruby. The reading appears only where it is the prompt (`reading_term`) or the answer (`term_reading`). Once a question is answered, the feedback shows the word's reading.
+
+**Acceptance**
+- No `term_meaning` or `meaning_term` question shows a reading, in its prompt or its options, before it is answered.
+- After any answer to a word that has a reading, the feedback shows that reading.
 
 ## FR-14 Sound effects (M)
 
@@ -186,6 +191,44 @@ The signed-in home at `/app`, top to bottom:
 - **Progress:** cards by maturity (new, learning, mature), true retention and calibration over 30 days, reviews per day over 30 days, and the due forecast for the next 7 study days.
 - **My decks:** each deck with its languages, word count and due count.
 - **Won't:** tags, weekly chart, "words mastered", "best deck". They need definitions the data model does not have.
+
+## FR-20 Deck snooze (S)
+
+A Learner who falls behind watches the due count keep growing, and the number alone can make them quit. Snoozing sets chosen decks aside, so the counts they are nagged with stay at a size they can face.
+
+- From the deck page, or by selecting several decks in the library, the Learner snoozes them for **1, 3, 7 or 14 days**, or **until unsnoozed** (no end date). They can unsnooze at any time.
+- While a deck is snoozed, its words are left out of the notification panel (FR-7), the dashboard's Today counts and Start studying (FR-19), the Hard Words view and its session (FR-8), and the new-word allowance.
+- Snooze only hides. Due dates do not move, so a deck's backlog is still there when it comes back.
+- A snoozed deck shows "Snoozed until <date>" (or "Snoozed" with no end date) in the library and on its deck page.
+- The Learner can still start a session from a snoozed deck's own page; it works as for any other deck.
+- A timed snooze ends at the Learner's day start (FR-9) on its end date.
+- **Won't:** snoozing a single word.
+
+**Acceptance**
+- While a deck is snoozed, its words add 0 to the counts in the notification panel and on the dashboard, and are never picked for a session started from the dashboard or from Hard Words.
+- Unsnoozing, or reaching the end of a timed snooze, brings the deck's words back into those counts on the next request.
+- A snooze with no end date lasts until the Learner unsnoozes.
+- Snoozing and unsnoozing never change any word's `due`, `stability` or `difficulty`.
+- A session started from a snoozed deck's page serves its words as it would without the snooze.
+
+## FR-21 Flashcards (S)
+
+Sometimes a Learner wants to flip through a deck without the pressure of a graded quiz. Flashcards are a light way to go over the words.
+
+- From a deck page, the Learner starts flashcards with **7, 10, 15 or 20** words, or **all** of the deck's words. The words are picked and ordered at random, with a fresh shuffle every run.
+- The front shows the term only, without its reading. A tap or click flips the card to show the reading, meaning, example and notes.
+- Swipe right (or →) means "remembered", and swipe left (or ←) means "not yet". Buttons do the same, for mouse users and for accessibility.
+- One pass: every card is shown once, and "not yet" cards do not come back within the run.
+- **Back** returns to the previous card and undoes its swipe, all the way to the first card.
+- At the end, a summary shows the remembered and not-yet counts.
+- Flashcards are practice only. Swipes are not stored and do not touch scheduling, analytics, the heatmap or the streak.
+- **Won't:** grading, timers, multiple choice, or saving a run to resume later.
+
+**Acceptance**
+- A run with size N (or all) shows min(N, deck word count) distinct words, each exactly once. Two runs of a deck of 3 or more words can come in different orders.
+- The front never shows the reading. After a flip, it shows the reading, meaning and any example and notes.
+- After k swipes, pressing Back k times returns to the first card, and the summary counts only the swipes that are left.
+- A flashcard run never changes any word's `due`, `stability` or `difficulty`, adds no review, and leaves the heatmap and streak unchanged.
 
 ---
 
