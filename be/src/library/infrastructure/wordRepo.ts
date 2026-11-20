@@ -353,6 +353,42 @@ export const WordRepoLive = Layer.effect(
         }
 
         return sql`INSERT INTO words ${sql.insert(rows)}`.pipe(Effect.asVoid, Effect.orDie)
+      },
+
+      insertNew: (deckId, words) => {
+        if (words.length === 0) {
+          return Effect.succeed(0)
+        }
+
+        // One array per column, unnested into rows: a `VALUES` list would bind a parameter per cell, past Postgres's
+        // limit for a 20,000-row import. An array of only nulls has no type the driver can infer, so an absent optional
+        // text goes in as '' and `NULLIF` turns it back into NULL; stored optional text is never ''.
+        const slugs = words.map((word) => word.slug)
+        const terms = words.map((word) => word.term)
+        const readings = words.map((word) => word.reading ?? "")
+        const meanings = words.map((word) => word.meaning)
+        const examples = words.map((word) => word.example ?? "")
+        const notes = words.map((word) => word.notes ?? "")
+        const termKeys = words.map((word) => word.termKey)
+        const readingKeys = words.map((word) => word.readingKey)
+        const meaningKeys = words.map((word) => word.meaningKey)
+        const createdAts = words.map((word) => new Date(word.createdAt).toISOString())
+
+        return sql<{ readonly slug: string }>`
+          INSERT INTO words (slug, deck_id, term, reading, meaning, example, notes, term_key, reading_key, meaning_key,
+                             created_at)
+          SELECT t.slug, ${deckId}::bigint, t.term, NULLIF(t.reading, ''), t.meaning, NULLIF(t.example, ''),
+                 NULLIF(t.notes, ''), t.term_key, t.reading_key, t.meaning_key, t.created_at
+          FROM unnest(
+            ${slugs}::text[], ${terms}::text[], ${readings}::text[], ${meanings}::text[], ${examples}::text[],
+            ${notes}::text[], ${termKeys}::text[], ${readingKeys}::text[], ${meaningKeys}::text[],
+            ${createdAts}::timestamptz[]
+          ) AS t(slug, term, reading, meaning, example, notes, term_key, reading_key, meaning_key, created_at)
+          ON CONFLICT (deck_id, term_key, reading_key) WHERE deleted_at IS NULL DO NOTHING
+          RETURNING slug`.pipe(
+          Effect.map((rows) => rows.length),
+          Effect.orDie
+        )
       }
     })
   })

@@ -1,8 +1,9 @@
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
-import { DuplicateWord, Forbidden, NotFound, VocaApi } from "@voca/contract"
+import { DuplicateWord, Forbidden, IMPORT_MAX_BYTES, ImportRejected, NotFound, PayloadTooLarge, VocaApi } from "@voca/contract"
 import { createDeck, deleteDeck, getDeck, listDecks, publishDeck, unpublishDeck, updateDeck } from "../application/decks.ts"
 import type { DeckRepo } from "../application/deckRepo.ts"
+import { exportCsv as exportWords, importCsv as importWords } from "../application/csv.ts"
 import { createWord, deleteWord, listWords, updateWord } from "../application/words.ts"
 import type { WordRepo } from "../application/wordRepo.ts"
 import type { Transaction } from "../../shared/transaction.ts"
@@ -84,8 +85,39 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("DeckNotFound", notFound("Deck"))
         ),
 
-      importCsv: () => Effect.die("not implemented: CSVB"),
-      exportCsv: () => Effect.die("not implemented: CSVB")
+      // The size is checked here, before the file is read: the framework's own limit does not apply to every caller.
+      importCsv: ({ params, payload }) =>
+        Effect.gen(function* () {
+          const upload = Bun.file(payload.file.path)
+
+          if (upload.size > IMPORT_MAX_BYTES) {
+            return yield* Effect.fail(new PayloadTooLarge({ message: "A CSV file can be at most 5 MB" }))
+          }
+
+          const bytes = yield* Effect.tryPromise({
+            try: () => upload.bytes(),
+            catch: (cause) => cause
+          }).pipe(Effect.orDie)
+
+          return yield* importWords(params.deckSlug, bytes)
+        }).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck")),
+          Effect.catchTag("CsvRejected", (error) =>
+            Effect.fail(
+              new ImportRejected({
+                message: error.message,
+                errors: error.errors,
+                totalErrors: error.totalErrors
+              })
+            ))
+        ),
+
+      exportCsv: ({ params }) =>
+        exportWords(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        )
     })
   })
 )

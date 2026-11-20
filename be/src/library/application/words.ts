@@ -12,7 +12,7 @@ type Needs = CurrentLearner | WordRepo | Transaction
 
 const DEFAULT_PAGE_SIZE = 50
 
-const findOwnedDeckId = (learnerId: bigint, deckSlug: string) =>
+export const findOwnedDeckId = (learnerId: bigint, deckSlug: string) =>
   Effect.gen(function* () {
     const words = yield* WordRepo
     const found = yield* words.findOwnedDeckId(learnerId, deckSlug)
@@ -44,7 +44,16 @@ const readingKeyOf = (reading: string | null): string => {
   return reading === null ? "" : normalizeKey(reading)
 }
 
-const newWordOf = (slug: string, input: typeof CreateWord.Type, createdAt: number): NewWord => {
+/** The text of a word as typed or imported: an absent or `null` optional field is no text. */
+export interface WordText {
+  readonly term: string
+  readonly meaning: string
+  readonly reading?: string | null
+  readonly example?: string | null
+  readonly notes?: string | null
+}
+
+export const newWordOf = (slug: string, input: WordText, createdAt: number): NewWord => {
   const reading = storedOrNull(input.reading)
 
   return {
