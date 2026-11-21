@@ -33,17 +33,18 @@ A deck is the grouping unit: a named, ordered collection of words in one term la
 - Create, rename, describe, and delete decks. Deleting asks for confirmation, then hides the deck and its words everywhere, including Community. Deletes are soft (`deleted_at`): the review history is kept, but no restore UI is offered in the MVP.
 - Each deck declares `termLang` and `meaningLang` as BCP-47 tags (e.g. `ja`, `zh-Hans`, `en`).
 - Add, edit, and delete words manually.
-- On a deck page, clicking or tapping a word opens a modal with all of its information: the term, reading, meaning, example and notes, and the per-word analytics of FR-6. From the modal the Learner can edit or delete the word, or follow "Full details" to the word page. Closing it (✕, Esc, or a tap outside) leaves the Learner on the deck page at the same scroll position.
-- In a Community deck preview (FR-5), clicking a word opens the same modal, view only: the word's content, without analytics, edit, delete or "Full details".
+- On a deck page, clicking or tapping anywhere on a word's row opens a modal with all of its information: the term, reading, meaning, example and notes, and the per-word analytics of FR-6. The row's own edit and delete buttons open the editor or the delete confirmation instead. The modal is view only; its one action is "Full details", to the word page. Closing it (✕, Esc, or a tap outside) leaves the Learner on the deck page at the same scroll position.
+- In a Community deck preview (FR-5), clicking anywhere on a word's row opens the same modal, view only: the word's content, without analytics, edit, delete or "Full details".
 - **Won't:** nested decks, tags. Revisit if users ask for them.
 
 **Acceptance**
-- Clicking a word on a deck page opens its modal, and the URL stays on the deck page.
+- Clicking anywhere on a word's row on a deck page, its meaning as well as its term, opens its modal, and the URL stays on the deck page.
+- The row's edit and delete buttons open the editor or the delete confirmation, never the modal.
 - The modal shows the term, reading, meaning, example and notes, and leaves out an empty field rather than showing it blank. For the Learner's own deck it also shows the FR-6 metrics.
-- Editing a word in the modal updates it in the modal and in the deck's word list. Deleting it closes the modal and removes it from the list.
+- The modal offers no edit or delete.
 - "Full details" opens the word page, which still works as before.
 - Closing the modal returns to the deck page at the same scroll position.
-- In a Community deck preview, the modal shows only the word's content and offers no edit, delete or "Full details".
+- In a Community deck preview, clicking anywhere on a word's row opens the modal, which shows only the word's content and offers no edit, delete or "Full details".
 
 ## FR-3 Language-agnostic content (M)
 
