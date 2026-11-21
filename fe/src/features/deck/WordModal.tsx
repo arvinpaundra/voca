@@ -4,6 +4,7 @@ import type { Deck, Word, WordLabels, WordWithCards } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { session } from "../../lib/appSession";
+import { AddWordsModal } from "./AddWordsModal";
 import { WordForm } from "./WordForm";
 import {
   createPayload,
@@ -29,6 +30,10 @@ type WordModalProps = {
 export function WordModal({ open, deck, labels, word, onClose, onSaved }: WordModalProps) {
   // Mounts only while open, so every opening starts from a fresh draft.
   if (!open) return null;
+
+  if (word === undefined) {
+    return <AddWordsModal deck={deck} labels={labels} onClose={onClose} onSaved={() => onSaved(undefined as never)} />;
+  }
 
   return <WordEditor deck={deck} labels={labels} word={word} onClose={onClose} onSaved={onSaved} />;
 }
