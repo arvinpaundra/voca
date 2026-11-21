@@ -49,7 +49,7 @@ export const testBeanstalk = (name: string): ImportsOptions => ({
   tube: `test-${name}-${process.pid}-${Date.now()}`
 })
 
-/** `imports`: also serve the imports endpoints, with their worker on that beanstalkd tube. */
+/** `imports`: the beanstalkd tube for the imports worker; by default a fresh one. */
 export const makeIdentityRuntime = (google = googleStub({}), options: { readonly imports?: ImportsOptions } = {}) => {
   const infra = Layer.mergeAll(
     LearnerRepoLive,
@@ -63,9 +63,10 @@ export const makeIdentityRuntime = (google = googleStub({}), options: { readonly
     google
   ).pipe(Layer.provideMerge(TestLayer))
 
-  const imports = options.imports === undefined
-    ? Layer.empty
-    : Layer.mergeAll(ImportsHandlers, ImportEventsHandlers).pipe(Layer.provide(ImportsLive(options.imports)))
+  // Every group of the contract needs its handlers, so the imports worker always runs, on a tube of this file's own.
+  const imports = Layer.mergeAll(ImportsHandlers, ImportEventsHandlers).pipe(
+    Layer.provide(ImportsLive(options.imports ?? testBeanstalk("api")))
+  )
 
   const api = Layer.mergeAll(MeHandlers, AuthHandlers, LibraryHandlers, CommunityHandlers, StudyHandlers, InsightHandlers, imports).pipe(
     Layer.provideMerge(AuthorizationLive),
