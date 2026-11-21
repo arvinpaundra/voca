@@ -24,7 +24,8 @@ import { SessionSummary } from "./SessionSummary";
 import { advance } from "./queue";
 import { segments, tally } from "./progress";
 import { isHardStudy, studyReturnHref } from "./returnTo";
-import { answerLang, promptLang } from "./scriptLang";
+import { answerLang } from "./scriptLang";
+import { QuestionPrompt } from "./QuestionPrompt";
 import { requestedSize, shortSessionNotice } from "./shortSession";
 import { SessionNotice } from "./SessionNotice";
 import { SessionWords, type SessionWordItem } from "./SessionWords";
@@ -315,22 +316,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
         <SessionNotice notice={notice} />
 
         <section className="prompt">
-          <span className="drill" dir="auto">{head.drillLabel}</span>
-
-          {promptIsTerm ? (
-            <p className="term" lang={promptLang(head.drill, studySession.termLang)}>
-              {head.prompt.ruby ? (
-                <ruby>
-                  {head.prompt.text}
-                  <rt lang={readingLang(studySession.termLang)}>{head.prompt.ruby}</rt>
-                </ruby>
-              ) : (
-                head.prompt.text
-              )}
-            </p>
-          ) : (
-            <p className="term" dir="auto">{head.prompt.text}</p>
-          )}
+          <QuestionPrompt question={head} termLang={studySession.termLang} />
 
           <AnswerOptions
             options={head.options}
@@ -350,6 +336,8 @@ function StudyFlow({ studySession }: { studySession: Session }) {
             correct={feedback.result.correct}
             term={verdictTerm}
             answer={verdictAnswer}
+            reading={feedback.result.reading ?? null}
+            readingLang={readingLang(studySession.termLang)}
             onNext={next}
           />
         )}
