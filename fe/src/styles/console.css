@@ -350,6 +350,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .card .deck { grid-template-columns: minmax(0, 1fr) 40px 48px 76px; padding: 10px 14px; }
 .card .deck-tags { display: none; }
 .deck-moon { flex-shrink: 0; margin-top: 2px; color: var(--muted); }
+/* In select mode the whole row ticks the deck, so the row shows it is clickable. */
+.deck.selecting { cursor: pointer; }
 /* Opacity is set on the children of .deck-stats: that wrapper is display: contents and has no box to fade. */
 .deck.snoozed .deck-title, .deck.snoozed .deck-stats > div { opacity: .55; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
