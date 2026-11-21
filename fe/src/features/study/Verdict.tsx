@@ -21,6 +21,8 @@ export function Verdict({
   // The answered word's reading, shown once the question is answered; null when it has none.
   reading?: string | null;
   readingLang?: string;
+  // The deck's term language, for the term in the message.
+  termLang?: string | undefined;
   onNext: () => void;
 }) {
   // A focused button already turns Enter into a click; handling it here too would advance twice.
