@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Word, WordDrillStats } from "@voca/contract";
 import { Button } from "../../components/Button";
@@ -109,19 +110,32 @@ function MetricsPanel({ metrics }: { metrics: Metrics }) {
   return (
     <>
       {metrics.drills.map((drill) => (
-        <section key={drill.drill} aria-label={drill.label}>
-          <p className="muted">{drill.label}</p>
-          <StatStrip
-            stats={[
-              { label: "recall now", value: percent(drill.recallNow) },
-              { label: "stability", value: stability(drill.stabilityDays) },
-              { label: "lapses", value: String(drill.lapses) },
-              { label: "reviews", value: String(drill.reps) },
-              { label: "accuracy", value: percent(drill.accuracy.overall) },
-            ]}
-          />
-        </section>
+        <DirectionSection key={drill.drill} drill={drill} />
       ))}
     </>
   );
 }
+
+// One direction's metrics, folded to its label and recall now until opened.
+function DirectionSection({ drill }: { drill: WordDrillStats }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section aria-label={drill.label}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+        {`${drill.label} · ${percent(drill.recallNow)}`}
+      </button>
+
+      {open && <StatStrip stats={directionStats(drill)} />}
+    </section>
+  );
+}
+
+// The five metrics an unfolded direction shows.
+const directionStats = (drill: WordDrillStats) => [
+  { label: "recall now", value: percent(drill.recallNow) },
+  { label: "stability", value: stability(drill.stabilityDays) },
+  { label: "lapses", value: String(drill.lapses) },
+  { label: "reviews", value: String(drill.reps) },
+  { label: "accuracy", value: percent(drill.accuracy.overall) },
+];
