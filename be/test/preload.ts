@@ -60,6 +60,56 @@ const container = await new GenericContainer("postgres:18.3-alpine")
     return process.exit(1)
   })
 
+// Pinned by digest: the image publishes only `latest`. Ready once it answers a command over TCP.
+class BeanstalkdWait extends QueryWait {
+  override async waitUntilReady(_container: unknown, boundPorts: { getFirstBinding(): number }): Promise<void> {
+    const host = (await getContainerRuntimeClient()).info.containerRuntime.host
+    const deadline = Date.now() + TIMEOUT_MS
+    while (Date.now() < deadline) {
+      const ok = await answersStats(host, boundPorts.getFirstBinding())
+      if (ok) return
+      await Bun.sleep(250)
+    }
+    return Promise.reject(new Error(`beanstalkd did not answer within ${TIMEOUT_MS / 1000}s`))
+  }
+}
+
+const answersStats = (hostname: string, port: number): Promise<boolean> =>
+  new Promise((resolve) => {
+    Bun.connect({
+      hostname,
+      port,
+      socket: {
+        open: (socket) => {
+          socket.write("stats\r\n")
+        },
+        data: (socket, data) => {
+          resolve(data.toString().startsWith("OK")) // before end(): end() runs close() synchronously
+          socket.end()
+        },
+        error: () => resolve(false),
+        close: () => resolve(false)
+      }
+    }).catch(() => resolve(false))
+  })
+
+const beanstalkd = await new GenericContainer(
+  "ghcr.io/beanstalkd/beanstalkd@sha256:9b185e0e97c7f48867af0cce481793aaaf0a624935f4aeb40a6505d85da02997"
+)
+  .withExposedPorts(11300)
+  .withLabels({ "voca-test": String(process.pid) })
+  .withWaitStrategy(new BeanstalkdWait())
+  .start()
+  .catch((cause: unknown) => {
+    console.error("Could not start beanstalkd.\n", cause)
+    return process.exit(1)
+  })
+
+// Shared by every test file; each file uses its own tubes so one file's worker never takes another's jobs.
+process.env.TEST_BEANSTALKD_HOST = beanstalkd.getHost()
+process.env.TEST_BEANSTALKD_PORT = String(beanstalkd.getMappedPort(11300))
+afterAll(() => beanstalkd.stop())
+
 const server = `postgres://postgres:voca@${container.getHost()}:${container.getMappedPort(5432)}`
 process.env.TEST_PG_ADMIN_URL = `${server}/postgres`
 afterAll(() => container.stop())

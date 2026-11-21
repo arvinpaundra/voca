@@ -20,7 +20,7 @@ const slugOf = (length: number) =>
   )
 
 /** Slug lengths differ per model, so one kind can never be decoded as another. */
-export const SLUG_LENGTH = { learner: 8, deck: 10, word: 12, session: 14 } as const
+export const SLUG_LENGTH = { learner: 8, deck: 10, word: 12, session: 14, importBatch: 16 } as const
 
 export const LearnerSlug = slugOf(SLUG_LENGTH.learner).pipe(Schema.brand("LearnerSlug"))
 export type LearnerSlug = typeof LearnerSlug.Type
@@ -30,3 +30,5 @@ export const WordSlug = slugOf(SLUG_LENGTH.word).pipe(Schema.brand("WordSlug"))
 export type WordSlug = typeof WordSlug.Type
 export const SessionSlug = slugOf(SLUG_LENGTH.session).pipe(Schema.brand("SessionSlug"))
 export type SessionSlug = typeof SessionSlug.Type
+export const ImportBatchSlug = slugOf(SLUG_LENGTH.importBatch).pipe(Schema.brand("ImportBatchSlug"))
+export type ImportBatchSlug = typeof ImportBatchSlug.Type

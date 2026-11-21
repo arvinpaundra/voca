@@ -60,3 +60,6 @@ export class ImportRejected extends Schema.TaggedError<ImportRejected>()(
 ) {}
 
 export class PayloadTooLarge extends Schema.TaggedError<PayloadTooLarge>()("PayloadTooLarge", fields, { httpApiStatus: 413 }) {}
+
+/** Dismissing a batch whose files are not all finished: a running batch can't be cancelled. */
+export class ImportRunning extends Schema.TaggedError<ImportRunning>()("ImportRunning", fields, { httpApiStatus: 409 }) {}

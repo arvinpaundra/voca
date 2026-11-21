@@ -8,6 +8,7 @@ import { LearnerRepoLive } from "./identity/infrastructure/learnerRepo.ts"
 import { RefreshTokensLive } from "./identity/infrastructure/refreshTokens.ts"
 import { TokenSignerLive } from "./identity/infrastructure/tokenSigner.ts"
 import { CommunityHandlers } from "./library/http/community.ts"
+import { ImportEventsHandlers, ImportsHandlers } from "./library/http/imports.ts"
 import { LibraryHandlers } from "./library/http/library.ts"
 import { InsightHandlers } from "./insight/http/index.ts"
 import { InsightLive } from "./insight/infrastructure/index.ts"
@@ -30,7 +31,9 @@ export const makeApiLayer = (options: { readonly jwtSecret: Redacted.Redacted<st
     LibraryHandlers,
     CommunityHandlers,
     StudyHandlers,
-    InsightHandlers
+    InsightHandlers,
+    ImportsHandlers,
+    ImportEventsHandlers
   )
   const infra = Layer.mergeAll(
     LearnerRepoLive,

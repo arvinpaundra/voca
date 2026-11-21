@@ -203,6 +203,33 @@ CREATE TABLE reviews (
 CREATE UNIQUE INDEX ON reviews (session_id, word_id);
 CREATE INDEX ON reviews (word_id, drill, reviewed_at);
 CREATE INDEX ON reviews (learner_id, reviewed_at);     -- activity heatmap, deck stats
+
+-- FR-29: a batch of CSV files, each imported into a new deck by the beanstalkd worker
+CREATE TABLE import_batches (
+  id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  slug          text NOT NULL UNIQUE,                 -- 16 chars
+  learner_id    bigint NOT NULL REFERENCES learners,
+  term_lang     text NOT NULL,
+  meaning_lang  text NOT NULL,
+  created_at    timestamptz NOT NULL,
+  dismissed_at  timestamptz
+);
+CREATE INDEX ON import_batches (learner_id, created_at DESC) WHERE dismissed_at IS NULL;
+
+CREATE TABLE import_files (
+  id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  batch_id            bigint NOT NULL REFERENCES import_batches,
+  position            smallint NOT NULL,              -- upload order, 0-based
+  name                text NOT NULL,                  -- the uploaded file name
+  content             bytea,                          -- cleared once done or failed
+  status              text NOT NULL,                  -- pending|running|done|failed
+  deck_id             bigint REFERENCES decks,        -- set iff done
+  imported            integer NOT NULL,
+  skipped_duplicates  integer NOT NULL,
+  errors              jsonb NOT NULL,                 -- [{row, column, message}], ≤ 100
+  total_errors        integer NOT NULL,
+  UNIQUE (batch_id, position)
+);
 ```
 
 Defaults such as `now()` and `false` are not set in the database. The app supplies every value through its constructor, so the domain is the single source of defaults. A unique violation (`23505`) is mapped in infrastructure to a domain error, for example `DuplicateWord` or `QuestionAlreadyAnswered`.

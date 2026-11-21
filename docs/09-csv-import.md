@@ -43,18 +43,20 @@ multipart file ─▶ bytes ─▶ TextDecoder("utf-8", {fatal:true})   ── i
 - **Bulk insert with `unnest`.** One statement inserts every row in a single round trip, with no batching loop. Twenty thousand rows take well under a second.
 - **Memory:** a 5 MB file is about 10 MB as JS strings, plus the parsed rows (about 15 MB). That is transient and fine within a 512 MiB limit. A double-submitted import is harmless: the second one skips every row as a duplicate. Traefik rate-limits the import route to 5 requests per minute per IP, which bounds memory use if someone abuses it.
 
-## Is beanstalkd needed?
+## Several decks at once (FR-29, ADR 59)
 
-**Decision: no, not in the MVP** (confirmed, ADR 7). It will be considered again at scale.
+A single-deck import stays synchronous, as above. A batch of up to 20 files would hold a request for tens of seconds, so it runs on **beanstalkd**:
 
-| | Synchronous (recommended) | beanstalkd worker |
-|---|---|---|
-| Latency for 5 MB / 20k rows | ~0.5–1.5 s within the request | Same work, plus job status polling in the UI |
-| Infrastructure | none | A beanstalkd pod and a worker process (or a fiber) |
-| Failure handling | Transaction rollback, user retries | Retries, dead jobs (buried), and a job status table |
-| Code | ~1 use case | Use case + producer + consumer + client library (the `fivebeans` and `beanstalkd` npm clients are unmaintained) + status endpoint |
-| Fits within a request timeout? | Yes. Traefik's default is 60 s or more | n/a |
+```
+POST /imports (multipart) ─▶ one transaction: import_batches row + one import_files row per file (bytes in `content`)
+                          ─▶ put one job per file, body {fileId}            -- a job is capped at 64 KiB, the file is not
+worker fiber (in the API) ─▶ reserve ─▶ mark the file running, publish {batch, status: "running"}
+                          ─▶ the pipeline above, into a new deck named after the file
+                          ─▶ one transaction: create deck + insert words + file done (counts), or file failed (errors)
+                          ─▶ clear `content`, delete the job, publish the event ("finished" after the batch's last file)
+```
 
-A 5 MB cap is small enough that a queue adds infrastructure, a status endpoint, a polling UI, and an unmaintained client library without solving any real problem.
-
-**When to revisit:** add asynchronous processing if imports grow large (for example 50 MB files, or slow enrichment such as fetching TTS audio). Even then, start with a Postgres-backed queue (a `jobs` table read with `FOR UPDATE SKIP LOCKED`, processed by an Effect fiber in the API). That adds no new infrastructure. Move to beanstalkd only if the job volume outgrows Postgres.
+- **Each file is all-or-nothing on its own.** A failed file creates no deck; the others still do.
+- **At least once.** A job comes back when its TTR expires (the pod died mid-file). The worker skips a file that is already `done` or `failed`, so it imports once. A defect buries the job.
+- **Progress lives in Postgres**, so it survives a reload and a sign-out. The SSE events only say that a batch changed; the frontend refetches `GET /imports`.
+- **Memory:** one request carries up to 20 × 5 MB. The route's rate limit bounds how many run at once.
