@@ -221,6 +221,52 @@ const hardWords = [
   { ...word(7, "مَدْرَسَة", "", "school", "", [hardCard("meaning_term", "2026-11-18T00:00:00.000Z")]), reading: null, example: null, deck: hardDeck(3) },
 ]
 
+const importFile = (name: string, status: string, deck: string | null, imported: number, skipped: number) => ({
+  name,
+  status,
+  deck: deck === null ? null : { slug: deckSlug(1), title: deck },
+  imported,
+  skippedDuplicates: skipped,
+  errors: [],
+  totalErrors: 0,
+})
+
+/** FR-29 batches: `imports` has one running and one finished, `imports-done` only finished ones. */
+const importBatches = (state: string) => {
+  const failed = {
+    ...importFile("N5 adjectives.csv", "failed", null, 0, 0),
+    errors: [
+      { row: 14, column: "meaning", message: "meaning is required" },
+      { row: 31, column: "term", message: "term is longer than 200 characters" },
+      { row: 52, column: null, message: "unknown column “meening”" },
+    ],
+    totalErrors: 104,
+  }
+  const running = {
+    slug: "BATCH00000000002",
+    termLang: "ja",
+    meaningLang: "en",
+    createdAt: "2026-11-18T11:58:00.000Z",
+    files: [
+      importFile("N5 verbs.csv", "done", "N5 verbs", 248, 3),
+      importFile("N5 nouns.csv", "done", "N5 nouns", 412, 0),
+      failed,
+      importFile("Particles.csv", "running", null, 0, 0),
+      importFile("Counters.csv", "pending", null, 0, 0),
+    ],
+  }
+  const finished = {
+    slug: "BATCH00000000001",
+    termLang: "zh-Hans",
+    meaningLang: "en",
+    createdAt: "2026-11-18T11:50:00.000Z",
+    files: [importFile("HSK 1.csv", "done", "HSK 1", 150, 0), importFile("HSK 2.csv", "done", "HSK 2", 151, 2)],
+  }
+  if (state === "imports") return [running, finished]
+  if (state === "imports-done") return [{ ...running, files: running.files.slice(0, 3) }, finished]
+  return []
+}
+
 /** Answer with an empty 204 (mark and unmark hard). */
 export const NO_CONTENT = Symbol("no content")
 
@@ -230,6 +276,9 @@ type Handler = (url: URL, state: string, method: string) => unknown
 export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
   [/^\/api\/auth\/refresh$/, () => ({ accessToken: "mock.access.token", refreshToken: "A".repeat(43), expiresIn: 3600 })],
   [/^\/api\/me$/, () => learner],
+  [/^\/api\/imports$/, (_url, state) => importBatches(state)],
+  [/^\/api\/imports\/events\/ticket$/, () => ({ ticket: "mock-ticket" })],
+  [/^\/api\/imports\/events$/, () => NO_CONTENT],
   [/^\/api\/me\/stats$/, () => learnerStats],
   [/^\/api\/me\/activity$/, () => ({
     month: "2026-11",

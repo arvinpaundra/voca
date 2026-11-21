@@ -7,7 +7,7 @@
 //
 // --mock signs in with a fake refresh token and answers /api/* from scripts/shots-fixtures.ts (the design's sample
 // data), with the clock frozen on the design's date. States: `complete` (a finished session), `wrong` (press 1 on
-// the question, which the fake API marks wrong), `finish` (answer right and end the session), `select` (turn on the decks list's select mode and tick the first deck). --design writes .shots/design-<screen>.png for side-by-side checks.
+// the question, which the fake API marks wrong), `finish` (answer right and end the session), `select` (turn on the decks list's select mode and tick the first deck), `imports` and `imports-done` (the FR-29 import panel: one batch running, or all finished). --design writes .shots/design-<screen>.png for side-by-side checks.
 // First run downloads Chromium once (`bunx playwright install chromium`).
 import { mkdirSync } from "node:fs"
 import { resolve } from "node:path"
