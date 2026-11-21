@@ -60,13 +60,7 @@ The node `mio-vnc` is **arm64**. The release builds the image on GitHub's `ubunt
 
 There is no Helm or Kustomize for 6 files.
 
-**Migrations** never run at boot. The owner runs them before tagging a release that adds one, with the same binary's `migrate` command, through a port-forward. The URL is the cluster's own `DATABASE_URL` with the host swapped for the tunnel, so the password is never typed:
-```bash
-kubectl -n database port-forward svc/postgres-postgresql 5432:5432 &
-DATABASE_URL=$(kubectl -n voca get secret voca-api -o jsonpath='{.data.DATABASE_URL}' | base64 -d | sed 's|@[^/]*/|@localhost:5432/|') \
-  bun run --cwd be migrate
-```
-The `effect/sql` Migrator takes a lock, so two runs at once are safe.
+**Migrations** never run at boot. Every release runs them before the rollout, as a one-off pod `voca-migrate` on the release's own image (`voca-api migrate`, env from the `voca-api` secret). The `effect/sql` Migrator applies only what is pending, so a release without a new migration changes nothing, and it takes a lock, so two runs at once are safe. A failed migration fails the release before the rollout, and the running version keeps serving.
 
 **Rollout** (ADR 53): `RollingUpdate` with `maxSurge: 1`, `maxUnavailable: 0`. The old pod serves until the new one is ready; the `preStop` sleep takes a stopping pod out of the endpoints before SIGTERM. For that moment the old version runs against the new schema, so **every migration must work with the previous release**: add first, remove in a later release. During a rollout two pods hold up to 20 database connections.
 
@@ -83,8 +77,9 @@ Master is protected by the required `verify` check, so a master commit has alrea
 
 1. **image:** built on an arm64 runner, pushed to `ghcr.io/arvinpaundra/voca-api:<tag>`.
 2. **secret:** `secret.yaml` is filled in from the GitHub secrets on every run (values masked in logs).
-3. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
-4. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
+3. **migrate:** the pending migrations, from the release's image (above). A failure stops the release here.
+4. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
+5. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
 
 **Roll back:** re-run the older tag's release run (GitHub allows it for 30 days), or *Actions → release → Run workflow* with that tag. Migrations are not reversed, which is why they stay backward compatible.
 
@@ -131,5 +126,4 @@ One-time steps only the owner does, in order. Steps 2–4 cannot be undone, and 
    kubectl config view --minify --flatten --context kube-oci | base64 | gh secret set KUBECONFIG
    ```
 8. **Cloudflare Pages:** `bunx wrangler@4.20.0 pages project create voca --production-branch master`, then Pages → voca → Custom domains → add `voca.arvinpaundra.dev`. The `voca-origin` record is created by external-dns from the ingress on the first release.
-9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. GHCR makes a new package private: if the rollout fails with `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release. The API turns healthy on the empty database (`/api/healthz` only runs `SELECT 1`).
-10. **Migrate** the fresh database with the command under *Migrations* above; it reads `DATABASE_URL` from the `voca-api` secret the first release created.
+9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. It migrates the fresh database itself. GHCR makes a new package private: if the migrate step times out on `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release.

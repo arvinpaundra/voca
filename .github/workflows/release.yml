@@ -53,6 +53,16 @@ jobs:
 
           envsubst < deploy/k8s/secret.yaml | kubectl apply -f - > /dev/null
 
+      # The release's own binary applies only the pending migrations (none is a no-op). A failure exits non-zero,
+      # so the rollout never starts and the running version keeps its schema.
+      - name: migrate
+        run: |
+          kubectl -n voca delete pod voca-migrate --ignore-not-found
+
+          kubectl -n voca run voca-migrate --rm -i --restart=Never --pod-running-timeout=3m \
+            --image="$IMAGE:$TAG" \
+            --overrides='{"spec":{"containers":[{"name":"voca-migrate","image":"'"$IMAGE:$TAG"'","args":["migrate"],"envFrom":[{"secretRef":{"name":"voca-api"}}]}]}}'
+
       # The old pod keeps serving until the new one is ready (maxUnavailable: 0). A pod that never becomes
       # ready is rolled back so its ReplicaSet doesn't linger; a release that became healthy is never undone.
       - name: rollout
