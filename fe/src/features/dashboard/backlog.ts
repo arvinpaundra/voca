@@ -10,5 +10,6 @@ const backlogThreshold = (sessionSize: SessionSize): number => Math.max(BACKLOG_
 export const backlogDecks = (decks: readonly DeckSummary[], sessionSize: SessionSize): readonly DeckSummary[] => {
   const threshold = backlogThreshold(sessionSize);
 
-  return decks.filter((deck) => deck.snooze === null && deck.dueCount > threshold);
+  // A missing snooze key (the field is optional while the server rolls out) means not snoozed.
+  return decks.filter((deck) => !deck.snooze && deck.dueCount > threshold);
 };
