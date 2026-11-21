@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { DateTime, Effect } from "effect"
 import { CurrentLearner, drillLabel, type Notifications } from "@voca/contract"
 import { estimateMinutes } from "../domain/pace.ts"
 import { learnerCalendar } from "./calendar.ts"
@@ -6,12 +6,17 @@ import { InsightRepo } from "./insightRepo.ts"
 
 type NotificationDeck = Notifications["decks"][number]
 
-/** `GET /notifications`: the Learner's decks with due cards, most overdue first, and the hard and new counts. */
+/**
+ * `GET /notifications`: the Learner's decks with due cards, most overdue first, and the hard and new counts.
+ * Decks whose snooze is live count for nothing here.
+ */
 export const notifications = Effect.gen(function* () {
   const { id: learnerId } = yield* CurrentLearner
   const repo = yield* InsightRepo
   const calendar = yield* learnerCalendar(learnerId)
-  const rows = yield* repo.dueByDeck(learnerId, calendar.day.start, calendar.day.end)
+  const now = yield* DateTime.now
+
+  const rows = yield* repo.dueByDeck(learnerId, calendar.day.start, calendar.day.end, now)
   const newToday = yield* repo.newReviewsBetween(learnerId, calendar.day.start, calendar.day.end)
 
   const decks = new Map<string, NotificationDeck>()
@@ -37,7 +42,7 @@ export const notifications = Effect.gen(function* () {
   }
 
   const due = rows.reduce((sum, row) => sum + row.due, 0)
-  const unstudied = yield* repo.unstudiedPairs({ learnerId, deckId: null })
+  const unstudied = yield* repo.unstudiedPairs({ learnerId, deckId: null }, now)
   const settings = yield* repo.learnerSettings(learnerId)
 
   // The allowance caps the count, and the words the decks no longer have cap the allowance.
