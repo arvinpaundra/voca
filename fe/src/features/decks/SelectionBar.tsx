@@ -5,11 +5,13 @@ export function SelectionBar({
   count,
   onSnooze,
   onUnsnooze,
+  onDelete,
   onClear,
 }: {
   count: number;
   onSnooze: () => void;
   onUnsnooze: () => void;
+  onDelete?: () => void;
   onClear: () => void;
 }) {
   return (
@@ -22,6 +24,10 @@ export function SelectionBar({
 
       <Button variant="secondary" size="sm" onClick={onUnsnooze}>
         Unsnooze
+      </Button>
+
+      <Button variant="danger" size="sm" onClick={() => onDelete?.()}>
+        Delete
       </Button>
 
       <Button variant="ghost" size="sm" onClick={onClear}>
