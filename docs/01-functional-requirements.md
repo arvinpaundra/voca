@@ -202,6 +202,7 @@ A Learner who falls behind watches the due count keep growing, and the number al
 - A snoozed deck shows "Snoozed until <date>" (or "Snoozed" with no end date) in the library and on its deck page.
 - The Learner can still start a session from a snoozed deck's own page; it works as for any other deck.
 - A timed snooze ends at the Learner's day start (FR-9) on its end date.
+- In select mode, a tap or click anywhere on a deck row ticks or unticks it and never opens the deck page. The Learner leaves select mode (Done) to open a deck.
 - **Won't:** snoozing a single word.
 
 **Acceptance**
@@ -210,13 +211,14 @@ A Learner who falls behind watches the due count keep growing, and the number al
 - A snooze with no end date lasts until the Learner unsnoozes.
 - Snoozing and unsnoozing never change any word's `due`, `stability` or `difficulty`.
 - A session started from a snoozed deck's page serves its words as it would without the snooze.
+- In select mode, a tap anywhere on a deck row changes only that row's tick, and the page stays on the library. Outside select mode, a tap on a row opens the deck page.
 
 ## FR-21 Flashcards (S)
 
 Sometimes a Learner wants to flip through a deck without the pressure of a graded quiz. Flashcards are a light way to go over the words.
 
 - From a deck page, the Learner starts flashcards with **7, 10, 15 or 20** words, or **all** of the deck's words. The words are picked and ordered at random, with a fresh shuffle every run.
-- The front shows the term only, without its reading. A tap or click flips the card to show the reading, meaning, example and notes.
+- The front shows the term only, without its reading. A tap or click flips the card with a turn animation, and the back shows the reading, meaning, example and notes, but never the term, even for a word with no reading. The animation always plays.
 - Swipe right (or →) means "remembered", and swipe left (or ←) means "not yet". Buttons do the same, for mouse users and for accessibility.
 - One pass: every card is shown once, and "not yet" cards do not come back within the run.
 - **Back** returns to the previous card and undoes its swipe, all the way to the first card.
@@ -226,7 +228,8 @@ Sometimes a Learner wants to flip through a deck without the pressure of a grade
 
 **Acceptance**
 - A run with size N (or all) shows min(N, deck word count) distinct words, each exactly once. Two runs of a deck of 3 or more words can come in different orders.
-- The front never shows the reading. After a flip, it shows the reading, meaning and any example and notes.
+- The front never shows the reading. After a flip, the card shows the reading, meaning and any example and notes, and never the term.
+- Every flip, to the back and back to the front, plays the turn animation.
 - After k swipes, pressing Back k times returns to the first card, and the summary counts only the swipes that are left.
 - A flashcard run never changes any word's `due`, `stability` or `difficulty`, adds no review, and leaves the heatmap and streak unchanged.
 
