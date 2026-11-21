@@ -7,7 +7,7 @@
 //
 // --mock signs in with a fake refresh token and answers /api/* from scripts/shots-fixtures.ts (the design's sample
 // data), with the clock frozen on the design's date. States: `complete` (a finished session), `wrong` (press 1 on
-// the question, which the fake API marks wrong), `finish` (answer right and end the session). --design writes .shots/design-<screen>.png for side-by-side checks.
+// the question, which the fake API marks wrong), `finish` (answer right and end the session), `select` (turn on the decks list's select mode and tick the first deck). --design writes .shots/design-<screen>.png for side-by-side checks.
 // First run downloads Chromium once (`bunx playwright install chromium`).
 import { mkdirSync } from "node:fs"
 import { resolve } from "node:path"
@@ -107,6 +107,11 @@ for (const spec of specs) {
   if (state === "wrong") {
     await page.keyboard.press("1")
     await page.waitForTimeout(400)
+  }
+  if (state === "select") {
+    await page.getByRole("button", { name: "Select", exact: true }).click()
+    await page.getByRole("checkbox").first().check()
+    await page.waitForTimeout(300)
   }
   if (state === "finish") {
     await page.keyboard.press("2")
