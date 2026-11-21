@@ -277,6 +277,71 @@ The owner needs to ship Voca to `voca.arvinpaundra.dev`, and every later version
 
 ---
 
+## FR-23 Landing page for signed-in Learners (M)
+
+The landing page ignores that the Learner is signed in, and its hero stretches the full width on large screens.
+
+- The hero section keeps the same maximum width as the sections below it, centred, at every screen width.
+- A signed-in Learner sees "Open app" in the header, leading to the Dashboard (FR-19), instead of "Sign in". "Start learning" also leads to the Dashboard.
+- **Won't:** redirect a signed-in Learner away from `/`; the landing stays reachable.
+
+**Acceptance**
+- At 1920px wide, the hero's left and right edges line up with those of the section below it.
+- A signed-in Learner on `/` sees no "Sign in" button; "Open app" and "Start learning" open the Dashboard.
+- A Visitor sees "Sign in" as before.
+
+## FR-24 Session survives a reload (S)
+
+Extends FR-10. Every page load calls refresh today, even while the access token is still valid.
+
+- The access token is stored alongside the refresh token, so a reload reuses it until it expires.
+- A refresh happens only when the access token is missing, expired, or rejected by the API.
+
+**Acceptance**
+- Reloading within 15 minutes of the last refresh makes no call to the refresh endpoint.
+- Reloading after the access token expired makes exactly one refresh call, and the Learner stays signed in.
+- Signing out removes both tokens; after a reload the Learner is signed out.
+
+## FR-25 CSV import template (S)
+
+Extends FR-4. Learners shouldn't have to guess the CSV format.
+
+- The Import CSV modal offers "Download template": `voca-template.csv`, the canonical header row `term,meaning,reading,example,notes` and nothing else.
+- **Won't:** example rows, per-language aliases in the header.
+
+**Acceptance**
+- The downloaded file is UTF-8 and contains exactly the line `term,meaning,reading,example,notes`.
+- Importing the template unchanged succeeds with 0 words added.
+
+## FR-26 Add several words at once (S)
+
+Extends FR-2. Adding words one by one is slow.
+
+- The Add word modal holds a list of words. "Add another" appends a word with the same fields as today.
+- Each word folds like an accordion: folded, it shows a one-line summary (term · meaning); only the word being edited is open.
+- A word can be removed from the list before saving. One "Add N words" button saves them all.
+- The list holds at most **50** words.
+- Saving is all-or-nothing: an invalid word, or one duplicating a word in the deck or elsewhere in the list, is marked and opened, and nothing is saved until every error is fixed.
+
+**Acceptance**
+- Adding 3 valid words saves all 3; the deck shows 3 new rows.
+- With 1 invalid word among 3, none are saved and the invalid word is open with its error shown.
+- Two words in the list with the same term and reading are both flagged as duplicates, and nothing is saved.
+- With 50 words in the list, "Add another" is disabled.
+
+## FR-27 Foldable directions in the word modal (S)
+
+Extends FR-2 and FR-6. The word modal shows five metrics for each of up to four directions at once, which overwhelms.
+
+- Each direction's metrics sit in their own foldable section. Folded, it shows the direction label and its recall now; unfolded, every metric as today.
+- All directions start folded.
+- **Won't:** change the metrics themselves, or the word page.
+
+**Acceptance**
+- Opening the word modal shows every direction folded, each with its label and recall-now percentage.
+- Unfolding a direction shows its recall now, stability, lapses, reviews and accuracy; folding hides them again.
+- The word page shows every FR-6 metric unchanged.
+
 ## Extra ideas (not in your list)
 
 | Idea | Priority | Why |
