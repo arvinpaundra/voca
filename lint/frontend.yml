@@ -1,0 +1,14 @@
+# Server data comes from the query cache: a page never calls the session inside an effect.
+id: no-fetch-in-effect
+language: Tsx
+files: ["fe/src/**/*.tsx", "fe/src/**/*.ts"]
+ignores: ["fe/src/**/*.test.tsx", "fe/src/**/*.test.ts", "fe/src/features/auth/CallbackPage.tsx"] # the callback exchanges a one-time code: a write, not server state
+severity: error
+message: "No `session.call` or `loadCurrentLearner` in a `useEffect`. Read with `useQuery(<option from lib/queries.ts>, queryClient)`."
+rule:
+  any:
+    - pattern: session.call($$$)
+    - pattern: loadCurrentLearner($$$)
+  inside:
+    pattern: useEffect($$$)
+    stopBy: end
