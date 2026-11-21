@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { readingLang, type Word } from "@voca/contract";
+import type { Word } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Term } from "../../components/Term";
+import { CardBack } from "./CardBack";
 import { back, currentCard, flip, startRun, summary, swipe, type Mark, type Run } from "./flashcardsModel";
 
 // A drag this far, and more across than down, is a swipe; a shorter touch is still a tap that flips the card.
@@ -123,21 +124,7 @@ export function FlashcardRun({ cards, termLang, backHref }: { cards: ReadonlyArr
         }}
       >
         {run.flipped ? (
-          <>
-            <Term
-              term={card.term}
-              // Term draws a ruby only for a non-empty reading, so an empty one is a plain term.
-              reading={card.reading ?? ""}
-              lang={termLang}
-              readingLang={readingLang(termLang)}
-            />
-
-            <p>{card.meaning}</p>
-
-            {card.example !== null && <p lang={termLang}>{card.example}</p>}
-
-            {card.notes !== null && <p className="muted">{card.notes}</p>}
-          </>
+          <CardBack card={card} termLang={termLang} />
         ) : (
           <Term term={card.term} lang={termLang} size="lg" />
         )}
