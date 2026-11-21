@@ -5,6 +5,7 @@ import { parseCsv, toCsv } from "../domain/csv.ts"
 import { DeckNotFound, CsvRejected } from "../domain/errors.ts"
 import type { CsvRowError } from "../domain/errors.ts"
 import { readWords } from "../domain/csvWords.ts"
+import type { CsvWordRow } from "../domain/csvWords.ts"
 import { newSlug } from "../domain/slug.ts"
 import { Transaction } from "../../shared/transaction.ts"
 import { findOwnedDeckId, newWordOf } from "./words.ts"
@@ -18,7 +19,7 @@ const MAX_REPORTED_ERRORS = 100
 const EXPORT_HEADER: ReadonlyArray<string> = ["term", "meaning", "reading", "example", "notes"]
 
 /** The rejection of an upload: the first `MAX_REPORTED_ERRORS` problems, and the count of all of them. */
-const rejected = (message: string, errors: ReadonlyArray<CsvRowError>): CsvRejected => {
+export const rejected = (message: string, errors: ReadonlyArray<CsvRowError>): CsvRejected => {
   return new CsvRejected({
     message,
     errors: errors.slice(0, MAX_REPORTED_ERRORS),
@@ -26,7 +27,7 @@ const rejected = (message: string, errors: ReadonlyArray<CsvRowError>): CsvRejec
   })
 }
 
-const decodeText = (bytes: Uint8Array): Effect.Effect<string, CsvRejected> => {
+export const decodeText = (bytes: Uint8Array): Effect.Effect<string, CsvRejected> => {
   return Effect.try({
     try: () => new TextDecoder("utf-8", { fatal: true }).decode(bytes),
     catch: () =>
@@ -36,7 +37,7 @@ const decodeText = (bytes: Uint8Array): Effect.Effect<string, CsvRejected> => {
   })
 }
 
-const parseText = (text: string): Effect.Effect<ReadonlyArray<ReadonlyArray<string>>, CsvRejected> => {
+export const parseText = (text: string): Effect.Effect<ReadonlyArray<ReadonlyArray<string>>, CsvRejected> => {
   const parsed = parseCsv(text)
 
   return Result.isFailure(parsed)
@@ -46,6 +47,28 @@ const parseText = (text: string): Effect.Effect<ReadonlyArray<ReadonlyArray<stri
       ])
     )
     : Effect.succeed(parsed.success)
+}
+
+/** The words of an uploaded file, each checked against the Word Schemas: any problem rejects the whole file. */
+export const readRows = (bytes: Uint8Array): Effect.Effect<ReadonlyArray<CsvWordRow>, CsvRejected> => {
+  return Effect.gen(function* () {
+    const text = yield* decodeText(bytes)
+    const records = yield* parseText(text)
+    const read = readWords(records)
+
+    if (read.errors.length > 0) {
+      return yield* Effect.fail(
+        rejected(`Nothing was imported. The file has ${read.errors.length} problem(s).`, read.errors)
+      )
+    }
+
+    return read.rows
+  })
+}
+
+/** New words for the rows: a fresh slug each, all stamped with the same clock time. */
+export const newWordDrafts = (rows: ReadonlyArray<CsvWordRow>, createdAt: number) => {
+  return Effect.forEach(rows, (row) => Effect.map(newSlug(SLUG_LENGTH.word), (slug) => newWordOf(slug, row, createdAt)))
 }
 
 /**
@@ -61,20 +84,9 @@ export const importCsv = (
     const words = yield* WordRepo
     const transaction = yield* Transaction
     const deckId = yield* findOwnedDeckId(id, deckSlug)
-    const text = yield* decodeText(bytes)
-    const records = yield* parseText(text)
-    const read = readWords(records)
-
-    if (read.errors.length > 0) {
-      return yield* Effect.fail(
-        rejected(`Nothing was imported. The file has ${read.errors.length} problem(s).`, read.errors)
-      )
-    }
-
+    const rows = yield* readRows(bytes)
     const createdAt = yield* Clock.currentTimeMillis
-    const drafts = yield* Effect.forEach(read.rows, (row) =>
-      Effect.map(newSlug(SLUG_LENGTH.word), (slug) => newWordOf(slug, row, createdAt))
-    )
+    const drafts = yield* newWordDrafts(rows, createdAt)
     const written = yield* transaction.run(words.insertNew(deckId, drafts))
 
     return { imported: written, skippedDuplicates: drafts.length - written }
