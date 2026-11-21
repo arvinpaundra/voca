@@ -7,14 +7,26 @@ import { AppConfig } from "./shared/config.ts"
 import { DbLive } from "./shared/db.ts"
 import { migrate } from "../migrations/index.ts"
 
-const program = Effect.gen(function* () {
-  const { port, jwtSecret } = yield* AppConfig
+const migrateOnly = Effect.gen(function* () {
   yield* migrate
-  yield* Effect.logInfo(`voca-api: migrations applied, serving on :${port}`)
+  yield* Effect.logInfo("voca-api: migrations applied")
+})
+
+const serve = Effect.gen(function* () {
+  const { port, jwtSecret } = yield* AppConfig
+  yield* Effect.logInfo(`voca-api: serving on :${port}`)
+
   const server = HttpRouter.serve(makeApiLayer({ jwtSecret }).pipe(Layer.provide(GoogleOAuthLive))).pipe(
     Layer.provide(BunHttpServer.layer({ port }))
   )
-  return yield* Layer.launch(server)
-}).pipe(Effect.provide(DbLive))
 
-BunRuntime.runMain(program)
+  return yield* Layer.launch(server)
+})
+
+// The server never migrates: the release runs `voca-api migrate` as a Job and rolls out only once it succeeds,
+// so a failed migration never reaches a serving pod.
+if (process.argv[2] === "migrate") {
+  BunRuntime.runMain(migrateOnly.pipe(Effect.provide(DbLive)))
+} else {
+  BunRuntime.runMain(serve.pipe(Effect.provide(DbLive)))
+}

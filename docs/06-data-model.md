@@ -1,6 +1,6 @@
 # 06 — Data Model (PostgreSQL)
 
-Requirements: **PostgreSQL 18.3** (the cluster instance; the schema itself needs only 13 or later), no extensions. Migrations are numbered TypeScript files run by the `effect/sql` `Migrator` at boot. The Migrator takes a lock, so it is safe if two pods ever start at the same time.
+Requirements: **PostgreSQL 18.3** (the cluster instance; the schema itself needs only 13 or later), no extensions. Migrations are numbered TypeScript files run by the `effect/sql` `Migrator` through `voca-api migrate` (`bun run migrate` locally), never by the server. The Migrator takes a lock, so two runs at once are safe.
 
 ## Rules
 
