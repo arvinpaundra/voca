@@ -3,8 +3,13 @@ import { AlertCircle, ArrowRight, Check } from "lucide-react";
 import { Button } from "../../components/Button";
 import { WORD_FONT_CLASS } from "../../lib/wordFont";
 
-// The word's own text gets its own element, so the sentence around it keeps the interface font.
-const wordText = (text: string) => <span className={WORD_FONT_CLASS}>{text}</span>;
+// The word's own text gets its own element, so the sentence around it keeps the interface font. The language goes on
+// the element too: a word the word font covers must resolve to its CJK language, and a meaning has none.
+const wordText = (text: string, lang: string | undefined) => (
+  <span className={WORD_FONT_CLASS} lang={lang}>
+    {text}
+  </span>
+);
 
 // The bar under the question once it is answered; it holds the Next button.
 export function Verdict({
@@ -13,6 +18,8 @@ export function Verdict({
   answer,
   reading = null,
   readingLang,
+  termLang,
+  answerLang,
   onNext,
 }: {
   correct: boolean;
@@ -21,8 +28,10 @@ export function Verdict({
   // The answered word's reading, shown once the question is answered; null when it has none.
   reading?: string | null;
   readingLang?: string;
-  // The deck's term language, for the term in the message.
+  // The language of the term in the message; undefined when it is not word content in a covered language.
   termLang?: string | undefined;
+  // The language of the answer when it is a term; undefined for a meaning.
+  answerLang?: string | undefined;
   onNext: () => void;
 }) {
   // A focused button already turns Enter into a click; handling it here too would advance twice.
@@ -52,11 +61,12 @@ export function Verdict({
       <span className="grow">
         {correct ? (
           <>
-            <b>Correct.</b> {wordText(term)} means “{wordText(answer)}”.
+            <b>Correct.</b> {wordText(term, termLang)} means “{wordText(answer, answerLang)}”.
           </>
         ) : (
           <>
-            <b>Not quite.</b> {wordText(term)} means “{wordText(answer)}”. It comes back later in this session.
+            <b>Not quite.</b> {wordText(term, termLang)} means “{wordText(answer, answerLang)}”. It comes back later in
+            this session.
           </>
         )}
       </span>

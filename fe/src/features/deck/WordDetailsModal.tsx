@@ -69,7 +69,14 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
     );
 
   return (
-    <Modal open title={word.term} titleClassName={WORD_FONT_CLASS} onClose={onClose} footer={footer}>
+    <Modal
+      open
+      title={word.term}
+      titleClassName={WORD_FONT_CLASS}
+      titleLang={termLang}
+      onClose={onClose}
+      footer={footer}
+    >
       <div className="grid gap-3">
         {word.reading !== null && (
           <p className={WORD_FONT_CLASS} lang={termLang} dir="auto">
