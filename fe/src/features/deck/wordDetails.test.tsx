@@ -82,11 +82,21 @@ const fakeSession = () => {
     return Effect.succeed(answer(request) as never);
   };
 
+  // The list is the fake's own, so the refetch after a write reads back what the write saved.
+  let words = [listed(EAT), listed(DRINK)];
+
   const client = {
     library: {
-      listWords: record("listWords", () => ({ items: [listed(EAT), listed(DRINK)], nextCursor: null })),
-      updateWord: record("updateWord", (request) => ({ ...EAT, ...request.payload })),
-      deleteWord: record("deleteWord", () => undefined),
+      listWords: record("listWords", () => ({ items: words, nextCursor: null })),
+      updateWord: record("updateWord", (request) => {
+        const saved = { ...EAT, ...request.payload };
+        words = words.map((entry) => (entry.slug === EAT.slug ? { ...entry, ...saved } : entry));
+
+        return saved;
+      }),
+      deleteWord: record("deleteWord", (request) => {
+        words = words.filter((entry) => entry.slug !== request.params.wordSlug);
+      }),
     },
     insight: {
       deckStats: record("deckStats", () => deckStats),
@@ -106,7 +116,7 @@ const fakeSession = () => {
 };
 
 const renderDeck = async () => {
-  render(<DeckView deck={deck} onDeckChanged={() => {}} />);
+  render(<DeckView deck={deck} />);
 
   await screen.findByRole("button", { name: "Open 食べる" });
 };

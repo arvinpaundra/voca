@@ -1,15 +1,17 @@
-import { describe, expect, mock, spyOn, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DateTime, Effect, Result } from "effect";
-import type { DeckDetail, DeckSnooze } from "@voca/contract";
+import type { DeckDetail, DeckSlug, DeckSnooze } from "@voca/contract";
 import type { ApiClient } from "../../lib/api";
 import { session } from "../../lib/appSession";
-import { DeckView } from "./DeckView";
+import { deckQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
+import { DeckPage } from "./DeckPage";
 
 // The deck page's snooze: the header badge, and Snooze or Unsnooze in the ⋯ menu for this one deck.
 
-const SLUG = "DECK000001";
+const SLUG = "DECK000001" as DeckSlug;
 
 const deckWith = (snooze: DeckSnooze | null): DeckDetail =>
   ({
@@ -29,9 +31,12 @@ const deckWith = (snooze: DeckSnooze | null): DeckDetail =>
     dueCount: 3,
   }) as unknown as DeckDetail;
 
-// The words load after the first render; waiting for the empty list keeps that update inside the test.
-const renderDeck = async (deck: DeckDetail, onDeckChanged: (deck: DeckDetail) => void) => {
-  render(<DeckView deck={deck} onDeckChanged={onDeckChanged} />);
+// The deck page reads the deck from the cache; the words load after the first render, so waiting for the empty
+// list keeps that update inside the test.
+const renderDeck = async (deck: DeckDetail) => {
+  queryClient.setQueryData(deckQuery(SLUG).queryKey, deck);
+
+  render(<DeckPage deckSlug={SLUG} />);
 
   await screen.findByText("No words yet");
 };
@@ -46,35 +51,45 @@ const stats = {
   reviewsPerDay: [],
 };
 
-// A fake API client: `snoozeDecks` and `unsnoozeDecks` record their payload and answer with the deck, snoozed or not.
-const fakeSession = (answer: (endpoint: string) => unknown) => {
-  const requests: { endpoint: string; payload: unknown }[] = [];
+// A fake API client whose deck lives in the fake: a write saves `after`, and the refetch that follows reads it back.
+const fakeSession = (after: DeckDetail) => {
+  let current: DeckDetail | null = null;
+  const requests: string[] = [];
 
-  const endpoint = (name: string) => (request: { payload?: unknown }) => {
-    requests.push({ endpoint: name, payload: request?.payload });
+  const write = (name: string) => () => {
+    requests.push(name);
+    current = after;
 
-    return Effect.succeed(answer(name) as never);
+    return Effect.succeed([after] as never);
   };
 
   const client = {
     library: {
+      getDeck: () => {
+        requests.push("getDeck");
+
+        return Effect.succeed(current as never);
+      },
       listWords: () => Effect.succeed({ items: [], nextCursor: null } as never),
-      snoozeDecks: endpoint("snoozeDecks"),
-      unsnoozeDecks: endpoint("unsnoozeDecks"),
+      snoozeDecks: write("snoozeDecks"),
+      unsnoozeDecks: write("unsnoozeDecks"),
     },
     insight: { deckStats: () => Effect.succeed(stats as never) },
     me: { get: () => Effect.succeed({ settings: { timezone: "UTC" } } as never) },
   };
 
-  return spyOn(session, "call").mockImplementation(async (f) =>
+  const spy = spyOn(session, "call").mockImplementation(async (f) =>
     Result.succeed(await Effect.runPromise(f(client as unknown as ApiClient))),
   );
+
+  return { requests, spy };
 };
 
-describe("DeckView snooze", () => {
+describe("DeckPage snooze", () => {
   test("a snoozed deck shows its end in the header", async () => {
-    const spy = fakeSession(() => []);
-    await renderDeck(deckWith({ until: DateTime.makeUnsafe("2026-11-28T04:00:00.000Z") }), () => {});
+    const { spy } = fakeSession(deckWith(null));
+    await renderDeck(deckWith({ until: DateTime.makeUnsafe("2026-11-28T04:00:00.000Z") }));
+
     expect(screen.getByText("Snoozed until Sat 28 Nov").classList.contains("badge")).toBe(true);
 
     spy.mockRestore();
@@ -82,40 +97,38 @@ describe("DeckView snooze", () => {
 
   test("the ⋯ menu offers Unsnooze for a snoozed deck and saves it", async () => {
     const user = userEvent.setup();
-    const onDeckChanged = mock((_deck: DeckDetail) => {});
-    const spy = fakeSession(() => [{ ...deckWith(null), snooze: null }]);
-    await renderDeck(deckWith({ until: null }), onDeckChanged);
+    const { requests, spy } = fakeSession(deckWith(null));
+    await renderDeck(deckWith({ until: null }));
 
     await user.click(screen.getByRole("button", { name: "More actions" }));
     await user.click(screen.getByRole("menuitem", { name: "Unsnooze deck" }));
 
-    await waitFor(() => expect(onDeckChanged).toHaveBeenCalledTimes(1));
-    expect(onDeckChanged.mock.calls[0]?.[0]?.snooze).toBeNull();
+    await waitFor(() => expect(requests).toEqual(["unsnoozeDecks", "getDeck"]));
+    await user.click(screen.getByRole("button", { name: "More actions" }));
+    expect(screen.getByRole("menuitem", { name: "Snooze deck" })).toBeTruthy();
 
     spy.mockRestore();
   });
 
   test("the ⋯ menu snoozes an awake deck for the chosen days", async () => {
     const user = userEvent.setup();
-    const onDeckChanged = mock((_deck: DeckDetail) => {});
-    const spy = fakeSession(() => [
-      { ...deckWith(null), snooze: { until: DateTime.makeUnsafe("2026-11-28T04:00:00.000Z") } },
-    ]);
-    await renderDeck(deckWith(null), onDeckChanged);
+    const snoozed = deckWith({ until: DateTime.makeUnsafe("2026-11-28T04:00:00.000Z") });
+    const { requests, spy } = fakeSession(snoozed);
+    await renderDeck(deckWith(null));
 
     await user.click(screen.getByRole("button", { name: "More actions" }));
     await user.click(screen.getByRole("menuitem", { name: "Snooze deck" }));
     await user.click(within(screen.getByRole("dialog", { name: "Snooze deck" })).getByRole("button", { name: "7 days" }));
 
-    await waitFor(() => expect(onDeckChanged).toHaveBeenCalledTimes(1));
-    expect(onDeckChanged.mock.calls[0]?.[0]?.snooze).toEqual({ until: DateTime.makeUnsafe("2026-11-28T04:00:00.000Z") });
+    expect(await screen.findByText("Snoozed until Sat 28 Nov")).toBeTruthy();
+    expect(requests).toEqual(["snoozeDecks", "getDeck"]);
 
     spy.mockRestore();
   });
 
   test("the header links to the deck's flashcards", async () => {
-    const spy = fakeSession(() => []);
-    await renderDeck(deckWith(null), () => {});
+    const { spy } = fakeSession(deckWith(null));
+    await renderDeck(deckWith(null));
 
     const link = screen.getByRole("link", { name: "Flashcards" });
     expect(link.getAttribute("href")).toBe(`/app/decks/${SLUG}/flashcards`);

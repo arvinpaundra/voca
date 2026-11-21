@@ -1,16 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DateTime, Option, Result, Schema } from "effect";
 import { ArrowLeft, Pencil } from "lucide-react";
-import {
-  DeckSlug,
-  WordSlug,
-  wordLabels,
-  type DeckDetail,
-  type DeckDrill,
-  type Drill,
-  type WordStats,
-  type WordWithCards,
-} from "@voca/contract";
+import { DeckSlug, WordSlug, wordLabels, type Drill, type WordWithCards } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
@@ -18,122 +10,79 @@ import { Menu } from "../../components/Menu";
 import { Skeleton } from "../../components/Skeleton";
 import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
+import { deckDrillsQuery, deckQuery, meQuery, wordStatsQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { DeleteWordModal } from "../deck/DeleteWordModal";
 import { WordModal } from "../deck/WordModal";
 import { DrillPanel } from "./DrillPanel";
 import { WordHero } from "./WordHero";
 import { wordTabs } from "./wordTabs";
 
-type Loaded = {
-  deck: DeckDetail;
-  stats: WordStats;
-  drills: readonly DeckDrill[];
-  timezone: string;
-};
-
-type State = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; data: Loaded };
-
 // The word page (FR-6, FR-8): one drill at a time, with the hard toggle per drill.
 export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: string }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
+  // URL segments are plain strings; the API takes slugs, so a malformed one never leaves the page.
+  const deck = Option.getOrNull(Schema.decodeUnknownOption(DeckSlug)(deckSlug));
+  const word = Option.getOrNull(Schema.decodeUnknownOption(WordSlug)(wordSlug));
+
+  if (deck === null || word === null) {
+    return (
+      <>
+        <BackToDeck deckSlug={deckSlug} title="Deck" />
+        <ErrorState message="This word could not be loaded." />
+      </>
+    );
+  }
+
+  return <LoadedWord deckSlug={deck} wordSlug={word} />;
+}
+
+function LoadedWord({ deckSlug, wordSlug }: { deckSlug: DeckSlug; wordSlug: WordSlug }) {
+  const deckResult = useQuery(deckQuery(deckSlug), queryClient);
+  const statsResult = useQuery(wordStatsQuery(wordSlug), queryClient);
+  const drillsResult = useQuery(deckDrillsQuery(deckSlug), queryClient);
+  const meResult = useQuery(meQuery(), queryClient);
+
   const [selected, setSelected] = useState<Drill | null>(null);
   const [hardBusy, setHardBusy] = useState(false);
   const [hardError, setHardError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    let active = true;
+  const deck = deckResult.data;
+  const stats = statsResult.data;
+  const drills = drillsResult.data;
+  const me = meResult.data;
 
-    // URL segments are plain strings; the API takes slugs, so a malformed one never leaves the page.
-    const deck = Schema.decodeUnknownOption(DeckSlug)(deckSlug);
-    const word = Schema.decodeUnknownOption(WordSlug)(wordSlug);
-    if (Option.isNone(deck) || Option.isNone(word)) {
-      setState({ kind: "failed" });
-      return;
-    }
+  if (deck === undefined || stats === undefined || drills === undefined || me === undefined) {
+    const failed = [deckResult, statsResult, drillsResult, meResult].some((result) => result.isError);
 
-    Promise.all([
-      session.call((client) => client.library.getDeck({ params: { deckSlug: deck.value } })),
-      session.call((client) => client.insight.wordStats({ params: { wordSlug: word.value } })),
-      session.call((client) => client.study.deckDrills({ params: { deckSlug: deck.value } })),
-      session.call((client) => client.me.get()),
-    ]).then(([deckResult, statsResult, drillsResult, meResult]) => {
-      if (!active) return;
-
-      if (
-        Result.isSuccess(deckResult) &&
-        Result.isSuccess(statsResult) &&
-        Result.isSuccess(drillsResult) &&
-        Result.isSuccess(meResult)
-      ) {
-        setState({
-          kind: "ready",
-          data: {
-            deck: deckResult.success,
-            stats: statsResult.success,
-            drills: drillsResult.success,
-            timezone: meResult.success.settings.timezone,
-          },
-        });
-      } else {
-        setState({ kind: "failed" });
-      }
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [deckSlug, wordSlug, reloadKey]);
-
-  const toggleHard = useCallback(
-    async (drill: Drill, hard: boolean) => {
-      const word = Option.getOrNull(Schema.decodeUnknownOption(WordSlug)(wordSlug));
-      if (word === null) return;
-
-      setHardBusy(true);
-      setHardError(null);
-
-      const result = await session.call((client) =>
-        hard
-          ? client.study.markHard({ params: { wordSlug: word, drill } })
-          : client.study.unmarkHard({ params: { wordSlug: word, drill } }),
-      );
-
-      setHardBusy(false);
-      if (Result.isSuccess(result)) setReloadKey((key) => key + 1);
-      else setHardError("Could not change the hard mark. Try again.");
-    },
-    [wordSlug],
-  );
-
-  const back = (
-    <a className="back" href={`/app/decks/${deckSlug}`}>
-      <ArrowLeft className="i" aria-hidden="true" />
-      {state.kind === "ready" ? state.data.deck.title : "Deck"}
-    </a>
-  );
-
-  if (state.kind === "loading") {
     return (
       <>
-        {back}
-        <Skeleton label="Loading word" rows={4} />
+        <BackToDeck deckSlug={deckSlug} title="Deck" />
+        {failed ? (
+          <ErrorState message="This word could not be loaded." onRetry={() => void queryClient.invalidateQueries()} />
+        ) : (
+          <Skeleton label="Loading word" rows={4} />
+        )}
       </>
     );
   }
 
-  if (state.kind === "failed") {
-    return (
-      <>
-        {back}
-        <ErrorState message="This word could not be loaded." onRetry={() => setReloadKey((key) => key + 1)} />
-      </>
-    );
-  }
+  const toggleHard = async (drill: Drill, hard: boolean) => {
+    setHardBusy(true);
+    setHardError(null);
 
-  const { deck, stats, drills, timezone } = state.data;
+    const result = await session.call((client) =>
+      hard
+        ? client.study.markHard({ params: { wordSlug, drill } })
+        : client.study.unmarkHard({ params: { wordSlug, drill } }),
+    );
+
+    setHardBusy(false);
+    if (Result.isSuccess(result)) void queryClient.invalidateQueries();
+    else setHardError("Could not change the hard mark. Try again.");
+  };
+
   const tabs = wordTabs(drills, stats.drills);
   const current = selected !== null && tabs.some((tab) => tab.value === selected) ? selected : (tabs[0]?.value ?? null);
   const panel = stats.drills.find((entry) => entry.drill === current);
@@ -143,7 +92,7 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
 
   return (
     <>
-      {back}
+      <BackToDeck deckSlug={deckSlug} title={deck.title} />
 
       <div className="page-head">
         <WordHero word={stats.word} termLang={deck.termLang} meaningLang={deck.meaningLang} />
@@ -170,7 +119,7 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
         <DrillPanel
           key={panel.drill}
           stats={panel}
-          timezone={timezone}
+          timezone={me.settings.timezone}
           now={DateTime.nowUnsafe()}
           busy={hardBusy}
           termLang={deck.termLang}
@@ -190,7 +139,7 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
         onClose={() => setEditing(false)}
         onSaved={() => {
           setEditing(false);
-          setReloadKey((key) => key + 1);
+          void queryClient.invalidateQueries();
         }}
       />
 
@@ -200,5 +149,14 @@ export function WordPage({ deckSlug, wordSlug }: { deckSlug: string; wordSlug: s
         onDeleted={() => window.location.assign(`/app/decks/${deckSlug}`)}
       />
     </>
+  );
+}
+
+function BackToDeck({ deckSlug, title }: { deckSlug: string; title: string }) {
+  return (
+    <a className="back" href={`/app/decks/${deckSlug}`}>
+      <ArrowLeft className="i" aria-hidden="true" />
+      {title}
+    </a>
   );
 }
