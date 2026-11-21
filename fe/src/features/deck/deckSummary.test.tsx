@@ -137,6 +137,7 @@ describe("a reading is tagged with its own script", () => {
         deck={deck(termLang)}
         words={[listed("学习", "xuéxí")]}
         now={NOW}
+        onOpen={() => {}}
         onEdit={() => {}}
         onDelete={() => {}}
       />,

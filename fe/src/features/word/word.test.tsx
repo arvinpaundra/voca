@@ -176,16 +176,20 @@ describe("tabs and links", () => {
     ]);
   });
 
-  test("the word page lives under its deck, and the deck's word list links to it", () => {
+  test("the word page lives under its deck, and the deck's word list opens the word's modal", async () => {
+    const user = userEvent.setup();
     expect(wordHref("DECK000001", "WRD000000001")).toBe("/app/decks/DECK000001/words/WRD000000001");
 
     const deck = { slug: "DECK000001", termLang: "ja", meaningLang: "en" } as unknown as Deck;
     const listed = { ...word, cards: [] } as unknown as WordWithCards;
-    render(<WordList deck={deck} words={[listed]} now={NOW} onEdit={() => {}} onDelete={() => {}} />);
+    const onOpen = mock((_listed: WordWithCards) => {});
+    render(<WordList deck={deck} words={[listed]} now={NOW} onOpen={onOpen} onEdit={() => {}} onDelete={() => {}} />);
 
-    const link = screen.getByRole("link", { name: /食べる/ });
-    expect(link.getAttribute("href")).toBe("/app/decks/DECK000001/words/WRD000000001");
-    expect(link.closest(".w-term")).not.toBeNull();
+    const button = screen.getByRole("button", { name: "Open 食べる" });
+    expect(button.closest(".w-term")).not.toBeNull();
+
+    await user.click(button);
+    expect(onOpen).toHaveBeenCalledWith(listed);
   });
 });
 

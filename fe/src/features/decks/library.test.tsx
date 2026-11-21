@@ -131,7 +131,7 @@ describe("WordList", () => {
   ];
 
   test("a .word-list of .word rows: term with its reading, meaning and example", () => {
-    render(<WordList deck={owner} words={words} now={NOW} onEdit={() => {}} onDelete={() => {}} />);
+    render(<WordList deck={owner} words={words} now={NOW} onOpen={() => {}} onEdit={() => {}} onDelete={() => {}} />);
 
     const list = screen.getByRole("list", { name: "Words" });
     expect(list.classList.contains("word-list")).toBe(true);
@@ -149,7 +149,7 @@ describe("WordList", () => {
   });
 
   test("each word's state badge: due, learning, mature (21+ days), new", () => {
-    render(<WordList deck={owner} words={words} now={NOW} onEdit={() => {}} onDelete={() => {}} />);
+    render(<WordList deck={owner} words={words} now={NOW} onOpen={() => {}} onEdit={() => {}} onDelete={() => {}} />);
 
     const list = screen.getByRole("list", { name: "Words" });
     const badges = [...list.querySelectorAll(".w-state .badge")];
@@ -165,7 +165,7 @@ describe("WordList", () => {
     const user = userEvent.setup();
     const onEdit = mock((_word: WordWithCards) => {});
     const onDelete = mock((_word: WordWithCards) => {});
-    render(<WordList deck={owner} words={words} now={NOW} onEdit={onEdit} onDelete={onDelete} />);
+    render(<WordList deck={owner} words={words} now={NOW} onOpen={() => {}} onEdit={onEdit} onDelete={onDelete} />);
 
     const edit = screen.getByRole("button", { name: "Edit 飲む" });
     expect(edit.classList.contains("btn-icon")).toBe(true);
