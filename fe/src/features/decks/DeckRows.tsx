@@ -84,7 +84,9 @@ export function DeckRows({
               </div>
 
               <div className="deck-foot">
-                {deck.wordCount === 0 ? (
+                {snoozeLabel(deck.snooze, timezone) !== null ? (
+                  <span>not implemented: FD2</span>
+                ) : deck.wordCount === 0 ? (
                   <Button
                     variant="secondary"
                     size="sm"
