@@ -63,6 +63,7 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
   const footer =
     own === undefined ? undefined : (
       <>
+        <span>not implemented: WR</span>
         <Button variant="secondary" onClick={() => own.onEdit(word)}>
           Edit word
         </Button>

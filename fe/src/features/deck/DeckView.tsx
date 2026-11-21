@@ -190,6 +190,7 @@ export function DeckView({ deck }: DeckViewProps) {
 
   return (
     <>
+      <p>not implemented: WR</p>
       <WordDetailsModal
         word={openedWord}
         termLang={deck.termLang}

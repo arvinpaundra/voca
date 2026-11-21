@@ -32,6 +32,7 @@ export function PreviewList({
   return (
     <>
       <ul className="preview-list" aria-label="Preview">
+        <li>not implemented: WR</li>
         {words.map((word) => (
           <li key={word.slug}>
             <span className="t" lang={termLang} dir="auto">
