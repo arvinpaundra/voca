@@ -141,7 +141,14 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
           return row.id === openId ? (
             <div key={row.id} className="word-item is-open">
               <div className="word-item-head">
-                <span className="muted">Word {position}</span>
+                <button
+                  type="button"
+                  className="word-fold muted"
+                  aria-expanded="true"
+                  onClick={() => setError("not implemented: AW")}
+                >
+                  Word {position}
+                </button>
 
                 {count > 1 && (
                   <button
@@ -171,7 +178,7 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
           ) : (
             <div key={row.id} className="word-item">
               <div className="word-item-fold">
-                <button type="button" className="word-fold" onClick={() => setOpenId(row.id)}>
+                <button type="button" className="word-fold" aria-expanded="false" onClick={() => setOpenId(row.id)}>
                   {`${row.draft.term} · ${row.draft.meaning}`}
                 </button>
 
