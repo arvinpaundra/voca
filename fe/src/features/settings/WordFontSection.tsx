@@ -28,17 +28,19 @@ export function WordFontSection() {
   return (
     <SettingsSection title="Display">
       <SettingsRow label="Word font" help="The typeface for words, their readings and examples">
-        <Select
-          label="Word font"
-          value={font}
-          options={WORD_FONTS.map((candidate) => ({ value: candidate, label: LABELS[candidate] }))}
-          onChange={choose}
-        />
-      </SettingsRow>
+        <div>
+          <Select
+            label="Word font"
+            value={font}
+            options={WORD_FONTS.map((candidate) => ({ value: candidate, label: LABELS[candidate] }))}
+            onChange={choose}
+          />
 
-      <p className={WORD_FONT_CLASS} style={{ fontSize: 20, marginTop: 12 }}>
-        <span lang="ja">勉強</span> · <span lang="id">belajar</span>
-      </p>
+          <p className={WORD_FONT_CLASS} style={{ fontSize: 20, marginTop: 8 }}>
+            <span lang="ja">勉強</span> · <span lang="id">belajar</span>
+          </p>
+        </div>
+      </SettingsRow>
     </SettingsSection>
   );
 }

@@ -7,6 +7,7 @@ export function Modal({
   open,
   title,
   titleClassName,
+  titleLang,
   description,
   onClose,
   footer,
@@ -15,6 +16,8 @@ export function Modal({
   open: boolean;
   title: string;
   titleClassName?: string | undefined;
+  // The language of the title, when it is word content in a language the word font covers.
+  titleLang?: string | undefined;
   description?: string;
   onClose: () => void;
   footer?: ReactNode;
@@ -62,7 +65,7 @@ export function Modal({
       <div className="modal">
         <div className="modal-head">
           <div>
-            <h3 id={titleId} className={titleClassName}>
+            <h3 id={titleId} className={titleClassName} lang={titleLang}>
               {title}
             </h3>
             {description !== undefined && <p>{description}</p>}

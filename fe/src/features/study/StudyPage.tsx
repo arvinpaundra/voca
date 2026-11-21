@@ -27,7 +27,7 @@ import { SessionSummary } from "./SessionSummary";
 import { advance } from "./queue";
 import { segments, tally } from "./progress";
 import { isHardStudy, studyReturnHref } from "./returnTo";
-import { answerLang } from "./scriptLang";
+import { answerLang, promptLang } from "./scriptLang";
 import { QuestionPrompt } from "./QuestionPrompt";
 import { requestedSize, shortSessionNotice } from "./shortSession";
 import { SessionNotice } from "./SessionNotice";
@@ -295,6 +295,15 @@ function StudyFlow({ studySession }: { studySession: Session }) {
   const verdictTerm = promptIsTerm ? head.prompt.text : correctText;
   const verdictAnswer = promptIsTerm ? correctText : head.prompt.text;
 
+  // The verdict's term is the prompt when the prompt is a term or a reading, else the correct option: each text
+  // takes the language of the field it came from, so a reading is never tagged with the term's language.
+  const verdictTermLang = promptIsTerm
+    ? promptLang(head.drill, studySession.termLang)
+    : answerLang(head.drill, studySession.termLang);
+  const verdictAnswerLang = promptIsTerm
+    ? answerLang(head.drill, studySession.termLang)
+    : promptLang(head.drill, studySession.termLang);
+
   return (
     <div className="study">
       <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
@@ -339,6 +348,8 @@ function StudyFlow({ studySession }: { studySession: Session }) {
             answer={verdictAnswer}
             reading={feedback.result.reading ?? null}
             readingLang={readingLang(studySession.termLang)}
+            termLang={verdictTermLang}
+            answerLang={verdictAnswerLang}
             onNext={next}
           />
         )}
