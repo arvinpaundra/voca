@@ -3,6 +3,7 @@ import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiMiddleware, HttpApiSchem
 import { CommunityGroup } from "./community.ts"
 import { Unauthorized } from "./errors.ts"
 import { AuthGroup, MeGroup } from "./identity.ts"
+import { ImportEventsGroup, ImportsGroup } from "./imports.ts"
 import { InsightGroup } from "./insight.ts"
 import { LibraryGroup } from "./library.ts"
 import type { LearnerSlug } from "./slug.ts"
@@ -41,6 +42,8 @@ export class VocaApi extends HttpApi.make("voca")
   .add(CommunityGroup.middleware(Authorization))
   .add(StudyGroup.middleware(Authorization))
   .add(InsightGroup.middleware(Authorization))
+  .add(ImportsGroup.middleware(Authorization))
+  .add(ImportEventsGroup)
   .prefix("/api")
   .annotateMerge(OpenApi.annotations({ title: "Voca API" }))
 {}

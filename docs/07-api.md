@@ -49,6 +49,18 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | POST | `/decks/:deckSlug/import` | `multipart/form-data` field `file` (≤ 5 MB) → `{imported, skippedDuplicates}` |
 | GET | `/decks/:deckSlug/export` | → `text/csv` |
 
+### Imports (FR-29)
+
+| Method | Path | Body → Response |
+|---|---|---|
+| POST | `/imports` | `multipart/form-data`: `termLang`, `meaningLang`, `files` (1–20, each ≤ 5 MB) → `ImportBatch`; more than 20 → `400`, nothing stored |
+| GET | `/imports` | → `ImportBatch[]`: not dismissed, newest first |
+| DELETE | `/imports/:batchSlug` | → `204`; `409 ImportRunning` while a file is pending or running |
+| POST | `/imports/events/ticket` | → `{ticket}`: single use, valid 30 s |
+| GET | `/imports/events` | `?ticket` (no bearer) → `text/event-stream` of `{batch, status: running\|finished}`; `401` for an unknown, used or expired ticket |
+
+`ImportBatch` is `{slug, termLang, meaningLang, createdAt, files: ImportFile[]}` in upload order; `ImportFile` is `{name, status: pending|running|done|failed, deck: {slug, title} | null, imported, skippedDuplicates, errors (≤100), totalErrors}`.
+
 Every `Deck` carries `snooze: {until: Instant | null} | null`: `null` when the deck is not snoozed or a timed snooze has ended. A snoozed deck's words are left out of `/notifications`, `/hard-words` and hard-words sessions; its own deck page and sessions are unchanged.
 
 ## Community
@@ -117,5 +129,6 @@ Session = {
 | `DeckNotPublic` | 404 | Forking a private deck. Returns 404 so it doesn't reveal that the deck exists |
 | `ImportRejected` | 422 | `{errors: [{row, column, message}] (≤100), totalErrors}` |
 | `PayloadTooLarge` | 413 | CSV larger than 5 MB |
+| `ImportRunning` | 409 | Dismissing a batch that still has a pending or running file |
 
 Ownership is checked in the application layer by scoping every query with `learner_id`. As a result, a resource owned by someone else returns `NotFound`, and `Forbidden` is used only for actions on a public deck that the Learner does not own.

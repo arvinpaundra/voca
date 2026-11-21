@@ -108,7 +108,9 @@ describe("endpoint inventory", () => {
     "post /api/sessions", "get /api/sessions/active", "post /api/sessions/{sessionSlug}/answers",
     "post /api/sessions/{sessionSlug}/abandon",
     "get /api/hard-words", "put /api/words/{wordSlug}/drills/{drill}/hard", "delete /api/words/{wordSlug}/drills/{drill}/hard",
-    "get /api/words/{wordSlug}/stats", "get /api/decks/{deckSlug}/stats", "get /api/me/stats", "get /api/notifications"
+    "get /api/words/{wordSlug}/stats", "get /api/decks/{deckSlug}/stats", "get /api/me/stats", "get /api/notifications",
+    "post /api/imports", "get /api/imports", "delete /api/imports/{batchSlug}", "post /api/imports/events/ticket",
+    "get /api/imports/events"
   ]
 
   const spec = OpenApi.fromApi(VocaApi)
@@ -120,9 +122,10 @@ describe("endpoint inventory", () => {
     expect(actual.sort()).toEqual([...expected].sort())
   })
 
-  test("bearer auth everywhere except /auth/* and /healthz", () => {
+  // The import event stream authenticates with a single-use ticket in its query: EventSource can't send a header.
+  test("bearer auth everywhere except /auth/*, /healthz and the import event stream", () => {
     for (const [path, item] of Object.entries(spec.paths)) {
-      const isPublic = path.startsWith("/api/auth/") || path === "/api/healthz"
+      const isPublic = path.startsWith("/api/auth/") || path === "/api/healthz" || path === "/api/imports/events"
       for (const op of Object.values(item as Record<string, { security?: unknown[] }>)) {
         expect([path, (op.security?.length ?? 0) > 0]).toEqual([path, !isPublic])
       }
