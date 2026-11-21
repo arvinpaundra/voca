@@ -3,13 +3,16 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY contract/package.json contract/
 COPY be/package.json be/
+# Only be's dependencies are installed, but the root workspace list needs every member's manifest.
+COPY fe/package.json fe/
 RUN bun install --frozen-lockfile --production --filter @voca/be
 COPY contract contract
 COPY be be
 RUN bun build be/src/main.ts --compile --minify --target=bun-linux-arm64-musl --outfile /voca-api
 
 FROM alpine:3.22
-RUN adduser -D -u 10001 app
+LABEL org.opencontainers.image.source=https://github.com/arvinpaundra/voca
+RUN apk add --no-cache libstdc++ libgcc && adduser -D -u 10001 app
 COPY --from=build /voca-api /voca-api
 USER 10001
 EXPOSE 8000

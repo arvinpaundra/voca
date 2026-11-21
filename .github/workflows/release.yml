@@ -1,0 +1,103 @@
+name: release
+on:
+  push:
+    tags: ["v*.*.*"]
+  # Rolls back to a tag whose run is too old for GitHub's re-run button.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release, e.g. v1.0.0"
+        required: true
+permissions:
+  contents: read
+  packages: write
+# One release at a time; a second tag waits instead of racing the first rollout.
+concurrency:
+  group: release
+  cancel-in-progress: false
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+  IMAGE: ghcr.io/${{ github.repository }}-api
+  API_HOST: ${{ vars.API_HOST }}
+  API_TARGET_IP: ${{ vars.API_TARGET_IP }}
+jobs:
+  api:
+    runs-on: ubuntu-24.04-arm # the kube-oci node is arm64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
+
+      - name: image
+        run: |
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker build -f be/Containerfile -t "$IMAGE:$TAG" .
+          docker push "$IMAGE:$TAG"
+
+      - name: kubeconfig
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_B64" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          kubectl apply -f deploy/k8s/namespace.yaml
+
+          envsubst < deploy/k8s/secret.yaml | kubectl apply -f - > /dev/null
+
+      # The old pod keeps serving until the new one is ready (maxUnavailable: 0). A pod that never becomes
+      # ready is rolled back so its ReplicaSet doesn't linger; a release that became healthy is never undone.
+      - name: rollout
+        run: |
+          kubectl apply -f deploy/k8s/service.yaml -f deploy/k8s/ratelimit.yaml
+
+          envsubst '${API_HOST} ${API_TARGET_IP}' < deploy/k8s/ingress.yaml | kubectl apply -f -
+
+          sed -e "s|IMAGE|$IMAGE:$TAG|" -e "s|RELEASE|$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT|" deploy/k8s/deployment.yaml \
+            | kubectl apply -f -
+
+          if ! kubectl -n voca rollout status deployment/voca-api --timeout=180s; then
+            kubectl -n voca describe pods -l app=voca-api | tail -n 30
+            kubectl -n voca rollout undo deployment/voca-api || true
+            echo "::error::$TAG never became healthy; the previous version keeps serving"
+            exit 1
+          fi
+
+  web:
+    needs: api # the web app only ships once the API it calls is healthy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - run: bun install --frozen-lockfile
+
+      - name: build
+        env:
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        run: bun run --filter @voca/fe build
+
+      - name: pages
+        working-directory: fe
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          envsubst '${API_HOST}' < wrangler.toml > wrangler.toml.tmp
+          mv wrangler.toml.tmp wrangler.toml
+
+          bunx wrangler@4.20.0 pages deploy --branch master \
+            --commit-hash "$(git rev-parse HEAD)" --commit-message "$TAG"
