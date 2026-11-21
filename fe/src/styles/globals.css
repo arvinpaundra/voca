@@ -102,16 +102,16 @@ ruby rt {
 }
 
 :root[data-word-font="handwriting"] .word-font {
-  font-family: "Klee One", cursive;
+  font-family: "Klee One", serif;
 }
 :root[data-word-font="handwriting"] .word-font:lang(ja) {
-  font-family: "Klee One", cursive;
+  font-family: "Klee One", serif;
 }
 :root[data-word-font="handwriting"] .word-font:lang(zh-Hans) {
   font-family: "Noto Serif SC", serif;
 }
 :root[data-word-font="handwriting"] .word-font:lang(zh-Hant) {
-  font-family: "LXGW WenKai TC", cursive;
+  font-family: "LXGW WenKai TC", serif;
 }
 :root[data-word-font="handwriting"] .word-font:lang(ko) {
   font-family: "Noto Serif KR", serif;
