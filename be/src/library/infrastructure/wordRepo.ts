@@ -227,6 +227,23 @@ export const WordRepoLive = Layer.effect(
         ORDER BY w.created_at ASC, w.id ASC`
     })
 
+    const takenKeyRows = SqlSchema.findAll({
+      Request: Schema.Struct({
+        deckId: Schema.BigInt,
+        termKeys: Schema.Array(Schema.String),
+        readingKeys: Schema.Array(Schema.String)
+      }),
+      Result: Schema.Struct({
+        termKey: Schema.String,
+        readingKey: Schema.String
+      }),
+      execute: ({ deckId, termKeys, readingKeys }) => sql`
+        SELECT DISTINCT w.term_key AS "termKey", w.reading_key AS "readingKey"
+        FROM unnest(${termKeys}::text[], ${readingKeys}::text[]) AS k(term_key, reading_key)
+        JOIN words w ON w.term_key = k.term_key AND w.reading_key = k.reading_key
+        WHERE w.deck_id = ${deckId} AND w.deleted_at IS NULL`
+    })
+
     const liveRows = SqlSchema.findAll({
       Request: Schema.BigInt,
       Result: Schema.Struct({
@@ -371,6 +388,13 @@ export const WordRepoLive = Layer.effect(
 
         return sql`INSERT INTO words ${sql.insert(rows)}`.pipe(Effect.asVoid, Effect.orDie)
       },
+
+      findTakenKeys: (deckId, keys) =>
+        takenKeyRows({
+          deckId,
+          termKeys: keys.map((key) => key.termKey),
+          readingKeys: keys.map((key) => key.readingKey)
+        }).pipe(Effect.orDie),
 
       insertNew: (deckId, words) => {
         if (words.length === 0) {
