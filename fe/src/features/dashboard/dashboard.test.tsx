@@ -5,7 +5,7 @@ import { DecksSection } from "./DecksSection";
 import { ProgressSection } from "./ProgressSection";
 import { StreakSection } from "./StreakSection";
 import { TodaySection } from "./TodaySection";
-import type { Loadable } from "./useLoadable";
+import type { Loadable } from "./dashboardModel";
 
 // Markup and class names follow the dashboard screen of docs/design/ui-refinement.html (Console).
 

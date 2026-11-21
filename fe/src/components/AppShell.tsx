@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Result } from "effect";
 import type { Learner } from "@voca/contract";
 import { Compass, Flame, Layers, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, Settings, X, type LucideIcon } from "lucide-react";
 import { session, tokenStore } from "../lib/appSession";
-import { loadCurrentLearner } from "../lib/signIn";
+import { meQuery, notificationsQuery } from "../lib/queries";
+import { queryClient } from "../lib/queryClient";
 import { Avatar } from "./Avatar";
 import { cx } from "./cx";
 import { IconButton } from "./IconButton";
@@ -153,37 +154,16 @@ function SideUser({ learner, collapsed }: { learner: Learner; collapsed: boolean
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const [learner, setLearner] = useState<Learner | null>(null);
-  const [due, setDue] = useState(0);
   const [collapsed, setCollapsed] = useState<boolean>(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-
-    loadCurrentLearner(session, tokenStore).then((found) => {
-      if (active) setLearner(found);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Without a refresh token there is no session to load the Learner with, so the query stays off.
+  const meState = useQuery({ ...meQuery(), enabled: tokenStore.getRefresh() !== null }, queryClient);
+  const learner: Learner | null = meState.data ?? null;
 
   // The Decks badge is a hint: when the call fails it just stays hidden.
-  useEffect(() => {
-    let active = true;
-
-    void session.call((client) => client.insight.notifications()).then((result) => {
-      if (!active || !Result.isSuccess(result)) return;
-
-      setDue(result.success.decks.reduce((sum, deck) => sum + deck.due, 0));
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const notifications = useQuery(notificationsQuery(), queryClient);
+  const due = notifications.data?.decks.reduce((sum, deck) => sum + deck.due, 0) ?? 0;
 
   const toggleCollapsed = () => {
     const next = !collapsed;

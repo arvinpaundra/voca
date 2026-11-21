@@ -1,5 +1,21 @@
+import type { UseQueryResult } from "@tanstack/react-query";
 import { DateTime } from "effect";
 import type { LearnerStats } from "@voca/contract";
+
+// One dashboard section's data: each section shows its own skeleton or message, so one failed query leaves the rest.
+export type Loadable<T> =
+  | { readonly kind: "loading" }
+  | { readonly kind: "failed" }
+  | { readonly kind: "loaded"; readonly value: T };
+
+/** The section state of a query: failed on error, loaded once data is there, loading before that. */
+export const loadableOf = <T>(query: UseQueryResult<T, unknown>): Loadable<T> => {
+  if (query.isError) return { kind: "failed" };
+
+  if (query.isSuccess) return { kind: "loaded", value: query.data };
+
+  return { kind: "loading" };
+};
 
 /** The study date ("YYYY-MM-DD") `now` falls on: the local date in `timezone`, minus a day before `dayStartHour`. */
 export const studyDate = (now: DateTime.Utc, timezone: string, dayStartHour: number): string => {

@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Result } from "effect";
 import { Check } from "lucide-react";
 import type { Learner, LearnerSettings, Mode, SessionSize } from "@voca/contract";
@@ -11,14 +12,11 @@ import { SegmentedControl } from "../../components/SegmentedControl";
 import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
+import { meQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { changedSettings, draftFrom, parseDraft, type DraftErrors, type SettingsDraft } from "./settingsModel";
 import { SettingsRow } from "./SettingsRow";
 import { SettingsSection } from "./SettingsSection";
-
-type LoadState =
-  | { readonly kind: "loading" }
-  | { readonly kind: "failed" }
-  | { readonly kind: "loaded"; readonly learner: Learner };
 
 type Notice = { readonly kind: "saved" } | { readonly kind: "failed" } | null;
 
@@ -63,13 +61,7 @@ function ProfileSection({ learner }: { learner: Learner }) {
   );
 }
 
-function StudyPreferences({
-  settings,
-  onSaved,
-}: {
-  settings: LearnerSettings;
-  onSaved: (learner: Learner) => void;
-}) {
+function StudyPreferences({ settings }: { settings: LearnerSettings }) {
   const [draft, setDraft] = useState<SettingsDraft>(() => draftFrom(settings));
   const [errors, setErrors] = useState<DraftErrors>({});
   const [saving, setSaving] = useState(false);
@@ -109,7 +101,8 @@ function StudyPreferences({
     setSaving(false);
 
     if (Result.isSuccess(result)) {
-      onSaved(result.success);
+      // The saved settings come back through the cached learner, so every page that shows them refetches.
+      void queryClient.invalidateQueries();
       setNotice({ kind: "saved" });
       return;
     }
@@ -234,38 +227,21 @@ function StudyPreferences({
 }
 
 export function SettingsPage() {
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
-
-  useEffect(() => {
-    let active = true;
-
-    void session.call((client) => client.me.get()).then((result) => {
-      if (!active) return;
-
-      setState(Result.isSuccess(result) ? { kind: "loaded", learner: result.success } : { kind: "failed" });
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const learner = useQuery(meQuery(), queryClient);
 
   return (
     <>
       <PageHeader title="Settings" description="Your account and how study sessions start." />
 
-      {state.kind === "loading" && <Skeleton label="Loading settings" rows={3} />}
+      {learner.isPending && <Skeleton label="Loading settings" rows={3} />}
 
-      {state.kind === "failed" && <ErrorState message="Couldn't load your settings." />}
+      {learner.isError && <ErrorState message="Couldn't load your settings." />}
 
-      {state.kind === "loaded" && (
+      {learner.isSuccess && (
         <div className="settings">
-          <ProfileSection learner={state.learner} />
+          <ProfileSection learner={learner.data} />
 
-          <StudyPreferences
-            settings={state.learner.settings}
-            onSaved={(learner) => setState({ kind: "loaded", learner })}
-          />
+          <StudyPreferences settings={learner.data.settings} />
         </div>
       )}
     </>

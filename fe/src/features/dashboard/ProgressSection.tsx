@@ -4,8 +4,7 @@ import { Card } from "../../components/Card";
 import { cx } from "../../components/cx";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
-import { shortDate, weekdayLetter } from "./dashboardModel";
-import type { Loadable } from "./useLoadable";
+import { shortDate, weekdayLetter, type Loadable } from "./dashboardModel";
 
 export function ProgressSection({ state }: { state: Loadable<LearnerStats> }) {
   if (state.kind === "loading") return <Skeleton label="Loading progress" rows={4} />;

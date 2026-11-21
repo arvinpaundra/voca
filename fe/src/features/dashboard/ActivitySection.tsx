@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DateTime } from "effect";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Learner } from "@voca/contract";
@@ -7,9 +8,9 @@ import { ErrorState } from "../../components/ErrorState";
 import { Heatmap } from "../../components/Heatmap";
 import { IconButton } from "../../components/IconButton";
 import { Skeleton } from "../../components/Skeleton";
-import { session } from "../../lib/appSession";
-import { shiftMonth, studyDate } from "./dashboardModel";
-import { useLoadable } from "./useLoadable";
+import { activityQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
+import { loadableOf, shiftMonth, studyDate } from "./dashboardModel";
 
 const monthName = (month: string) =>
   new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(
@@ -25,10 +26,8 @@ export function ActivitySection({ learner }: { learner: Learner }) {
   const currentMonth = today.slice(0, 7);
 
   const [month, setMonth] = useState(currentMonth);
-  const activity = useLoadable(
-    () => session.call((client) => client.insight.activity({ query: { month } })),
-    [month],
-  );
+  // Each month is its own query: a month seen before renders from the cache, and the others load on first visit.
+  const activity = loadableOf(useQuery(activityQuery(month), queryClient));
 
   return (
     <Card aria-label="Activity">
