@@ -33,11 +33,9 @@ ruby rt {
   font-family: var(--f-term);
 }
 
-/* The word font. System default has no rules here, so the design's own fonts stay. Latin is the base face; the
-   other scripts pick theirs by :lang(). The :root attribute makes these outrank the component rules that set a face. */
-:root[data-word-font="sans"] .word-font {
-  font-family: "Noto Sans", sans-serif;
-}
+/* The word font. System default has no rules here, so the design's own fonts stay. Only CJK word content takes the
+   face: every rule is keyed on a CJK :lang(), so Latin, Arabic, Hebrew and pinyin keep the app font. The :root
+   attribute makes these outrank the component rules that set a face. */
 :root[data-word-font="sans"] .word-font:lang(ja) {
   font-family: "Noto Sans JP", sans-serif;
 }
@@ -50,16 +48,7 @@ ruby rt {
 :root[data-word-font="sans"] .word-font:lang(ko) {
   font-family: "Noto Sans KR", sans-serif;
 }
-:root[data-word-font="sans"] .word-font:lang(ar) {
-  font-family: "Noto Sans Arabic", sans-serif;
-}
-:root[data-word-font="sans"] .word-font:lang(he) {
-  font-family: "Noto Sans Hebrew", sans-serif;
-}
 
-:root[data-word-font="serif"] .word-font {
-  font-family: "Noto Serif", serif;
-}
 :root[data-word-font="serif"] .word-font:lang(ja) {
   font-family: "Noto Serif JP", serif;
 }
@@ -72,16 +61,7 @@ ruby rt {
 :root[data-word-font="serif"] .word-font:lang(ko) {
   font-family: "Noto Serif KR", serif;
 }
-:root[data-word-font="serif"] .word-font:lang(ar) {
-  font-family: "Noto Naskh Arabic", serif;
-}
-:root[data-word-font="serif"] .word-font:lang(he) {
-  font-family: "Noto Serif Hebrew", serif;
-}
 
-:root[data-word-font="rounded"] .word-font {
-  font-family: "M PLUS Rounded 1c", sans-serif;
-}
 :root[data-word-font="rounded"] .word-font:lang(ja) {
   font-family: "Zen Maru Gothic", sans-serif;
 }
@@ -94,16 +74,7 @@ ruby rt {
 :root[data-word-font="rounded"] .word-font:lang(ko) {
   font-family: "Gowun Dodum", sans-serif;
 }
-:root[data-word-font="rounded"] .word-font:lang(ar) {
-  font-family: "Noto Sans Arabic", sans-serif;
-}
-:root[data-word-font="rounded"] .word-font:lang(he) {
-  font-family: "Noto Sans Hebrew", sans-serif;
-}
 
-:root[data-word-font="handwriting"] .word-font {
-  font-family: "Klee One", serif;
-}
 :root[data-word-font="handwriting"] .word-font:lang(ja) {
   font-family: "Klee One", serif;
 }
@@ -116,18 +87,25 @@ ruby rt {
 :root[data-word-font="handwriting"] .word-font:lang(ko) {
   font-family: "Noto Serif KR", serif;
 }
-:root[data-word-font="handwriting"] .word-font:lang(ar) {
-  font-family: "Noto Naskh Arabic", serif;
-}
-:root[data-word-font="handwriting"] .word-font:lang(he) {
-  font-family: "Noto Serif Hebrew", serif;
-}
 
-/* Readings keep their own size and colour but take the word font's face, not the interface's. */
-:root[data-word-font="sans"] .word-font rt,
-:root[data-word-font="serif"] .word-font rt,
-:root[data-word-font="rounded"] .word-font rt,
-:root[data-word-font="handwriting"] .word-font rt {
+/* Readings keep their own size and colour but take the word font's face, not the interface's. Only CJK readings
+   are scoped in: a pinyin reading is tagged zh-Latn-pinyin and keeps the app font. */
+:root[data-word-font="sans"] .word-font rt:lang(ja),
+:root[data-word-font="sans"] .word-font rt:lang(zh-Hans),
+:root[data-word-font="sans"] .word-font rt:lang(zh-Hant),
+:root[data-word-font="sans"] .word-font rt:lang(ko),
+:root[data-word-font="serif"] .word-font rt:lang(ja),
+:root[data-word-font="serif"] .word-font rt:lang(zh-Hans),
+:root[data-word-font="serif"] .word-font rt:lang(zh-Hant),
+:root[data-word-font="serif"] .word-font rt:lang(ko),
+:root[data-word-font="rounded"] .word-font rt:lang(ja),
+:root[data-word-font="rounded"] .word-font rt:lang(zh-Hans),
+:root[data-word-font="rounded"] .word-font rt:lang(zh-Hant),
+:root[data-word-font="rounded"] .word-font rt:lang(ko),
+:root[data-word-font="handwriting"] .word-font rt:lang(ja),
+:root[data-word-font="handwriting"] .word-font rt:lang(zh-Hans),
+:root[data-word-font="handwriting"] .word-font rt:lang(zh-Hant),
+:root[data-word-font="handwriting"] .word-font rt:lang(ko) {
   font-family: inherit;
 }
 
