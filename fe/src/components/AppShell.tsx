@@ -236,12 +236,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           {learner !== null ? <Avatar name={learner.name} src={learner.avatarUrl} size="sm" tone="dark" /> : <span />}
         </div>
         <main className="main">
-          <div className="content">
-            <ImportProgress batches={imports.data ?? []} />
-            {children}
-          </div>
+          <div className="content">{children}</div>
         </main>
       </div>
+
+      <ImportProgress batches={imports.data ?? []} />
     </div>
   );
 }
