@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Result } from "effect";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import type { DeckSlug, DeckSummary, SnoozeDays } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
@@ -15,6 +15,7 @@ import { decksQuery, meQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { DeckModal } from "./DeckModal";
 import { DeckRows } from "./DeckRows";
+import { ImportDecksModal } from "./ImportDecksModal";
 import { DeleteDeckModal } from "./DeleteDeckModal";
 import { DeleteDecksModal } from "./DeleteDecksModal";
 import { SelectionBar } from "./SelectionBar";
@@ -45,6 +46,7 @@ export function DecksPage() {
   const [filter, setFilter] = useState<DeckFilter>(initialFilter);
   const [form, setForm] = useState<FormTarget | null>(null);
   const [deleting, setDeleting] = useState<DeckSummary | null>(null);
+  const [importing, setImporting] = useState(false);
   const timezone = meResult.data?.settings.timezone ?? "UTC";
   // Checkboxes stay hidden until the Learner asks to pick decks.
   const [selecting, setSelecting] = useState(false);
@@ -216,6 +218,11 @@ export function DecksPage() {
               {selecting ? "Done" : "Select"}
             </Button>
 
+            <Button variant="secondary" onClick={() => setImporting(true)}>
+              <Upload className="i" aria-hidden="true" />
+              Import decks
+            </Button>
+
             <Button onClick={() => setForm({ kind: "create" })}>
               <Plus className="i" aria-hidden="true" />
               New deck
@@ -331,6 +338,8 @@ export function DecksPage() {
         onClose={() => setDeletingSelection(false)}
         onDeleted={deletedSelection}
       />
+
+      <ImportDecksModal open={importing} onClose={() => setImporting(false)} />
 
       <DeleteDeckModal
         deck={deleting}

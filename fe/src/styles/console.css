@@ -624,3 +624,13 @@ dl.kpis, dl.kpis dd, .deck-stats-strip dd, .deck-stats-strip dl { margin: 0; }
 /* ChoiceCard keeps a real checkbox for keyboard and screen readers, visually hidden. */
 .choice input { position: absolute; opacity: 0; pointer-events: none; }
 }
+
+/* Import progress: the panel sits above the page on every screen while a batch is not dismissed. */
+.import-panel { display: grid; gap: 12px; margin-bottom: var(--stack); }
+.import-title { font: 600 15px/1.3 var(--f-display); }
+.import-meta { font-size: var(--small); color: var(--muted); }
+.import-track { height: 6px; border-radius: 999px; background: var(--sunken); overflow: hidden; }
+.import-track span { display: block; height: 100%; background: var(--navy); transition: width .3s ease; }
+.import-files { display: grid; gap: 10px; }
+.import-file { display: grid; gap: 4px; font-size: var(--small); }
+.import-name { font-weight: 600; overflow-wrap: anywhere; }
