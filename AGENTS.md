@@ -40,7 +40,7 @@ Names you remember from Effect 2/3 are often wrong (`Effect.catchAll` doesn't ex
 ## Frontend rules
 
 - Call the API only through the session (`fe/src/lib/appSession.ts`) or `callApi` in `fe/src/lib/api.ts`. Never import `be/`.
-- Access token in memory, refresh token in `localStorage`.
+- Both tokens live in `localStorage` (`fe/src/lib/tokens.ts`), shared by every tab.
 
 ## Commands
 

@@ -4,7 +4,7 @@ import { callApi, type ApiClient, type ApiOptions } from "./api.ts"
 import type { createTokenStore } from "./tokens.ts"
 
 export interface SessionDeps {
-  /** The token store (tokens.ts): refresh token in storage, access token in memory. */
+  /** The token store (tokens.ts): both tokens persist in storage. */
   readonly store: ReturnType<typeof createTokenStore>
   /** Passed to `callApi`; tests give a fake `fetch`. */
   readonly baseUrl?: string
