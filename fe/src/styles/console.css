@@ -328,9 +328,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .deck-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
 .deck-foot .mini { flex: 1; max-width: 120px; }
 .deck-foot .mbar { height: 4px; }
-.deck-grid { grid-template-columns: 1fr; gap: 0; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: #fff; }
+/* No overflow: hidden: it would clip the last row's menu. The end rows round their own hover background instead. */
+.deck-grid { grid-template-columns: 1fr; gap: 0; border: 1px solid var(--line); border-radius: var(--r-lg); background: #fff; }
 .deck { grid-template-columns: minmax(0, 1fr) 220px 64px 64px 84px 32px; grid-template-rows: none; align-items: center; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 10px 16px; gap: 16px; }
-.deck-grid li:first-child .deck { border-top: 0; }
+.deck-grid li:first-child .deck { border-top: 0; border-top-left-radius: calc(var(--r-lg) - 1px); border-top-right-radius: calc(var(--r-lg) - 1px); }
+.deck-grid li:last-child .deck { border-bottom-left-radius: calc(var(--r-lg) - 1px); border-bottom-right-radius: calc(var(--r-lg) - 1px); }
 .deck:hover { background: var(--sunken); }
 .deck-top { display: contents; }
 .deck-top .btn-icon { order: 5; justify-self: end; }
