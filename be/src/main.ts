@@ -13,10 +13,11 @@ const migrateOnly = Effect.gen(function* () {
 })
 
 const serve = Effect.gen(function* () {
-  const { port, jwtSecret } = yield* AppConfig
+  const { port, jwtSecret, beanstalkdHost, beanstalkdPort, beanstalkdTube } = yield* AppConfig
+  const beanstalk = { host: beanstalkdHost, port: beanstalkdPort, tube: beanstalkdTube }
   yield* Effect.logInfo(`voca-api: serving on :${port}`)
 
-  const server = HttpRouter.serve(makeApiLayer({ jwtSecret }).pipe(Layer.provide(GoogleOAuthLive))).pipe(
+  const server = HttpRouter.serve(makeApiLayer({ jwtSecret, beanstalk }).pipe(Layer.provide(GoogleOAuthLive))).pipe(
     Layer.provide(BunHttpServer.layer({ port }))
   )
 

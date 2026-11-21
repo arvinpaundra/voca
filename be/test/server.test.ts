@@ -4,7 +4,7 @@ import { HttpRouter, HttpServer } from "effect/http"
 import { makeApiLayer } from "../src/app.ts"
 import { TokenSigner } from "../src/identity/application/ports.ts"
 import { TokenSignerLive } from "../src/identity/infrastructure/tokenSigner.ts"
-import { googleStub, seedLearner, TEST_SECRET } from "./identity.ts"
+import { googleStub, seedLearner, TEST_SECRET, testBeanstalk } from "./identity.ts"
 import { TestLayer } from "./layers.ts"
 
 // The served API: real HTTP requests through the web handler that main.ts serves with Bun.
@@ -12,7 +12,7 @@ import { TestLayer } from "./layers.ts"
 
 const rt = ManagedRuntime.make(Layer.mergeAll(TestLayer, TokenSignerLive(TEST_SECRET)))
 const { handler, dispose } = HttpRouter.toWebHandler(
-  makeApiLayer({ jwtSecret: TEST_SECRET }).pipe(
+  makeApiLayer({ jwtSecret: TEST_SECRET, beanstalk: testBeanstalk("server") }).pipe(
     Layer.provide(googleStub({})),
     Layer.provide(TestLayer),
     Layer.provide(HttpServer.layerServices)

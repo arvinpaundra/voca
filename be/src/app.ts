@@ -17,13 +17,20 @@ import { StudyLive } from "./study/infrastructure/index.ts"
 import { SystemHandlers } from "./shared/http/system.ts"
 import { TransactionLive } from "./shared/transaction.ts"
 import { DeckRepoLive } from "./library/infrastructure/deckRepo.ts"
+import { ImportsLive, type ImportsOptions } from "./library/infrastructure/imports.ts"
 import { WordRepoLive } from "./library/infrastructure/wordRepo.ts"
 
 /**
  * The whole API as one layer: `VocaApi` with every group's handlers, the Authorization middleware and the identity
  * infrastructure. It still needs a `SqlClient` and a `GoogleOAuth` from outside (main.ts gives the real ones, tests stubs).
  */
-export const makeApiLayer = (options: { readonly jwtSecret: Redacted.Redacted<string> }) => {
+export const makeApiLayer = (options: {
+  readonly jwtSecret: Redacted.Redacted<string>
+  readonly beanstalk: ImportsOptions
+}) => {
+  const imports = Layer.mergeAll(ImportsHandlers, ImportEventsHandlers).pipe(
+    Layer.provide(ImportsLive(options.beanstalk))
+  )
   const groups = Layer.mergeAll(
     SystemHandlers,
     AuthHandlers,
@@ -32,8 +39,7 @@ export const makeApiLayer = (options: { readonly jwtSecret: Redacted.Redacted<st
     CommunityHandlers,
     StudyHandlers,
     InsightHandlers,
-    ImportsHandlers,
-    ImportEventsHandlers
+    imports
   )
   const infra = Layer.mergeAll(
     LearnerRepoLive,
