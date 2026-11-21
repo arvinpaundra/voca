@@ -4,6 +4,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
 import { ActivitySection } from "./ActivitySection";
+import { BacklogHint } from "./BacklogHint";
 import { localHour, longDate, studyDate } from "./dashboardModel";
 import { DecksSection } from "./DecksSection";
 import { ProgressSection } from "./ProgressSection";
@@ -40,6 +41,9 @@ export function DashboardPage() {
 
       <div className="dash">
         <div className="dash-main">
+          {decks.kind === "loaded" && (
+            <BacklogHint decks={decks.value} sessionSize={learner.value.settings.defaultSessionSize} />
+          )}
           <TodaySection state={notifications} stats={stats} learner={learner.value} />
           <DecksSection state={decks} />
         </div>
