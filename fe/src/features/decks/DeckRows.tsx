@@ -37,28 +37,14 @@ export function DeckRows({
           <li key={deck.slug}>
             <article className="deck">
               <div className="deck-top">
-                {/*
-                  The checkbox shares the title's grid cell: `.deck-top` is `display: contents` in the table
-                  layout, so a separate checkbox would become an extra column and shift every cell after it.
-                  The title's ::after overlay covers the row, so the checkbox needs its own stacking.
-                */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
+                {/* The checkbox shares the title's cell. */}
+                <div className="deck-head">
                   {onToggleSelect !== undefined && (
                     <input
                       type="checkbox"
                       aria-label={`Select ${deck.title}`}
                       checked={selected?.has(deck.slug) ?? false}
-                      onChange={() => onToggleSelect(deck)}
-                      style={{ flexShrink: 0, marginTop: 4, position: "relative", zIndex: 1 }}
-                    />
+                      onChange={() => onToggleSelect(deck)}                    />
                   )}
 
                   <a className="deck-title" href={`/app/decks/${deck.slug}`} dir="auto">
