@@ -62,6 +62,7 @@ describe("DecksPage bulk snooze", () => {
     const { requests, spy } = fakeSession([JAPANESE, MANDARIN]);
     render(<DecksPage />);
 
+    await user.click(screen.getByRole("button", { name: "Select" }));
     await user.click(await screen.findByRole("checkbox", { name: "Select Japanese N5 verbs" }));
     await user.click(screen.getByRole("checkbox", { name: "Select Mandarin HSK 1" }));
 
@@ -85,6 +86,7 @@ describe("DecksPage bulk snooze", () => {
     const { requests, spy } = fakeSession([JAPANESE]);
     render(<DecksPage />);
 
+    await user.click(screen.getByRole("button", { name: "Select" }));
     await user.click(await screen.findByRole("checkbox", { name: "Select Japanese N5 verbs" }));
     await user.click(within(screen.getByRole("region", { name: "Selected decks" })).getByRole("button", { name: "Unsnooze" }));
 

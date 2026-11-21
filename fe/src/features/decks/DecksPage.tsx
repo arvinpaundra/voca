@@ -44,6 +44,8 @@ export function DecksPage() {
   const [form, setForm] = useState<FormTarget | null>(null);
   const [deleting, setDeleting] = useState<DeckSummary | null>(null);
   const [timezone, setTimezone] = useState("UTC");
+  // Checkboxes stay hidden until the Learner asks to pick decks.
+  const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<DeckSlug>>(new Set());
   const [snoozing, setSnoozing] = useState(false);
   const [snoozeBusy, setSnoozeBusy] = useState(false);
@@ -89,6 +91,28 @@ export function DecksPage() {
 
   const clearSelection = () => setSelected(new Set());
 
+  // Leaving select mode drops the ticks, so the next time starts from none.
+  const stopSelecting = useCallback(() => {
+    setSelecting(false);
+    setSelected(new Set());
+  }, []);
+
+  // A dialog marks its own Escape as handled; that one only closes the dialog.
+  useEffect(() => {
+    if (!selecting) return;
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
+
+      stopSelecting();
+    };
+
+    document.addEventListener("keydown", onKey);
+
+    return () => document.removeEventListener("keydown", onKey);
+  }, [selecting, stopSelecting]);
+
   // The snooze endpoints take at least one slug, so an empty selection has nothing to send.
   const selectedSlugs = (): readonly [DeckSlug, ...DeckSlug[]] | null => {
     const [first, ...rest] = [...selected];
@@ -112,7 +136,7 @@ export function DecksPage() {
     }
 
     setSnoozing(false);
-    clearSelection();
+    stopSelecting();
     void loadDecks();
   };
 
@@ -129,7 +153,7 @@ export function DecksPage() {
       return;
     }
 
-    clearSelection();
+    stopSelecting();
     void loadDecks();
   };
 
@@ -188,10 +212,19 @@ export function DecksPage() {
           ),
         })}
         actions={
-          <Button onClick={() => setForm({ kind: "create" })}>
-            <Plus className="i" aria-hidden="true" />
-            New deck
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              onClick={selecting ? stopSelecting : () => setSelecting(true)}
+            >
+              {selecting ? "Done" : "Select"}
+            </Button>
+
+            <Button onClick={() => setForm({ kind: "create" })}>
+              <Plus className="i" aria-hidden="true" />
+              New deck
+            </Button>
+          </>
         }
       />
 
@@ -255,7 +288,7 @@ export function DecksPage() {
         />
       )}
 
-      {selected.size > 0 && (
+      {selecting && selected.size > 0 && (
         <SelectionBar
           count={selected.size}
           onSnooze={() => setSnoozing(true)}
@@ -270,8 +303,10 @@ export function DecksPage() {
         <DeckRows
           decks={visible}
           timezone={timezone}
-          selected={selected}
-          onToggleSelect={toggleSelect}
+          {...(selecting && {
+            selected,
+            onToggleSelect: toggleSelect,
+          })}
           onEdit={(deck) => setForm({ kind: "edit", deck })}
           onDelete={(deck) => setDeleting(deck)}
         />
