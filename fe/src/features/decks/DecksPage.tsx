@@ -53,6 +53,7 @@ export function DecksPage() {
   const [snoozeBusy, setSnoozeBusy] = useState(false);
   const [snoozeError, setSnoozeError] = useState<string | null>(null);
   const [deletingSelection, setDeletingSelection] = useState(false);
+  const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
 
   // A write refreshes every cached read, so the list shows what the write changed.
   const refreshCache = () => {
@@ -138,9 +139,18 @@ export function DecksPage() {
     refreshCache();
   };
 
-  const deletedSelection = (_failed: number) => {
+  const deletedSelection = (failed: number) => {
     setDeletingSelection(false);
-    setSnoozeError("not implemented: LD");
+    stopSelecting();
+    refreshCache();
+
+    if (failed === 0) {
+      setDeleteNotice(null);
+      return;
+    }
+
+    const noun = failed === 1 ? "deck" : "decks";
+    setDeleteNotice(`${failed} ${noun} could not be deleted.`);
   };
 
   const loaded = decksResult.isSuccess;
@@ -285,6 +295,8 @@ export function DecksPage() {
       )}
 
       {snoozeError !== null && <ErrorState message={snoozeError} />}
+
+      {deleteNotice !== null && <ErrorState message={deleteNotice} />}
 
       {visible.length > 0 && (
         <DeckRows
