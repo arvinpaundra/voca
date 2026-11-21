@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Result } from "effect";
 import { Plus } from "lucide-react";
 import type { DeckSlug, DeckSummary, SnoozeDays } from "@voca/contract";
@@ -10,6 +11,8 @@ import { SearchInput } from "../../components/SearchInput";
 import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
+import { decksQuery, meQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { DeckModal } from "./DeckModal";
 import { DeckRows } from "./DeckRows";
 import { DeleteDeckModal } from "./DeleteDeckModal";
@@ -21,11 +24,6 @@ import {
   type DeckFilter,
   type DeckSort,
 } from "./deckList";
-
-type DeckListState =
-  | { kind: "loading" }
-  | { kind: "failed" }
-  | { kind: "loaded"; decks: readonly DeckSummary[] };
 
 type FormTarget = { kind: "create" } | { kind: "edit"; deck: DeckSummary };
 
@@ -39,11 +37,14 @@ const sortOptions: readonly { value: DeckSort; label: string }[] = [
 const initialFilter: DeckFilter = { q: "", termLang: null, sort: "due" };
 
 export function DecksPage() {
-  const [state, setState] = useState<DeckListState>({ kind: "loading" });
+  // The whole list is read once and kept in the cache; search, the language filter and sorting happen in the browser.
+  const decksResult = useQuery(decksQuery(), queryClient);
+  // A snooze's end is shown on the Learner's day, so the list needs their timezone.
+  const meResult = useQuery(meQuery(), queryClient);
   const [filter, setFilter] = useState<DeckFilter>(initialFilter);
   const [form, setForm] = useState<FormTarget | null>(null);
   const [deleting, setDeleting] = useState<DeckSummary | null>(null);
-  const [timezone, setTimezone] = useState("UTC");
+  const timezone = meResult.data?.settings.timezone ?? "UTC";
   // Checkboxes stay hidden until the Learner asks to pick decks.
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<DeckSlug>>(new Set());
@@ -51,32 +52,10 @@ export function DecksPage() {
   const [snoozeBusy, setSnoozeBusy] = useState(false);
   const [snoozeError, setSnoozeError] = useState<string | null>(null);
 
-  // The whole list is loaded once; search, the language filter and sorting happen in the browser.
-  const loadDecks = useCallback(async () => {
-    const result = await session.call((client) => client.library.listDecks());
-    setState(
-      Result.isSuccess(result)
-        ? { kind: "loaded", decks: result.success }
-        : { kind: "failed" },
-    );
-  }, []);
-
-  useEffect(() => {
-    void loadDecks();
-  }, [loadDecks]);
-
-  // A snooze's end is shown on the Learner's day, so the list needs their timezone.
-  useEffect(() => {
-    let active = true;
-
-    void session.call((client) => client.me.get()).then((result) => {
-      if (active && Result.isSuccess(result)) setTimezone(result.success.settings.timezone);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  // A write refreshes every cached read, so the list shows what the write changed.
+  const refreshCache = () => {
+    void queryClient.invalidateQueries();
+  };
 
   const toggleSelect = (deck: DeckSummary) => {
     setSelected((previous) => {
@@ -137,7 +116,7 @@ export function DecksPage() {
 
     setSnoozing(false);
     stopSelecting();
-    void loadDecks();
+    refreshCache();
   };
 
   const unsnoozeSelected = async () => {
@@ -154,10 +133,11 @@ export function DecksPage() {
     }
 
     stopSelecting();
-    void loadDecks();
+    refreshCache();
   };
 
-  const decks = state.kind === "loaded" ? state.decks : [];
+  const loaded = decksResult.isSuccess;
+  const decks = decksResult.data ?? [];
   const langs = termLangsOf(decks);
   const visible = filterDecks(decks, filter);
   const dueToday = decks.reduce((sum, deck) => sum + deck.dueCount, 0);
@@ -182,25 +162,24 @@ export function DecksPage() {
     setFilter((previous) => ({ ...previous, q: "", termLang: null }));
 
   const retry = () => {
-    setState({ kind: "loading" });
-    void loadDecks();
+    refreshCache();
   };
 
   const saved = () => {
     setForm(null);
-    void loadDecks();
+    refreshCache();
   };
 
   const deleted = () => {
     setDeleting(null);
-    void loadDecks();
+    refreshCache();
   };
 
   return (
     <>
       <PageHeader
         title="Decks"
-        {...(state.kind === "loaded" && {
+        {...(loaded && {
           meta: (
             <>
               <span>{decks.length} decks</span>
@@ -228,7 +207,7 @@ export function DecksPage() {
         }
       />
 
-      {state.kind === "loaded" && decks.length > 0 && (
+      {loaded && decks.length > 0 && (
         <div className="toolbar">
           <SearchInput
             label="Search decks"
@@ -256,13 +235,13 @@ export function DecksPage() {
         </div>
       )}
 
-      {state.kind === "loading" && <Skeleton label="Loading decks" rows={4} />}
+      {decksResult.isPending && <Skeleton label="Loading decks" rows={4} />}
 
-      {state.kind === "failed" && (
+      {decksResult.isError && (
         <ErrorState message="Could not load your decks." onRetry={retry} />
       )}
 
-      {state.kind === "loaded" && decks.length === 0 && (
+      {loaded && decks.length === 0 && (
         <EmptyState
           title="No decks yet"
           body="Create your first deck to start building your vocabulary."
@@ -277,7 +256,7 @@ export function DecksPage() {
         />
       )}
 
-      {state.kind === "loaded" && decks.length > 0 && visible.length === 0 && (
+      {loaded && decks.length > 0 && visible.length === 0 && (
         <EmptyState
           title="No decks match your search."
           action={

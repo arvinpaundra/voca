@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Result } from "effect";
+import { useEffect, useState, type FormEvent } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import type { PublicDeck } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
@@ -8,8 +8,14 @@ import { PageHeader } from "../../components/PageHeader";
 import { SearchInput } from "../../components/SearchInput";
 import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
-import { session } from "../../lib/appSession";
-import { communityQuery, mergeTermLangs, type CommunitySort, type DiscoverFilter } from "./discoverModel";
+import { communityQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
+import {
+  communityQuery as communityParams,
+  mergeTermLangs,
+  type CommunitySort,
+  type DiscoverFilter,
+} from "./discoverModel";
 import { PublicDeckRows } from "./PublicDeckRows";
 import { forkDeck, forkMessage } from "./fork";
 
@@ -22,23 +28,17 @@ const sortOptions: readonly { value: CommunitySort; label: string }[] = [
 
 const initialFilter: DiscoverFilter = { q: "", termLang: null, sort: "new" };
 
-type Listing = {
-  decks: readonly PublicDeck[];
-  nextCursor: string | null;
-};
-
 export function DiscoverPage() {
   const [searchInput, setSearchInput] = useState("");
   const [filter, setFilter] = useState<DiscoverFilter>(initialFilter);
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [knownLangs, setKnownLangs] = useState<readonly string[]>([]);
   const [forking, setForking] = useState<string | null>(null);
   const [forkError, setForkError] = useState<string | null>(null);
 
-  // Each filter change starts a new generation; a page that arrives from an older one is dropped.
-  const generation = useRef(0);
+  // Each filter has its own cached pages; the first page of the default filter is usually already there.
+  const community = useInfiniteQuery(communityQuery(communityParams(filter)), queryClient);
+  const decks: readonly PublicDeck[] = community.data?.pages.flatMap((page) => page.items) ?? [];
+  const hasPages = community.data !== undefined;
 
   // The search goes out after a pause, or at once on Enter (see `search`).
   useEffect(() => {
@@ -49,22 +49,14 @@ export function DiscoverPage() {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
+  // The language list keeps every language seen on any page, so it does not shrink when a filter narrows.
   useEffect(() => {
-    const current = ++generation.current;
-    setLoadError(null);
-    setListing(null);
+    if (community.data === undefined) return;
 
-    session.call((client) => client.community.list({ query: communityQuery(filter) })).then((result) => {
-      if (current !== generation.current) return;
+    const items = community.data.pages.flatMap((page) => page.items);
 
-      if (Result.isSuccess(result)) {
-        setListing({ decks: result.success.items, nextCursor: result.success.nextCursor });
-        setKnownLangs((known) => mergeTermLangs(known, result.success.items));
-      } else {
-        setLoadError("Could not load community decks.");
-      }
-    });
-  }, [filter]);
+    setKnownLangs((known) => mergeTermLangs(known, items));
+  }, [community.data]);
 
   const search = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,34 +76,14 @@ export function DiscoverPage() {
     setFilter(initialFilter);
   };
 
-  // A new filter object restarts the load with the same query.
   const retry = () => {
-    setFilter((previous) => ({ ...previous }));
+    void community.refetch();
   };
 
-  const loadMore = async () => {
-    if (listing === null || listing.nextCursor === null || loadingMore) return;
+  const loadMore = () => {
+    if (!community.hasNextPage || community.isFetchingNextPage) return;
 
-    const current = generation.current;
-    const cursor = listing.nextCursor;
-    setLoadingMore(true);
-
-    const result = await session.call((client) =>
-      client.community.list({ query: { ...communityQuery(filter), cursor } }),
-    );
-
-    setLoadingMore(false);
-    if (current !== generation.current) return;
-
-    if (Result.isSuccess(result)) {
-      setListing((previous) => ({
-        decks: [...(previous?.decks ?? []), ...result.success.items],
-        nextCursor: result.success.nextCursor,
-      }));
-      setKnownLangs((known) => mergeTermLangs(known, result.success.items));
-    } else {
-      setLoadError("Could not load more decks.");
-    }
+    void community.fetchNextPage();
   };
 
   const fork = async (deck: PublicDeck) => {
@@ -129,7 +101,12 @@ export function DiscoverPage() {
     setForkError(forkMessage(outcome));
   };
 
-  const decks = listing?.decks ?? [];
+  // A failed first page leaves no data; a failed later page keeps the pages already shown.
+  const loadError = community.isError
+    ? hasPages
+      ? "Could not load more decks."
+      : "Could not load community decks."
+    : null;
 
   return (
     <>
@@ -158,11 +135,11 @@ export function DiscoverPage() {
 
       {forkError !== null && <ErrorState message={forkError} />}
 
-      {listing === null && loadError === null && <Skeleton label="Loading community decks" rows={4} />}
+      {community.isPending && <Skeleton label="Loading community decks" rows={4} />}
 
       {loadError !== null && <ErrorState message={loadError} onRetry={retry} />}
 
-      {listing !== null && decks.length === 0 && (
+      {hasPages && decks.length === 0 && (
         <EmptyState
           title="No decks found"
           body="Try a different search or clear your filters."
@@ -176,9 +153,9 @@ export function DiscoverPage() {
 
       {decks.length > 0 && <PublicDeckRows decks={decks} forking={forking} onFork={(deck) => void fork(deck)} />}
 
-      {listing !== null && listing.nextCursor !== null && (
+      {community.hasNextPage && (
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <Button variant="ghost" busy={loadingMore} onClick={() => void loadMore()}>
+          <Button variant="ghost" busy={community.isFetchingNextPage} onClick={loadMore}>
             Load more
           </Button>
         </div>

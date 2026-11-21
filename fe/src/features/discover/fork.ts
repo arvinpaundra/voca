@@ -1,6 +1,7 @@
 import { Result } from "effect";
 import type { DeckSlug } from "@voca/contract";
 import { session } from "../../lib/appSession";
+import { queryClient } from "../../lib/queryClient";
 
 export type ForkOutcome = { kind: "forked"; slug: string } | { kind: "gone" } | { kind: "failed" };
 
@@ -15,6 +16,9 @@ export const forkDeck = async (deckSlug: DeckSlug): Promise<ForkOutcome> => {
   const result = await session.call((client) => client.community.fork({ params: { deckSlug } }));
 
   if (Result.isSuccess(result)) {
+    // The Learner's deck list gains the copy.
+    void queryClient.invalidateQueries();
+
     return { kind: "forked", slug: result.success.slug };
   }
 
