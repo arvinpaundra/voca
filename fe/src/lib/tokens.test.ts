@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
-import { REFRESH_KEY, createTokenStore } from "./tokens.ts"
+import { ACCESS_EXPIRES_KEY, ACCESS_KEY, REFRESH_KEY, createTokenStore } from "./tokens.ts"
 
-// Access token in memory only, refresh token in localStorage ("voca.refreshToken"),
+// Both tokens persist in localStorage, the access token with its expiry,
 // proactive refresh when `exp − now < 60 s`. The store takes its storage as an argument so it can be tested.
 const memoryStorage = () => {
   const data = new Map<string, string>()
@@ -31,19 +31,45 @@ describe("refresh token (persisted)", () => {
   })
 })
 
-describe("access token (memory only)", () => {
-  test("is returned, but never written to storage", () => {
+describe("access token (persisted)", () => {
+  test("is stored with its expiry, and a reloaded store sees it", () => {
     const storage = memoryStorage()
     const store = createTokenStore(storage)
     expect(store.getAccess()).toBeNull()
+
     store.setAccess("jwt.value.here", 900, 1_000_000)
-    expect(store.getAccess()).toBe("jwt.value.here")
-    expect([...storage.data.values()].join("|")).not.toContain("jwt.value.here")
-    expect(createTokenStore(storage).getAccess()).toBeNull() // a new tab starts without one
+
+    expect(ACCESS_KEY).toBe("voca.accessToken")
+    expect(ACCESS_EXPIRES_KEY).toBe("voca.accessExpiresAt")
+    expect(storage.data.get(ACCESS_KEY)).toBe("jwt.value.here")
+    expect(storage.data.get(ACCESS_EXPIRES_KEY)).toBe("1900000")
+
+    const reloaded = createTokenStore(storage)
+    expect(reloaded.getAccess()).toBe("jwt.value.here")
+    expect(reloaded.needsRefresh(1_000_000)).toBe(false)
+  })
+
+  test("a token another tab stored is used without a reload", () => {
+    const storage = memoryStorage()
+    const store = createTokenStore(storage)
+    store.setAccess("a1", 900, 0)
+
+    createTokenStore(storage).setAccess("a2", 900, 0)
+
+    expect(store.getAccess()).toBe("a2")
   })
 
   test("needs a refresh when absent", () => {
     expect(createTokenStore(memoryStorage()).needsRefresh(0)).toBe(true)
+  })
+
+  test("needs a refresh when the stored expiry is missing or unreadable", () => {
+    const storage = memoryStorage()
+    storage.setItem(ACCESS_KEY, "a1")
+    expect(createTokenStore(storage).needsRefresh(0)).toBe(true)
+
+    storage.setItem(ACCESS_EXPIRES_KEY, "not a number")
+    expect(createTokenStore(storage).needsRefresh(0)).toBe(true)
   })
 
   test("needs a refresh once fewer than 60 s remain (expiresIn 900 s)", () => {
@@ -59,7 +85,7 @@ describe("access token (memory only)", () => {
 })
 
 describe("clear (sign out)", () => {
-  test("removes both tokens", () => {
+  test("removes both tokens, and a reloaded store has neither", () => {
     const storage = memoryStorage()
     const store = createTokenStore(storage)
     store.setRefresh("r1")
@@ -69,5 +95,6 @@ describe("clear (sign out)", () => {
     expect(store.getAccess()).toBeNull()
     expect(storage.data.size).toBe(0)
     expect(store.needsRefresh(0)).toBe(true)
+    expect(createTokenStore(storage).getAccess()).toBeNull()
   })
 })
