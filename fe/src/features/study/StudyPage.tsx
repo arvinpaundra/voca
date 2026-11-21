@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Result } from "effect";
 import {
   DRILLS,
@@ -17,6 +18,8 @@ import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
 import { IconButton } from "../../components/IconButton";
 import { session } from "../../lib/appSession";
+import { activeSessionQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { AnswerOptions } from "./AnswerOptions";
 import { SessionTally } from "./SessionTally";
 import { Verdict } from "./Verdict";
@@ -69,39 +72,28 @@ const wordItem = (question: Question, termLang: string, result: AnswerResult): S
 const withWord = (items: readonly SessionWordItem[], item: SessionWordItem): readonly SessionWordItem[] =>
   items.some((existing) => existing.wordSlug === item.wordSlug) ? items : [...items, item];
 
-type LoadState =
-  | { readonly kind: "loading" }
-  | { readonly kind: "failed" }
-  | { readonly kind: "none" }
-  | { readonly kind: "ready"; readonly studySession: Session };
-
+// A write refreshes the whole cache, so the live session refetches after every answer. Once a session is open,
+// the flow keeps it: a refetch that finds nothing running (the answer just finished the session) must not
+// take the summary off the screen.
 export function StudyPage() {
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const active = useQuery(activeSessionQuery(), queryClient);
+  const [opened, setOpened] = useState<Session | null>(null);
 
   useEffect(() => {
-    let active = true;
+    if (active.data) setOpened(active.data);
+  }, [active.data]);
 
-    session.call((client) => client.study.active()).then((result) => {
-      if (!active) return;
-      if (!Result.isSuccess(result)) setState({ kind: "failed" });
-      else if (result.success === null) setState({ kind: "none" });
-      else setState({ kind: "ready", studySession: result.success });
-    });
+  const studySession = opened ?? active.data ?? null;
 
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (state.kind === "loading") {
+  if (studySession !== null) {
     return (
       <Shell>
-        <Skeleton label="Loading study session" rows={3} />
+        <StudyFlow key={studySession.slug} studySession={studySession} />
       </Shell>
     );
   }
 
-  if (state.kind === "failed") {
+  if (active.isError) {
     return (
       <Shell>
         <ErrorState message="Could not load your session." />
@@ -109,23 +101,28 @@ export function StudyPage() {
     );
   }
 
-  if (state.kind === "none") {
+  if (active.isPending) {
     return (
       <Shell>
-        <EmptyState
-          title="No study session is running."
-          action={<Button variant="secondary" href="/app">Back to dashboard</Button>}
-        />
+        <Skeleton label="Loading study session" rows={3} />
       </Shell>
     );
   }
 
   return (
     <Shell>
-      <StudyFlow key={state.studySession.slug} studySession={state.studySession} />
+      <EmptyState
+        title="No study session is running."
+        action={<Button variant="secondary" href="/app">Back to dashboard</Button>}
+      />
     </Shell>
   );
 }
+
+// A write changes what the cache holds, so the whole cache refetches once one lands.
+const refreshOnSuccess = (result: Result.Result<unknown, unknown>): void => {
+  if (Result.isSuccess(result)) void queryClient.invalidateQueries();
+};
 
 // The study session has no sidebar, so the page supplies the full-screen frame itself.
 function Shell({ children }: { children: ReactNode }) {
@@ -187,6 +184,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     );
 
     setBusy(false);
+    refreshOnSuccess(result);
 
     if (Result.isSuccess(result)) {
       setFeedback({ chosen: wordSlug, result: result.success });
@@ -230,6 +228,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     );
 
     setBusy(false);
+    refreshOnSuccess(result);
 
     if (Result.isSuccess(result)) {
       window.location.assign(studyReturnHref());
@@ -245,6 +244,8 @@ function StudyFlow({ studySession }: { studySession: Session }) {
     const result = await session.call((client) =>
       item.hard ? client.study.unmarkHard({ params }) : client.study.markHard({ params })
     );
+
+    refreshOnSuccess(result);
 
     if (Result.isSuccess(result)) {
       setWords((previous) =>
