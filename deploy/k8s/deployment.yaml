@@ -1,4 +1,4 @@
-# IMAGE (an image digest) and RELEASE are replaced by the release workflow.
+# IMAGE and RELEASE are replaced by the release workflow.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -48,6 +48,13 @@ spec:
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+          # Migrations run before the server listens, so the pod is not ready until they finish.
+          startupProbe:
+            httpGet:
+              path: /api/healthz
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /api/healthz

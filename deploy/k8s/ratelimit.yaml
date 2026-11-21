@@ -5,11 +5,8 @@ metadata:
   namespace: voca
 spec:
   rateLimit:
-    period: 1s
     average: 10
     burst: 20
-    # Traefik sees Cloudflare's addresses; the Pages Function sets the visitor's IP in this header. It is
-    # trusted only because the route already required the origin secret. Counters live in Traefik's memory,
-    # per replica; the cluster runs one.
+    # Traefik sees Cloudflare's addresses; the Pages Function forwards the client's IP in this header.
     sourceCriterion:
       requestHeaderName: X-Real-IP
