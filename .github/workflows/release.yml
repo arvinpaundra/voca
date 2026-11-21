@@ -20,7 +20,6 @@ env:
   IMAGE: ghcr.io/${{ github.repository }}-api
   API_HOST: ${{ vars.API_HOST }}
   API_TARGET_IP: ${{ vars.API_TARGET_IP }}
-  WEB_URL: ${{ vars.WEB_URL }}
 jobs:
   api:
     runs-on: ubuntu-24.04-arm # the kube-oci node is arm64
@@ -28,7 +27,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: refs/tags/${{ env.TAG }}
-
 
       - name: image
         run: |
@@ -103,8 +101,3 @@ jobs:
 
           bunx wrangler@4.20.0 pages deploy --branch master \
             --commit-hash "$(git rev-parse HEAD)" --commit-message "$TAG"
-
-      - name: healthz
-        run: |
-          curl -fsS -o /dev/null -w "%{http_code}\n" --retry 10 --retry-delay 3 --retry-all-errors \
-            "$WEB_URL/api/healthz"

@@ -85,7 +85,6 @@ Master is protected by the required `verify` check, so a master commit has alrea
 2. **secret:** `secret.yaml` is filled in from the GitHub secrets on every run (values masked in logs).
 3. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
 4. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
-5. **healthz:** `GET $WEB_URL/api/healthz` must answer 204 through the Pages proxy.
 
 **Roll back:** re-run the older tag's release run (GitHub allows it for 30 days), or *Actions → release → Run workflow* with that tag. Migrations are not reversed, which is why they stay backward compatible.
 
@@ -106,7 +105,6 @@ Master is protected by the required `verify` check, so a master commit has alrea
 |---|---|
 | `API_HOST` | `voca-origin.arvinpaundra.dev` |
 | `API_TARGET_IP` | `140.245.111.204` |
-| `WEB_URL` | `https://voca.arvinpaundra.dev` |
 
 ## First-release checklist
 
