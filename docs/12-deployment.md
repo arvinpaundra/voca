@@ -36,7 +36,7 @@ export const onRequest = ({ request, env }: { request: Request; env: { API_ORIGI
 }
 ```
 
-- `API_ORIGIN = https://voca-origin.arvinpaundra.dev` is a Pages variable, set in `fe/wrangler.toml`.
+- `API_ORIGIN = https://${API_HOST}` is a Pages variable in `fe/wrangler.toml`; the release fills in `API_HOST` from the GitHub variable.
 - **Client IP:** Traefik sees Cloudflare's addresses, so the rate limit is keyed on `X-Real-IP` (`sourceCriterion.requestHeaderName`). Someone calling the origin host directly could spoof it; accepted for the MVP, and fixable by locking the origin to Cloudflare later.
 - **Cost ceiling:** each API call is one Worker request. The free plan allows 100k a day, about 2,500 daily learners at ~40 calls each. Beyond that, Workers Paid is $5/month for 10M requests.
 - **Local development:** `vite.config.ts` sets `server.proxy: { "/api": "http://localhost:8000" }`, so local paths match production.

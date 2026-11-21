@@ -3,4 +3,5 @@ pages_build_output_dir = "dist"
 compatibility_date = "2025-06-01"
 
 [vars]
-API_ORIGIN = "https://voca-origin.arvinpaundra.dev"
+# The release fills in API_HOST from the GitHub variable.
+API_ORIGIN = "https://${API_HOST}"
