@@ -52,15 +52,20 @@ The node `mio-vnc` is **arm64**. The release builds the image on GitHub's `ubunt
 | File | Content |
 |---|---|
 | `namespace.yaml` | `voca` |
-| `secret.example.yaml` | The shape of `voca-api`: `DATABASE_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Never applied; the release builds the real one from GitHub secrets |
-| `deployment.yaml` | 1 replica, rolling (below); resources `requests: 100m/128Mi`, `limits: 512Mi`; startup, readiness and liveness probes on `GET /api/healthz`; `runAsNonRoot`, `readOnlyRootFilesystem` (with an `emptyDir` on `/tmp`); a 10 s `preStop` sleep. `IMAGE` and `RELEASE` are filled in by the release |
+| `secret.yaml` | `voca-api` with `${DATABASE_URL}`, `${JWT_SECRET}`, `${GOOGLE_CLIENT_ID}`, `${GOOGLE_CLIENT_SECRET}` placeholders, filled in by the release with `envsubst` from GitHub secrets |
+| `deployment.yaml` | 1 replica, rolling (below); resources `requests: 100m/128Mi`, `limits: 512Mi`; readiness and liveness probes on `GET /api/healthz`; `runAsNonRoot`, `readOnlyRootFilesystem` (with an `emptyDir` on `/tmp`); a 10 s `preStop` sleep. `IMAGE` and `RELEASE` are filled in by the release |
 | `service.yaml` | ClusterIP 80 → 8000 |
-| `ingress.yaml` | Traefik, external-dns with Cloudflare proxying; host `voca-origin.arvinpaundra.dev`. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.dev/api` |
+| `ingress.yaml` | Traefik, external-dns with Cloudflare proxying; host `${API_HOST}` (`voca-origin.arvinpaundra.dev`) and target `${API_TARGET_IP}`, filled in by the release from GitHub variables. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.dev/api` |
 | `ratelimit.yaml` | A Traefik `Middleware` (`rateLimit`: average 10 req/s, burst 20, keyed on `X-Real-IP`) attached to the ingress |
 
 There is no Helm or Kustomize for 6 files.
 
-**Migrations** run at boot through the `effect/sql` Migrator, which takes a lock. The startup probe allows them 150 s; the pod is not ready until they finish. There is no separate migration Job.
+**Migrations** never run at boot. The owner runs them before tagging a release that adds one, with the same binary's `migrate` command, through a port-forward:
+```bash
+kubectl -n database port-forward svc/postgres-postgresql 5432:5432 &
+DATABASE_URL='postgres://voca:<pw>@localhost:5432/voca' bun run --cwd be migrate
+```
+The `effect/sql` Migrator takes a lock, so two runs at once are safe.
 
 **Rollout** (ADR 53): `RollingUpdate` with `maxSurge: 1`, `maxUnavailable: 0`. The old pod serves until the new one is ready; the `preStop` sleep takes a stopping pod out of the endpoints before SIGTERM. For that moment the old version runs against the new schema, so **every migration must work with the previous release**: add first, remove in a later release. During a rollout two pods hold up to 20 database connections.
 
@@ -73,12 +78,13 @@ Postgres 18.3. The `voca` database and role are created once (checklist step 5);
 
 The owner pushes a tag `vX.Y.Z` on a master commit. Nothing else deploys. `.github/workflows/release.yml`, one run at a time:
 
-1. **gate:** the tag's commit is on `origin/master` and its latest `verify` check-run concluded `success`. Otherwise the run fails here and nothing is deployed. Tag only after master's CI has finished.
-2. **image:** built on an arm64 runner, pushed to `ghcr.io/arvinpaundra/voca-api:<tag>`.
-3. **secret:** `voca-api` is rebuilt from the GitHub secrets on every run (values masked in logs).
-4. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
-5. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
-6. **healthz:** `GET https://voca.arvinpaundra.dev/api/healthz` must answer 204 through the Pages proxy.
+Master is protected by the required `verify` check, so a master commit has already passed it; tag only after master's CI has finished.
+
+1. **image:** built on an arm64 runner, pushed to `ghcr.io/arvinpaundra/voca-api:<tag>`.
+2. **secret:** `secret.yaml` is filled in from the GitHub secrets on every run (values masked in logs).
+3. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
+4. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
+5. **healthz:** `GET $WEB_URL/api/healthz` must answer 204 through the Pages proxy.
 
 **Roll back:** re-run the older tag's release run (GitHub allows it for 30 days), or *Actions → release → Run workflow* with that tag. Migrations are not reversed, which is why they stay backward compatible.
 
@@ -86,12 +92,20 @@ The owner pushes a tag `vX.Y.Z` on a master commit. Nothing else deploys. `.gith
 
 | Secret | Value |
 |---|---|
-| `KUBECONFIG` | base64 of the kubeconfig holding only the `kube-oci` context |
+| `KUBECONFIG` | base64 of a kubeconfig holding only the `kube-oci` context, set as its current context |
 | `DATABASE_URL` | `postgres://voca:<pw>@postgres-postgresql.database.svc.cluster.local:5432/voca` |
 | `JWT_SECRET` | at least 32 random bytes |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | the Google OAuth client; the ID is also built into the web app |
 | `CLOUDFLARE_API_TOKEN` | a token with *Cloudflare Pages: Edit* |
 | `CLOUDFLARE_ACCOUNT_ID` | the account that holds the Pages project |
+
+**GitHub repository variables:**
+
+| Variable | Value |
+|---|---|
+| `API_HOST` | `voca-origin.arvinpaundra.dev` |
+| `API_TARGET_IP` | `140.245.111.204` |
+| `WEB_URL` | `https://voca.arvinpaundra.dev` |
 
 ## First-release checklist
 
@@ -113,9 +127,10 @@ One-time steps only the owner does, in order. Steps 2–4 cannot be undone, and 
    REVOKE ALL ON DATABASE voca FROM PUBLIC;
    ```
 6. **Google OAuth:** Google Cloud Console → Credentials → the OAuth client → authorized redirect URIs `https://voca.arvinpaundra.dev/auth/callback` and `http://localhost:5173/auth/callback`; remove the old app's URIs.
-7. **GitHub secrets:** repo → Settings → Secrets and variables → Actions, every secret in the table above. The kubeconfig:
+7. **GitHub secrets and variables:** repo → Settings → Secrets and variables → Actions, every secret and variable in the tables above. The kubeconfig:
    ```bash
    kubectl config view --minify --flatten --context kube-oci | base64 | gh secret set KUBECONFIG
    ```
 8. **Cloudflare Pages:** `bunx wrangler@4.20.0 pages project create voca --production-branch master`, then Pages → voca → Custom domains → add `voca.arvinpaundra.dev`. The `voca-origin` record is created by external-dns from the ingress on the first release.
-9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. GHCR makes a new package private: if the rollout fails with `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release.
+9. **Migrate** the fresh database (the port-forward command under *Migrations* above).
+10. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. GHCR makes a new package private: if the rollout fails with `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release.
