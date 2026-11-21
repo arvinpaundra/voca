@@ -200,7 +200,15 @@ The signed-in home at `/app`, top to bottom:
 - **Activity:** the heatmap (FR-18).
 - **Progress:** cards by maturity (new, learning, mature), true retention and calibration over 30 days, reviews per day over 30 days, and the due forecast for the next 7 study days.
 - **My decks:** each deck with its languages, word count and due count.
+- **Backlog hint:** when a deck that isn't snoozed (FR-20) has a big backlog, a hint above Today names it, e.g. "Japanese N4 has 84 words due. You can snooze a deck from its page." A big backlog means more due words than 3 × the Learner's remembered session size (FR-11), and never fewer than 30. When several decks qualify, one hint lists them all. The hint only informs: it has no button and no dismiss. It goes away once no deck qualifies.
 - **Won't:** tags, weekly chart, "words mastered", "best deck". They need definitions the data model does not have.
+
+**Acceptance**
+- With a remembered session size of 20, a deck with 61 due words shows the hint and a deck with 60 shows none. With a size of 7, the threshold is 30, not 21.
+- The count is every due word in the deck, overdue or not.
+- A snoozed deck never appears in the hint, whatever its due count.
+- When two or more decks qualify, exactly one hint is shown, and it lists each of them with its due count.
+- The hint has no action or dismiss control, and it is gone on the next load once no deck qualifies.
 
 ## FR-20 Deck snooze (S)
 
