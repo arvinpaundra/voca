@@ -16,6 +16,7 @@ import { queryClient } from "../../lib/queryClient";
 import { DeckModal } from "./DeckModal";
 import { DeckRows } from "./DeckRows";
 import { DeleteDeckModal } from "./DeleteDeckModal";
+import { DeleteDecksModal } from "./DeleteDecksModal";
 import { SelectionBar } from "./SelectionBar";
 import { SnoozeModal } from "./SnoozeModal";
 import {
@@ -51,6 +52,7 @@ export function DecksPage() {
   const [snoozing, setSnoozing] = useState(false);
   const [snoozeBusy, setSnoozeBusy] = useState(false);
   const [snoozeError, setSnoozeError] = useState<string | null>(null);
+  const [deletingSelection, setDeletingSelection] = useState(false);
 
   // A write refreshes every cached read, so the list shows what the write changed.
   const refreshCache = () => {
@@ -134,6 +136,11 @@ export function DecksPage() {
 
     stopSelecting();
     refreshCache();
+  };
+
+  const deletedSelection = (_failed: number) => {
+    setDeletingSelection(false);
+    setSnoozeError("not implemented: LD");
   };
 
   const loaded = decksResult.isSuccess;
@@ -272,6 +279,7 @@ export function DecksPage() {
           count={selected.size}
           onSnooze={() => setSnoozing(true)}
           onUnsnooze={() => void unsnoozeSelected()}
+          onDelete={() => setDeletingSelection(true)}
           onClear={clearSelection}
         />
       )}
@@ -304,6 +312,12 @@ export function DecksPage() {
         deck={form?.kind === "edit" ? form.deck : undefined}
         onClose={() => setForm(null)}
         onSaved={saved}
+      />
+
+      <DeleteDecksModal
+        deckSlugs={deletingSelection ? selectedSlugs() : null}
+        onClose={() => setDeletingSelection(false)}
+        onDeleted={deletedSelection}
       />
 
       <DeleteDeckModal
