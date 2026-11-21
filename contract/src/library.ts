@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/http-api"
 import { Multipart } from "effect/http"
-import { DuplicateWord, Forbidden, ImportRejected, NotFound, PayloadTooLarge } from "./errors.ts"
+import { DuplicateWord, DuplicateWords, Forbidden, ImportRejected, NotFound, PayloadTooLarge } from "./errors.ts"
 import {
   Count, DeckDescription, DeckTitle, Drill, Example, Instant, LangTag, Meaning, NonNegative, Notes, Page, PageQuery,
   Reading, SearchQuery, SessionSize, Term, Visibility
@@ -83,6 +83,12 @@ export const CreateWord = Schema.Struct({
   notes: Schema.optionalKey(Notes)
 })
 
+export const MAX_BATCH_WORDS = 50
+
+export const CreateWords = Schema.Struct({
+  words: Schema.NonEmptyArray(CreateWord).check(Schema.isMaxLength(MAX_BATCH_WORDS))
+})
+
 /** Absent key = unchanged; `null` clears an optional field. */
 export const UpdateWord = Schema.Struct({
   term: Schema.optionalKey(Term),
@@ -151,6 +157,13 @@ export class LibraryGroup extends HttpApiGroup.make("library").add(
     payload: CreateWord,
     success: Word,
     error: [NotFound, DuplicateWord]
+  }),
+  /** All or nothing: any word colliding with a live word of the deck, or with another word of the batch, saves none. */
+  HttpApiEndpoint.post("createWords", "/decks/:deckSlug/words/batch", {
+    params: deckParams,
+    payload: CreateWords,
+    success: Schema.Array(Word), // in request order
+    error: [NotFound, DuplicateWords]
   }),
   HttpApiEndpoint.patch("updateWord", "/words/:wordSlug", {
     params: wordParams,

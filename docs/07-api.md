@@ -42,6 +42,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | GET | `/decks/:deckSlug/flashcards` | `?size=7\|10\|15\|20` (absent: all) → `Word[]` in a fresh random order; reads only (FR-21) |
 | GET | `/decks/:deckSlug/words` | `?q&cursor&limit` → `Page<WordWithCard>` |
 | POST | `/decks/:deckSlug/words` | `{term, meaning, reading?, example?, notes?}` → `Word` |
+| POST | `/decks/:deckSlug/words/batch` | `{words: CreateWord[1..50]}` → `Word[]` in request order; all or nothing (FR-26) |
 | PATCH | `/words/:wordSlug` | partial Word → `Word` |
 | DELETE | `/words/:wordSlug` | → `204` |
 | POST | `/decks/:deckSlug/import` | `multipart/form-data` field `file` (≤ 5 MB) → `{imported, skippedDuplicates}` |
@@ -107,6 +108,7 @@ Session = {
 | `NotFound` | 404 | — |
 | *(empty body)* | 400 | Schema decoding of params, query, or body failed. Effect's built-in `HttpApiSchemaError` answers with an empty `400`. The frontend validates with the same contract Schemas before sending and shows field errors itself, so a 400 means a client bug |
 | `DuplicateWord` | 409 | Same `termKey` and `readingKey` already in the deck |
+| `DuplicateWords` | 409 | `{indexes}`: every word of a batch whose keys a live deck word or another word of the batch holds; nothing is saved |
 | `QuestionAlreadyAnswered` | 409 | Double submit of the same position |
 | `SessionNotActive` | 409 | Answering a completed or abandoned session |
 | `DeckTooSmall` | 422 | Fewer than 4 words with distinct answers for the chosen drill |

@@ -23,6 +23,11 @@ export class DeckNotPublic extends Schema.TaggedError<DeckNotPublic>()("DeckNotP
 
 export class DuplicateWord extends Schema.TaggedError<DuplicateWord>()("DuplicateWord", fields, { httpApiStatus: 409 }) {}
 
+/** A batch of new words, rejected whole: `indexes` are the positions in the request of every word that collides. */
+export class DuplicateWords extends Schema.TaggedError<DuplicateWords>()(
+  "DuplicateWords", { message: Schema.String, indexes: Schema.Array(Schema.Int) }, { httpApiStatus: 409 }
+) {}
+
 export class QuestionAlreadyAnswered extends Schema.TaggedError<QuestionAlreadyAnswered>()(
   "QuestionAlreadyAnswered", fields, { httpApiStatus: 409 }
 ) {}
