@@ -109,6 +109,18 @@ describe("POST /decks/:deckSlug/import", () => {
       })
     ))
 
+  test("the download template, unchanged, imports with 0 words added", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const { token, deckSlug } = yield* ownDeck()
+
+        const result = yield* upload(token, deckSlug, "term,meaning,reading,example,notes\n")
+
+        expect(result).toEqual({ imported: 0, skippedDuplicates: 0 })
+        expect(yield* liveWordCount(deckSlug)).toBe(0)
+      })
+    ))
+
   test("duplicates in the file and against the deck are skipped and counted, by the normalized key", () =>
     rt.runPromise(
       Effect.gen(function* () {
