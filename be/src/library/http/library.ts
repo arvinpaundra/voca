@@ -62,6 +62,8 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("DuplicateWordError", duplicate)
         ),
 
+      createWords: () => Effect.die("not implemented: LB"),
+
       updateWord: ({ params, payload }) =>
         updateWord(params.wordSlug, payload).pipe(
           Effect.provideContext(ports),
