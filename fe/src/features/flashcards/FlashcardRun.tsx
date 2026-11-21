@@ -1,11 +1,28 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { readingLang, type Word } from "@voca/contract";
+import type { Word } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Term } from "../../components/Term";
+import { CardBack } from "./CardBack";
 import { back, currentCard, flip, startRun, summary, swipe, type Mark, type Run } from "./flashcardsModel";
 
 // A drag this far, and more across than down, is a swipe; a shorter touch is still a tap that flips the card.
 const SWIPE_MIN_PX = 48;
+
+// The content swaps at once, so the turn is only motion; it plays even with reduced motion, since a flip is the Learner's own action.
+const TURN_KEYFRAMES: Keyframe[] = [
+  { transform: "perspective(900px) rotateY(90deg)" },
+  { transform: "perspective(900px) rotateY(0deg)" },
+];
+
+const TURN_OPTIONS: KeyframeAnimationOptions = { duration: 300, easing: "ease-out" };
+
+// Web Animations is missing from the test DOM, so a card without it flips with no turn.
+const turnCard = (face: HTMLElement | null) => {
+  if (face === null) return;
+  if (typeof face.animate !== "function") return;
+
+  face.animate(TURN_KEYFRAMES, TURN_OPTIONS);
+};
 
 const markForKey = (key: string): Mark | null => {
   if (key === "ArrowRight") return "remembered";
@@ -18,6 +35,7 @@ const markForKey = (key: string): Mark | null => {
 export function FlashcardRun({ cards, termLang, backHref }: { cards: ReadonlyArray<Word>; termLang: string; backHref: string }) {
   const [run, setRun] = useState<Run>(() => startRun(cards));
   const drag = useRef<{ readonly x: number; readonly y: number } | null>(null);
+  const face = useRef<HTMLButtonElement>(null);
 
   // A swipe also ends in a click on the card; this stops that click from flipping the card the swipe just left.
   const swiped = useRef(false);
@@ -66,6 +84,7 @@ export function FlashcardRun({ cards, termLang, backHref }: { cards: ReadonlyArr
     }
 
     setRun((previous) => flip(previous));
+    turnCard(face.current);
   };
 
   const goBack = () => setRun((previous) => back(previous));
@@ -111,6 +130,7 @@ export function FlashcardRun({ cards, termLang, backHref }: { cards: ReadonlyArr
       </p>
 
       <button
+        ref={face}
         type="button"
         className="prompt"
         aria-label={label}
@@ -123,21 +143,7 @@ export function FlashcardRun({ cards, termLang, backHref }: { cards: ReadonlyArr
         }}
       >
         {run.flipped ? (
-          <>
-            <Term
-              term={card.term}
-              // Term draws a ruby only for a non-empty reading, so an empty one is a plain term.
-              reading={card.reading ?? ""}
-              lang={termLang}
-              readingLang={readingLang(termLang)}
-            />
-
-            <p>{card.meaning}</p>
-
-            {card.example !== null && <p lang={termLang}>{card.example}</p>}
-
-            {card.notes !== null && <p className="muted">{card.notes}</p>}
-          </>
+          <CardBack card={card} termLang={termLang} />
         ) : (
           <Term term={card.term} lang={termLang} size="lg" />
         )}
