@@ -31,6 +31,9 @@ Names you remember from Effect 2/3 are often wrong. Everything here was checked 
 | randomness a test can control | `Random.nextIntBetween(0, 256)` (not `crypto`); tests run the effect under `Random.withSeed("seed")` |
 | a test that needs the real web handler | `HttpRouter.toWebHandler(layer, { memoMap: rt.memoMap })` shares the test runtime's database (see `be/test/server.test.ts`) |
 | transaction inside a use case | the handler's `Effect.context<…>()` must list `Transaction` too, or the use case's requirement leaks out of the layer |
+| shuffle a list | `yield* Random.shuffle(items)` (not `Math.random` or SQL `random()`), so a test's seed controls the order |
+| "now" in a query | read it with `DateTime.now` / `Clock.currentTimeMillis` and bind it (`${new Date(now)}::timestamptz`); SQL `now()` ignores the `TestClock` |
+| study-day dates in another context | import `studyDay` / `dueAfter` from `be/src/study/domain/studyDay.ts`: a domain file may import another context's domain |
 | unhandled infra errors | repositories end with `Effect.orDie`: `SqlError`/`SchemaError` are defects, so ports have no error channel |
 
 ## Rules that bit us
@@ -46,4 +49,8 @@ Names you remember from Effect 2/3 are often wrong. Everything here was checked 
 - **Tests**: `ManagedRuntime.make(layer)` once per file, `afterAll(() => rt.dispose())`, `beforeEach(() => rt.runPromise(resetDb))`; call endpoints through `HttpApiTest.groups(VocaApi, ["<group>"])` with `Effect.scoped`; attach a bearer with `HttpApiMiddleware.layerClient`. Assert on `error._tag` after `Effect.flip`.
 - **Instants in tests**: the typed client decodes `Instant` fields to `DateTime.Utc`, not strings. Compare with `DateTime.formatIso(value)`; `new Date(String(value))` throws.
 - **Existing tests of an endpoint**: before locking tests for a change to an endpoint's response, grep `be/test` for the endpoint. An exact-match assertion (`toEqual`) on the old response breaks once the response grows; lock a relaxed version (`toMatchObject`) with the new tests.
+- **Moving the clock in API tests**: an access token is signed at the `TestClock`'s time and expires minutes later, so a test that jumps the clock forward (or back) must sign a fresh token after `at(...)`, or every later call answers `401`. See `later()` in `be/test/snooze.test.ts`.
+- **Slugs in assertions**: the typed client returns branded slugs; compare them as `String(slug)` with plain strings, or the typecheck fails on `toEqual`.
+- **Existing frontend tests of a label**: before changing what a label renders (or rendering it twice, e.g. once for screen readers), grep `fe/src` for `getByText("<label>")`: an exact single-match query breaks. Lock a relaxed version (`getAllByText(...).length`) with the new tests.
+- **Stubs a pre-check can see**: a failure only counts as the task's own when its output shows the marker. Put the stub where the failing query prints it: a component stub's DOM appears in a `getBy…` error, but a bare `toBe(true)` on a class prints nothing.
 - **Case-insensitive file systems**: a component file named like an existing module (`DeckList.tsx` next to `deckList.ts`) clashes on macOS. Pick another name.
