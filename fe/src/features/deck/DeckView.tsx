@@ -55,6 +55,8 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const [statsVersion, setStatsVersion] = useState(0);
   const [wordDelta, setWordDelta] = useState(0);
 
+  // The modal reads the word from the list, so an edit saved there shows in the modal too.
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [wordEditor, setWordEditor] = useState<WordEditor>(null);
   const [deletingWord, setDeletingWord] = useState<WordWithCards | null>(null);
   const [editingDeck, setEditingDeck] = useState(false);
@@ -162,6 +164,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     setStatsVersion((version) => version + 1);
     setWordDelta((delta) => delta - 1);
     setDeletingWord(null);
+    setOpenSlug(null);
   };
 
   // The server answers with the deck's snooze after the change, so the header shows what was saved.
@@ -258,9 +261,23 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const { tabs: filterTabs, searchPlaceholder } = deckCounts(counted, stats);
   const snoozeText = snoozeLabel(deck.snooze, timezone);
 
+  const openedWord = words?.find((word) => word.slug === openSlug) ?? null;
+
   return (
     <>
-      <WordDetailsModal word={null} termLang={deck.termLang} meaningLang={deck.meaningLang} onClose={() => {}} />
+      <WordDetailsModal
+        word={openedWord}
+        termLang={deck.termLang}
+        meaningLang={deck.meaningLang}
+        own={{
+          deckSlug: deck.slug,
+          onEdit: () => {
+            if (openedWord !== null) setWordEditor({ kind: "edit", word: openedWord });
+          },
+          onDelete: () => setDeletingWord(openedWord),
+        }}
+        onClose={() => setOpenSlug(null)}
+      />
 
       <div className="deck-hero">
         <PageHeader
@@ -358,6 +375,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
           deck={deck}
           words={shown}
           now={now}
+          onOpen={(word) => setOpenSlug(word.slug)}
           onEdit={(word) => setWordEditor({ kind: "edit", word })}
           onDelete={(word) => setDeletingWord(word)}
         />

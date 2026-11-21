@@ -3,7 +3,6 @@ import { Pencil, Trash2 } from "lucide-react";
 import { readingLang, type Deck, type WordWithCards } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { IconButton } from "../../components/IconButton";
-import { wordHref } from "../word/wordHref";
 
 const MATURE_DAYS = 21;
 
@@ -47,16 +46,29 @@ function Example({ example, term }: { example: string; term: string }) {
   );
 }
 
+// The term opens the word's modal; the button keeps the term's type and colour instead of the browser's.
+const termButtonStyle = {
+  background: "none",
+  border: 0,
+  padding: 0,
+  color: "inherit",
+  font: "inherit",
+  textAlign: "start",
+  cursor: "pointer",
+} as const;
+
 export function WordList({
   deck,
   words,
   now,
+  onOpen,
   onEdit,
   onDelete,
 }: {
   deck: Deck;
   words: readonly WordWithCards[];
   now: DateTime.Utc;
+  onOpen: (word: WordWithCards) => void;
   onEdit: (word: WordWithCards) => void;
   onDelete: (word: WordWithCards) => void;
 }) {
@@ -66,7 +78,12 @@ export function WordList({
         <li key={word.slug}>
           <article className="word">
             <span className="w-term" lang={deck.termLang} dir="auto">
-              <a href={wordHref(String(deck.slug), String(word.slug))}>
+              <button
+                type="button"
+                aria-label={`Open ${word.term}`}
+                style={termButtonStyle}
+                onClick={() => onOpen(word)}
+              >
                 {word.reading === null ? (
                   word.term
                 ) : (
@@ -75,7 +92,7 @@ export function WordList({
                     <rt lang={readingLang(deck.termLang)}>{word.reading}</rt>
                   </ruby>
                 )}
-              </a>
+              </button>
             </span>
 
             <div className="w-body">
