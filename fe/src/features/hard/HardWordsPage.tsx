@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { DateTime, Option, Result, Schema } from "effect";
 import { Drill, type HardWord, type SessionSize } from "@voca/contract";
 import { ArrowRight, Flame } from "lucide-react";
@@ -9,6 +10,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
 import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
+import { hardWordsQuery, meQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { failureTag } from "../deck/wordModel";
 import { startFailure } from "../study/startFailure";
 import { rememberHardStudy } from "../study/returnTo";
@@ -20,11 +23,6 @@ const DEFAULT_SIZE: SessionSize = 10;
 const ALL = "all";
 
 type Filter = typeof ALL | Drill;
-
-type LoadState =
-  | { readonly kind: "loading" }
-  | { readonly kind: "failed" }
-  | { readonly kind: "ready"; readonly words: readonly HardWord[] };
 
 const filterFromUrl = (): Filter => {
   const raw = new URLSearchParams(window.location.search).get("drill");
@@ -44,55 +42,37 @@ const setFilterInUrl = (filter: Filter): void => {
 const inFilter = (word: HardWord, filter: Filter): boolean =>
   word.cards.some((card) => card.isHard && (filter === ALL || card.drill === filter));
 
+// A write changes what the cache holds, so the whole cache refetches once one lands.
+const refreshOnSuccess = (result: Result.Result<unknown, unknown>): void => {
+  if (Result.isSuccess(result)) void queryClient.invalidateQueries();
+};
+
 export function HardWordsPage() {
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const hard = useInfiniteQuery(hardWordsQuery(), queryClient);
+  const learner = useQuery(meQuery(), queryClient);
+
   const [filter, setFilter] = useState<Filter>(filterFromUrl);
   const [studying, setStudying] = useState(false);
-  const [defaultSize, setDefaultSize] = useState<SessionSize>(DEFAULT_SIZE);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const now = useMemo(() => DateTime.nowUnsafe(), []);
 
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = hard;
+
+  // The page lists every hard word, so it keeps asking for the next page until none is left.
   useEffect(() => {
-    let active = true;
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-    const load = async () => {
-      const words: HardWord[] = [];
-      let cursor: string | undefined;
+  const defaultSize = learner.data?.settings.defaultSessionSize ?? DEFAULT_SIZE;
 
-      do {
-        const result = await session.call((client) =>
-          client.study.hardWords({ query: cursor === undefined ? {} : { cursor } }),
-        );
+  if (hard.isError) return <ErrorState message="Hard words could not be loaded." />;
 
-        if (!Result.isSuccess(result)) return null;
+  // The skeleton stays up until the last page is in, so the list never shows a partial set.
+  if (!hard.isSuccess || hard.hasNextPage) return <Skeleton label="Loading hard words" rows={3} />;
 
-        words.push(...result.success.items);
-        cursor = result.success.nextCursor ?? undefined;
-      } while (cursor !== undefined);
-
-      return words;
-    };
-
-    void load().then((words) => {
-      if (!active) return;
-      setState(words === null ? { kind: "failed" } : { kind: "ready", words });
-    });
-
-    void session.call((client) => client.me.get()).then((result) => {
-      if (active && Result.isSuccess(result)) setDefaultSize(result.success.settings.defaultSessionSize);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (state.kind === "loading") return <Skeleton label="Loading hard words" rows={3} />;
-  if (state.kind === "failed") return <ErrorState message="Hard words could not be loaded." />;
-
-  const { words } = state;
+  const words = hard.data.pages.flatMap((page) => page.items);
   const drills = hardDrills(words);
   const visible = words.filter((word) => inFilter(word, filter));
 
@@ -121,17 +101,7 @@ export function HardWordsPage() {
     }
 
     setError(null);
-
-    const unmarked = new Set(cards.map((card) => card.drill));
-
-    setState({
-      kind: "ready",
-      words: words.map((item) =>
-        item.slug === word.slug
-          ? { ...item, cards: item.cards.map((card) => (unmarked.has(card.drill) ? { ...card, isHard: false } : card)) }
-          : item,
-      ),
-    });
+    queryClient.invalidateQueries();
   };
 
   const start = async (chosen: readonly Drill[], size: SessionSize) => {
@@ -143,7 +113,9 @@ export function HardWordsPage() {
 
     if (size !== defaultSize) {
       // The size is a preference for next time; a failed save must not block the session.
-      void session.call((client) => client.me.updateSettings({ payload: { defaultSessionSize: size } }));
+      void session
+        .call((client) => client.me.updateSettings({ payload: { defaultSessionSize: size } }))
+        .then(refreshOnSuccess);
     }
 
     const result = await session.call((client) =>
@@ -151,6 +123,7 @@ export function HardWordsPage() {
     );
 
     setBusy(false);
+    refreshOnSuccess(result);
 
     if (Result.isSuccess(result)) {
       rememberHardStudy();
