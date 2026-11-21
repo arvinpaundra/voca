@@ -33,7 +33,7 @@ Browser (fe)                          API (be)                         Google
 | Claims | `sub` (the learner's 8-character slug; JWTs are readable, so the internal ID is never placed in one), `iat`, `exp`, `iss: "voca"`, `aud: "voca-web"` | — |
 | Lifetime | 15 min | 30 days, sliding (renewed on every rotation) |
 | Stored by the server | Nothing (stateless) | `sha256(token)`, `family_id`, `expires_at`, `used_at`, `revoked_at` |
-| Stored by the client | **Memory only** (module variable) | `localStorage` |
+| Stored by the client | `localStorage`, with its expiry, so a reload reuses it until it expires | `localStorage` |
 | Sent as | `Authorization: Bearer` | JSON body to `/auth/refresh` |
 
 Verification only accepts `algorithms: ["HS256"]`, and checks issuer and audience. Because the algorithm is fixed, `alg: none` and algorithm-confusion attacks are rejected.
