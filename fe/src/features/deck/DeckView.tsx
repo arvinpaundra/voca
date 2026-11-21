@@ -23,6 +23,7 @@ import { DeckProgress } from "./DeckProgress";
 import { DeleteWordModal } from "./DeleteWordModal";
 import { exportFileName } from "./csvModel";
 import { matchesWordFilter, type WordFilter } from "./wordFilter";
+import { WordDetailsModal } from "./WordDetailsModal";
 import { WordModal } from "./WordModal";
 import { WordList } from "./WordList";
 
@@ -259,6 +260,8 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
 
   return (
     <>
+      <WordDetailsModal word={null} termLang={deck.termLang} meaningLang={deck.meaningLang} onClose={() => {}} />
+
       <div className="deck-hero">
         <PageHeader
           back={{ href: "/app/decks", label: "Decks" }}
