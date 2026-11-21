@@ -19,7 +19,9 @@ const sectionStyle: CSSProperties = {
 
 const linkStyle: CSSProperties = { textDecoration: "none" };
 
-export function LandingPage() {
+export function LandingPage({ signedIn = false }: { signedIn?: boolean }) {
+  if (signedIn) throw new Error("not implemented: LP");
+
   return (
     <div className="landing">
       <Nav />
