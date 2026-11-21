@@ -38,6 +38,14 @@ export function DeckRows({
           const snoozeText = snoozeLabel(deck.snooze, timezone);
           const snoozed = snoozeText !== null;
 
+          if (selected !== undefined && onToggleSelect !== undefined) {
+            return (
+              <li key={deck.slug}>
+                <p>not implemented: SR</p>
+              </li>
+            );
+          }
+
           return (
             <li key={deck.slug}>
               <article className={snoozed ? "deck snoozed" : "deck"}>
