@@ -41,9 +41,11 @@ export function FlashcardSetup({ wordCount, onStart }: { wordCount: number; onSt
         />
       </div>
 
-      <Button variant="primary" disabled={wordCount === 0} onClick={() => onStart(choice.size)}>
-        Start flashcards
-      </Button>
+      <div className="form-actions" style={{ alignItems: "center" }}>
+        <Button variant="primary" disabled={wordCount === 0} onClick={() => onStart(choice.size)}>
+          Start flashcards
+        </Button>
+      </div>
     </section>
   );
 }
