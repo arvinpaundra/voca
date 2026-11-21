@@ -32,5 +32,13 @@ export const snoozeLabel = (snooze: DeckSnooze | null | undefined, timezone: str
  * The short text a snoozed row shows beside its moon: "until 28 Nov" (the end's date in the Learner's timezone),
  * "Snoozed" when it lasts until unsnoozed, and null when the deck is awake. `snoozeLabel` is the full text.
  */
-export const snoozeShortLabel = (_snooze: DeckSnooze | null | undefined, _timezone: string): string | null =>
-  "not implemented: FD2";
+export const snoozeShortLabel = (snooze: DeckSnooze | null | undefined, timezone: string): string | null => {
+  if (snooze == null) return null;
+
+  if (snooze.until === null) return "Snoozed";
+
+  // "Sat 28 Nov" minus its weekday, which the row has no room for.
+  const day = dayLabel(localDate(snooze.until, timezone)).replace(/^[A-Za-z]+ /, "");
+
+  return `until ${day}`;
+};
