@@ -6,12 +6,17 @@ import { Logo } from "../../components/Logo";
 import { StatStrip } from "../../components/StatStrip";
 import { Term } from "../../components/Term";
 
+// The hero and the sections below it share one content width, so their edges line up on wide screens.
+const contentStyle: CSSProperties = {
+  maxWidth: 1120,
+  margin: "0 auto",
+};
+
 // The sections below the hero share the nav's side padding and the app's content width.
 const sectionStyle: CSSProperties = {
   display: "grid",
   gap: 16,
-  maxWidth: 1120,
-  margin: "0 auto",
+  ...contentStyle,
   padding: "56px clamp(16px, 4vw, 40px)",
   borderTop: "1px solid var(--line)",
   scrollMarginTop: 16,
@@ -19,25 +24,28 @@ const sectionStyle: CSSProperties = {
 
 const linkStyle: CSSProperties = { textDecoration: "none" };
 
-export function LandingPage() {
+export function LandingPage({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <div className="landing">
-      <Nav />
+      <Nav signedIn={signedIn} />
 
       <main>
-        <Hero />
+        <Hero signedIn={signedIn} />
         <HowItWorks />
         <Scripts />
         <Progress />
         <Community />
       </main>
 
-      <Footer />
+      <Footer signedIn={signedIn} />
     </div>
   );
 }
 
-function Nav() {
+// A signed-in Learner goes straight to the Dashboard; a Visitor is sent to sign in first.
+const startHref = (signedIn: boolean): string => (signedIn ? "/app" : "/login");
+
+function Nav({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="l-nav">
       <Logo />
@@ -54,16 +62,22 @@ function Nav() {
         </a>
       </nav>
 
-      <Button variant="secondary" size="sm" href="/login">
-        Sign in
-      </Button>
+      {signedIn ? (
+        <Button variant="secondary" size="sm" href="/app">
+          Open app
+        </Button>
+      ) : (
+        <Button variant="secondary" size="sm" href="/login">
+          Sign in
+        </Button>
+      )}
     </div>
   );
 }
 
-function Hero() {
+function Hero({ signedIn }: { signedIn: boolean }) {
   return (
-    <div className="l-hero">
+    <div className="l-hero" style={contentStyle}>
       <div>
         <span className="pill">
           <i></i>Spaced repetition · any language
@@ -77,7 +91,7 @@ function Hero() {
         </p>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <Button variant="primary" href="/login">
+          <Button variant="primary" href={startHref(signedIn)}>
             Start learning
             <ArrowRight className="i" aria-hidden="true" />
           </Button>
@@ -208,7 +222,7 @@ function Community() {
   );
 }
 
-function Footer() {
+function Footer({ signedIn }: { signedIn: boolean }) {
   return (
     <footer style={{ ...sectionStyle, gridAutoFlow: "column", alignItems: "center", justifyContent: "space-between" }}>
       <div style={{ display: "grid", gap: 4 }}>
@@ -218,7 +232,7 @@ function Footer() {
         </span>
       </div>
 
-      <Button variant="primary" href="/login">
+      <Button variant="primary" href={startHref(signedIn)}>
         Start learning
       </Button>
     </footer>
