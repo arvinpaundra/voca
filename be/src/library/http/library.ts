@@ -10,7 +10,7 @@ import {
   PayloadTooLarge,
   VocaApi
 } from "@voca/contract"
-import { createDeck, deleteDeck, getDeck, listDecks, publishDeck, unpublishDeck, updateDeck } from "../application/decks.ts"
+import { createDeck, deleteDeck, deleteDecks, getDeck, listDecks, publishDeck, unpublishDeck, updateDeck } from "../application/decks.ts"
 import type { DeckRepo } from "../application/deckRepo.ts"
 import { exportCsv as exportWords, importCsv as importWords } from "../application/csv.ts"
 import { flashcards } from "../application/flashcards.ts"
@@ -115,7 +115,7 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("DeckNotFound", notFound("Deck"))
         ),
 
-      deleteDecks: () => Effect.die("not implemented: BD"),
+      deleteDecks: ({ payload }) => deleteDecks(payload).pipe(Effect.provideContext(ports)),
 
       unsnoozeDecks: ({ payload }) =>
         unsnoozeDecks(payload).pipe(
