@@ -18,9 +18,10 @@ export const questionOf = (input: {
     wordSlug: word.slug,
     drill,
     drillLabel: drillLabel(input.termLang, drill),
+    // The reading never hints the word: it shows only as the prompt of a reading drill or as the answer.
     prompt: {
       text: textOf(word, DRILLS[drill].prompt),
-      ruby: "not implemented: BS"
+      ruby: null
     },
     options: input.options.map((option) => ({
       wordSlug: option.slug,

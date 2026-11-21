@@ -226,7 +226,7 @@ export const answerQuestion = (
           retry,
           completed,
           leech,
-          reading: "not implemented: BS"
+          reading: prompt.reading
         } satisfies AnswerResult
       })
     )
