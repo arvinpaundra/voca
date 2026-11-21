@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test"
-import { Effect, Fiber, Stream } from "effect"
+import { Effect, Exit, Fiber, Stream } from "effect"
 import { HttpClientRequest } from "effect/http"
 import { HttpApiMiddleware, HttpApiTest } from "effect/http-api"
 import { SqlClient } from "effect/sql"
@@ -188,8 +188,11 @@ describe("POST /imports", () => {
         const token = yield* signedIn("ABCDEFGH")
         const files = Array.from({ length: 21 }, (_, i): CsvFile => [`deck ${i}.csv`, csv(1)])
 
-        yield* upload(token, files).pipe(Effect.flip)
+        // The 400 comes back as a defect from the test client, so read the exit rather than flip the error.
+        const refused = yield* upload(token, files).pipe(Effect.exit)
         yield* Effect.promise(() => Bun.sleep(500))
+
+        expect(Exit.isFailure(refused)).toBe(true)
 
         expect(yield* list(token)).toEqual([])
         expect(yield* decks(token)).toEqual([])
@@ -248,7 +251,7 @@ describe("GET and DELETE /imports", () => {
         // No job is put for this file, so the worker never takes it: it stays pending.
         const [batch] = yield* sql<{ readonly id: string }>`
           INSERT INTO import_batches (slug, learner_id, term_lang, meaning_lang, created_at, dismissed_at)
-          VALUES ('PENDINGBATCH0001', ${learnerId}, 'ja', 'en', '2026-11-22T00:00:00Z', NULL)
+          VALUES ('PENDNGBATCH00001', ${learnerId}, 'ja', 'en', '2026-11-22T00:00:00Z', NULL)
           RETURNING id::text AS id`
         yield* sql`
           INSERT INTO import_files (batch_id, position, name, content, status, deck_id, imported, skipped_duplicates,
@@ -256,7 +259,7 @@ describe("GET and DELETE /imports", () => {
           VALUES (${batch!.id}, 0, 'A.csv', ${new TextEncoder().encode(csv(1))}, 'pending', NULL, 0, 0, '[]'::jsonb, 0)`
 
         const error = yield* call(
-          (c) => c.imports.dismissImport({ params: { batchSlug: "PENDINGBATCH0001" as ImportBatchSlug } }),
+          (c) => c.imports.dismissImport({ params: { batchSlug: "PENDNGBATCH00001" as ImportBatchSlug } }),
           token
         ).pipe(Effect.flip)
 
