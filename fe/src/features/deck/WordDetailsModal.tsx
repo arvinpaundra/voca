@@ -13,12 +13,10 @@ export interface WordDetailsModalProps {
   word: Word | null;
   termLang: string;
   meaningLang: string;
-  // Only on the Learner's own deck: the word's metrics, and Edit word, Delete word and Full details.
+  // Only on the Learner's own deck: the word's metrics and Full details.
   // A Community preview leaves it out and shows the word's content only.
   own?: {
     deckSlug: string;
-    onEdit: (word: Word) => void;
-    onDelete: (word: Word) => void;
   };
   onClose: () => void;
 }
@@ -60,19 +58,12 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
   const example = word.example !== null && word.example !== "" ? word.example : null;
   const notes = word.notes !== null && word.notes !== "" ? word.notes : null;
 
+  // The modal is view only: its one action is the word page.
   const footer =
     own === undefined ? undefined : (
-      <>
-        <Button variant="secondary" onClick={() => own.onEdit(word)}>
-          Edit word
-        </Button>
-        <Button variant="danger" onClick={() => own.onDelete(word)}>
-          Delete word
-        </Button>
-        <Button variant="ghost" href={wordHref(own.deckSlug, word.slug)}>
-          Full details
-        </Button>
-      </>
+      <Button variant="ghost" href={wordHref(own.deckSlug, word.slug)}>
+        Full details
+      </Button>
     );
 
   return (

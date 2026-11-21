@@ -46,7 +46,7 @@ function Example({ example, term }: { example: string; term: string }) {
   );
 }
 
-// The term opens the word's modal; the button keeps the term's type and colour instead of the browser's.
+// The button keeps the term's type and colour instead of the browser's. Its click bubbles up to the row, which opens the word.
 const termButtonStyle = {
   background: "none",
   border: 0,
@@ -76,14 +76,9 @@ export function WordList({
     <ul className="word-list" aria-label="Words">
       {words.map((word) => (
         <li key={word.slug}>
-          <article className="word">
+          <article className="word row-open" onClick={() => onOpen(word)}>
             <span className="w-term" lang={deck.termLang} dir="auto">
-              <button
-                type="button"
-                aria-label={`Open ${word.term}`}
-                style={termButtonStyle}
-                onClick={() => onOpen(word)}
-              >
+              <button type="button" aria-label={`Open ${word.term}`} style={termButtonStyle}>
                 {word.reading === null ? (
                   word.term
                 ) : (
@@ -110,7 +105,8 @@ export function WordList({
               <StateBadge state={stateOf(word, now)} />
             </div>
 
-            <div className="w-actions">
+            {/* The row opens the word on any click, so the row's own buttons stop theirs from reaching it. */}
+            <div className="w-actions" onClick={(event) => event.stopPropagation()}>
               <IconButton label={`Edit ${word.term}`} onClick={() => onEdit(word)}>
                 <Pencil className="i" aria-hidden="true" />
               </IconButton>

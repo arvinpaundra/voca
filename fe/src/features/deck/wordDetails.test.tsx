@@ -9,8 +9,8 @@ import { PreviewList } from "../discover/PreviewList";
 import { wordHref } from "../word/wordHref";
 import { DeckView } from "./DeckView";
 
-// A word opens in a modal over the list it was clicked in. On the Learner's own deck the modal also shows the
-// word's metrics and offers Edit word, Delete word and Full details; in a Community preview it shows the content only.
+// A word opens in a modal over the list it was clicked in, from anywhere on its row. The modal is view only: on the
+// Learner's own deck it also shows the word's metrics and Full details; in a Community preview it shows the content only.
 
 const DECK = "DECK000001";
 
@@ -189,42 +189,56 @@ describe("WordDetailsModal on the deck page", () => {
     spy.mockRestore();
   });
 
-  test("editing from the modal updates the modal and the word list", async () => {
+  test("a click on a row's meaning opens the word's modal", async () => {
+    const user = userEvent.setup();
+    const { spy } = fakeSession();
+    await renderDeck();
+
+    await user.click(within(wordList()).getByText("to eat"));
+
+    const modal = await screen.findByRole("dialog", { name: "食べる" });
+    expect(modal.textContent).toContain("ichidan verb");
+
+    spy.mockRestore();
+  });
+
+  test("the row's edit button opens the editor, not the modal", async () => {
+    const user = userEvent.setup();
+    const { spy } = fakeSession();
+    await renderDeck();
+
+    await user.click(within(wordList()).getByRole("button", { name: "Edit 食べる" }));
+
+    await screen.findByRole("dialog", { name: "Edit word" });
+    expect(screen.queryByRole("dialog", { name: "食べる" })).toBeNull();
+
+    spy.mockRestore();
+  });
+
+  test("the row's delete button opens the delete confirmation, not the modal", async () => {
+    const user = userEvent.setup();
+    const { spy } = fakeSession();
+    await renderDeck();
+
+    await user.click(within(wordList()).getByRole("button", { name: "Delete 食べる" }));
+
+    await screen.findByRole("dialog", { name: "Delete word?" });
+    expect(screen.queryByRole("dialog", { name: "食べる" })).toBeNull();
+
+    spy.mockRestore();
+  });
+
+  test("the modal is view only: no Edit word or Delete word", async () => {
     const user = userEvent.setup();
     const { spy } = fakeSession();
     await renderDeck();
 
     await user.click(screen.getByRole("button", { name: "Open 食べる" }));
+
     const modal = await screen.findByRole("dialog", { name: "食べる" });
-    await user.click(within(modal).getByRole("button", { name: "Edit word" }));
-
-    const editor = await screen.findByRole("dialog", { name: "Edit word" });
-    const meaning = within(editor).getByLabelText("Meaning");
-    await user.clear(meaning);
-    await user.type(meaning, "to eat up");
-    await user.click(within(editor).getByRole("button", { name: "Save" }));
-
-    await waitFor(() => expect(within(wordList()).getByText("to eat up")).toBeTruthy());
-    expect(screen.getByRole("dialog", { name: "食べる" }).textContent).toContain("to eat up");
-
-    spy.mockRestore();
-  });
-
-  test("deleting from the modal closes it and removes the word from the list", async () => {
-    const user = userEvent.setup();
-    const { requests, spy } = fakeSession();
-    await renderDeck();
-
-    await user.click(screen.getByRole("button", { name: "Open 食べる" }));
-    const modal = await screen.findByRole("dialog", { name: "食べる" });
-    await user.click(within(modal).getByRole("button", { name: "Delete word" }));
-
-    const confirm = await screen.findByRole("dialog", { name: "Delete word?" });
-    await user.click(within(confirm).getByRole("button", { name: "Delete word" }));
-
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "食べる" })).toBeNull());
-    expect(within(wordList()).queryByRole("button", { name: "Open 食べる" })).toBeNull();
-    expect(requests.some((entry) => entry.endpoint === "deleteWord")).toBe(true);
+    expect(modal.textContent).not.toContain("Edit word");
+    expect(modal.textContent).not.toContain("Delete word");
+    expect(within(modal).getByRole("link", { name: "Full details" })).toBeTruthy();
 
     spy.mockRestore();
   });
@@ -264,6 +278,19 @@ describe("WordDetailsModal in a Community preview", () => {
     expect(within(modal).queryByRole("button", { name: "Delete word" })).toBeNull();
     expect(within(modal).queryByRole("link", { name: "Full details" })).toBeNull();
     expect(spy).not.toHaveBeenCalled();
+
+    spy.mockRestore();
+  });
+
+  test("a click on a row's meaning opens the word's modal", async () => {
+    const user = userEvent.setup();
+    const spy = spyOn(session, "call").mockImplementation(() => Promise.reject(new Error("a preview calls no API")));
+    render(<PreviewList words={[EAT, DRINK]} total={2} termLang="ja" meaningLang="en" />);
+
+    await user.click(screen.getByText("to eat"));
+
+    const modal = await screen.findByRole("dialog", { name: "食べる" });
+    expect(modal.textContent).toContain("ichidan verb");
 
     spy.mockRestore();
   });

@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Word } from "@voca/contract";
 import { WordDetailsModal } from "../deck/WordDetailsModal";
 
-// The term opens the word's modal; the button keeps the term's type and colour instead of the browser's.
+// The button keeps the term's type and colour instead of the browser's. Its click bubbles up to the row, which opens the word.
 const termButtonStyle = {
   background: "none",
   border: 0,
@@ -33,14 +33,9 @@ export function PreviewList({
     <>
       <ul className="preview-list" aria-label="Preview">
         {words.map((word) => (
-          <li key={word.slug}>
+          <li key={word.slug} className="row-open" onClick={() => setOpenSlug(word.slug)}>
             <span className="t" lang={termLang} dir="auto">
-              <button
-                type="button"
-                aria-label={`Open ${word.term}`}
-                style={termButtonStyle}
-                onClick={() => setOpenSlug(word.slug)}
-              >
+              <button type="button" aria-label={`Open ${word.term}`} style={termButtonStyle}>
                 {word.term}
               </button>
             </span>
