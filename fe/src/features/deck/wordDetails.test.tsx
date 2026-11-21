@@ -159,7 +159,7 @@ describe("WordDetailsModal on the deck page", () => {
     spy.mockRestore();
   });
 
-  test("the modal shows the word's metrics from its stats", async () => {
+  test("every direction starts folded, showing its label and recall now only", async () => {
     const user = userEvent.setup();
     const { requests, spy } = fakeSession();
     await renderDeck();
@@ -167,11 +167,44 @@ describe("WordDetailsModal on the deck page", () => {
     await user.click(screen.getByRole("button", { name: "Open 食べる" }));
 
     const modal = await screen.findByRole("dialog", { name: "食べる" });
-    await waitFor(() => expect(modal.textContent).toContain("recall now"));
-    expect(modal.textContent).toContain("lapses");
+    const direction = await within(modal).findByRole("button", { name: /Term → meaning.*82%/ });
+
+    expect(direction.getAttribute("aria-expanded")).toBe("false");
+    expect(modal.textContent).not.toContain("stability");
+    expect(modal.textContent).not.toContain("lapses");
+    expect(modal.textContent).not.toContain("reviews");
+    expect(modal.textContent).not.toContain("accuracy");
 
     const statsCalls = requests.filter((entry) => entry.endpoint === "wordStats");
     expect(statsCalls.map((entry) => (entry.request as { params: { wordSlug: string } }).params.wordSlug)).toEqual([EAT.slug]);
+
+    spy.mockRestore();
+  });
+
+  test("unfolding a direction shows its five metrics, and folding hides them again", async () => {
+    const user = userEvent.setup();
+    const { spy } = fakeSession();
+    await renderDeck();
+
+    await user.click(screen.getByRole("button", { name: "Open 食べる" }));
+
+    const modal = await screen.findByRole("dialog", { name: "食べる" });
+    const direction = await within(modal).findByRole("button", { name: /Term → meaning.*82%/ });
+
+    await user.click(direction);
+
+    expect(direction.getAttribute("aria-expanded")).toBe("true");
+    for (const label of ["recall now", "stability", "lapses", "reviews", "accuracy"]) {
+      expect(modal.textContent).toContain(label);
+    }
+    expect(modal.textContent).toContain("4.2");
+    expect(modal.textContent).toContain("83%");
+
+    await user.click(direction);
+
+    expect(direction.getAttribute("aria-expanded")).toBe("false");
+    expect(modal.textContent).not.toContain("stability");
+    expect(modal.textContent).not.toContain("lapses");
 
     spy.mockRestore();
   });

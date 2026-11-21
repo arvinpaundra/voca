@@ -83,6 +83,10 @@ function CsvImportDialog({ deckSlug, onClose, onImported }: CsvImportDialogProps
         )
       }
     >
+      <a href={`data:text/csv;charset=utf-8,${encodeURIComponent("not implemented: DF")}`} download="voca-template.csv">
+        Download template
+      </a>
+
       <input
         type="file"
         accept=".csv,text/csv"
