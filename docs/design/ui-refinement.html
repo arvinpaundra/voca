@@ -1056,7 +1056,7 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
   <header>
     <span class="eyebrow">Modal + docked panel · every page</span>
     <h2>Import decks</h2>
-    <p>“Import decks” on the Decks list takes up to 20 CSV files; each becomes a new deck named after its file, all in the two languages picked once. The import runs on the server; a panel docked to the bottom-right corner, like a cloud drive's upload panel, follows the Learner across pages, updates live, and stays after a reload or a new sign-in until each batch is dismissed. The panel folds to its header. Each batch is an accordion row with one progress bar; opening it lists its files. A finished batch has a dismiss ×; the panel goes away with the last one.</p>
+    <p>“Import decks” on the Decks list takes up to 20 CSV files; each becomes a new deck named after its file, all in the two languages picked once. The import runs on the server; a panel docked to the bottom-right corner, like a cloud drive's upload panel, follows the Learner across pages, updates live, and stays after a reload or a new sign-in until each batch is dismissed. The panel folds to its header. Each batch is an accordion row with one progress bar; opening it lists its files. A finished batch has a dismiss ×. Once every batch is finished (imported or failed), the header gets a close × too: it dismisses them all and the panel goes away. While the panel shows, the page gets bottom padding as tall as the panel, so its last items can always be scrolled clear of it.</p>
   </header>
 
   <div class="spec">
@@ -1125,7 +1125,7 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
       </div>
       <div class="dock-stage">
           <div class="import-dock"><section class="import-panel" aria-label="Imports">
-            <div class="import-head"><h2>Import finished · 4 of 5 decks</h2><button class="btn-icon" aria-label="Fold"><svg class="i"><use href="#i-chev-d"/></svg></button></div>
+            <div class="import-head"><h2>Import finished · 4 of 5 decks</h2><button class="btn-icon" aria-label="Fold"><svg class="i"><use href="#i-chev-d"/></svg></button><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
             <div class="import-body">
               <div class="import-batch">
                 <div class="import-sum"><svg class="i"><use href="#i-chev-d"/></svg><span><b>5 files</b> · ja → en</span><span class="import-meta" style="display:flex;align-items:center;gap:4px">4 of 5 created<button class="btn-icon" aria-label="Dismiss"><svg class="i"><use href="#i-x"/></svg></button></span>
