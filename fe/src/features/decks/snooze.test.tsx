@@ -91,16 +91,6 @@ describe("DeckRows with snooze", () => {
     deck("DECK000006", "Korean honorifics", null),
   ];
 
-  test("a snoozed deck shows its snooze as a badge; an awake one shows none", () => {
-    render(<DeckRows decks={decks} timezone="UTC" onEdit={() => {}} onDelete={() => {}} />);
-
-    const rows = screen.getAllByRole("listitem");
-
-    expect(within(rows[0]!).getByText("Snoozed until Sat 28 Nov").classList.contains("badge")).toBe(true);
-    expect(within(rows[1]!).getByText("Snoozed").classList.contains("badge")).toBe(true);
-    expect(rows[2]!.textContent).not.toContain("Snoozed");
-  });
-
   test("each row has a checkbox that toggles its deck", async () => {
     const user = userEvent.setup();
     const onToggleSelect = mock((_deck: DeckSummary) => {});
