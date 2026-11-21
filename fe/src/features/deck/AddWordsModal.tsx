@@ -36,7 +36,8 @@ const SAVE_FAILED = "Could not save the words. Try again.";
 export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalProps) {
   const nextId = useRef(1);
   const [rows, setRows] = useState<ReadonlyArray<Row>>([{ id: 0, draft: emptyDraft, problem: null }]);
-  const [openId, setOpenId] = useState(0);
+  // `null` folds every word, so the list can be saved with no word open.
+  const [openId, setOpenId] = useState<number | null>(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -134,7 +135,7 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
         </>
       }
     >
-      <div className="word-list">
+      <div className="add-list">
         {rows.map((row, index) => {
           const position = index + 1;
 
@@ -145,7 +146,7 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
                   type="button"
                   className="word-fold muted"
                   aria-expanded="true"
-                  onClick={() => setError("not implemented: AW")}
+                  onClick={() => setOpenId(null)}
                 >
                   Word {position}
                 </button>
