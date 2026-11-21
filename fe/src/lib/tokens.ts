@@ -8,22 +8,40 @@ const REFRESH_MARGIN_MS = 60_000
 
 // Both tokens persist in the given storage, so a reload and every other tab reuse them.
 export const createTokenStore = (storage: TokenStorage) => {
+  // Read on every call, never cached: another tab may have stored a newer token.
+  const readExpiresAt = (): number | null => {
+    const raw = storage.getItem(ACCESS_EXPIRES_KEY)
+    if (raw === null) return null
+
+    const value = Number(raw)
+    return Number.isFinite(value) ? value : null
+  }
+
   return {
     getRefresh: (): string | null => storage.getItem(REFRESH_KEY),
     setRefresh: (token: string): void => storage.setItem(REFRESH_KEY, token),
-    getAccess: (): string | null => {
-      throw new Error("not implemented: SR")
-    },
+    getAccess: (): string | null => storage.getItem(ACCESS_KEY),
+
     /** `expiresIn` is in seconds; `now` is epoch milliseconds. */
-    setAccess: (_token: string, _expiresIn: number, _now: number): void => {
-      throw new Error("not implemented: SR")
+    setAccess: (token: string, expiresIn: number, now: number): void => {
+      storage.setItem(ACCESS_KEY, token)
+      storage.setItem(ACCESS_EXPIRES_KEY, String(now + expiresIn * 1000))
     },
+
     /** True when there is no access token, its expiry is unreadable, or fewer than 60 s remain at `now` (epoch ms). */
-    needsRefresh: (_now: number): boolean => {
-      throw new Error(`not implemented: SR (margin ${REFRESH_MARGIN_MS} ms)`)
+    needsRefresh: (now: number): boolean => {
+      if (storage.getItem(ACCESS_KEY) === null) return true
+
+      const expiresAt = readExpiresAt()
+      if (expiresAt === null) return true
+
+      return expiresAt - now < REFRESH_MARGIN_MS
     },
+
     clear: (): void => {
       storage.removeItem(REFRESH_KEY)
+      storage.removeItem(ACCESS_KEY)
+      storage.removeItem(ACCESS_EXPIRES_KEY)
     }
   }
 }
