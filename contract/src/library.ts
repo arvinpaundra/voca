@@ -109,6 +109,12 @@ export const SnoozeDecks = Schema.Struct({ deckSlugs: DeckSlugs, days: Schema.Nu
 
 export const UnsnoozeDecks = Schema.Struct({ deckSlugs: DeckSlugs })
 
+export const DeleteDecks = Schema.Struct({ deckSlugs: DeckSlugs })
+
+/** The slugs that were not deleted: missing, already deleted, or not the Learner's. Every other deck is gone. */
+export const DeleteDecksResult = Schema.Struct({ failed: Schema.Array(DeckSlug) })
+export type DeleteDecksResult = typeof DeleteDecksResult.Type
+
 export const IMPORT_MAX_BYTES = 5 * 1024 * 1024
 
 export const ImportCsv = Schema.Struct({ file: Multipart.SingleFileSchema }).pipe(
@@ -138,6 +144,8 @@ export class LibraryGroup extends HttpApiGroup.make("library").add(
   HttpApiEndpoint.post("unpublishDeck", "/decks/:deckSlug/unpublish", { params: deckParams, success: Deck, error: NotFound }),
   /** All or nothing: a deck the Learner doesn't own fails the whole batch. A snoozed deck gets the new end. */
   HttpApiEndpoint.post("snoozeDecks", "/decks/snooze", { payload: SnoozeDecks, success: Schema.Array(Deck), error: NotFound }),
+  /** Not all or nothing: each deck is deleted as `deleteDeck` does, and the ones that can't be are listed in `failed`. */
+  HttpApiEndpoint.post("deleteDecks", "/decks/delete", { payload: DeleteDecks, success: DeleteDecksResult }),
   HttpApiEndpoint.post("unsnoozeDecks", "/decks/unsnooze", { payload: UnsnoozeDecks, success: Schema.Array(Deck), error: NotFound }),
   /** The deck's words in a fresh random order: `size` of them, or all when `size` is absent. Reads only. */
   HttpApiEndpoint.get("flashcards", "/decks/:deckSlug/flashcards", {

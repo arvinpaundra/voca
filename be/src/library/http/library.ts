@@ -115,6 +115,8 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("DeckNotFound", notFound("Deck"))
         ),
 
+      deleteDecks: () => Effect.die("not implemented: BD"),
+
       unsnoozeDecks: ({ payload }) =>
         unsnoozeDecks(payload).pipe(
           Effect.provideContext(ports),

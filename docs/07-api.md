@@ -39,6 +39,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | POST | `/decks/:deckSlug/unpublish` | → `Deck` |
 | POST | `/decks/snooze` | `{deckSlugs: DeckSlug[1..200], days: 1\|3\|7\|14\|null}` → `Deck[]`: all or nothing; `null` = until unsnoozed (FR-20) |
 | POST | `/decks/unsnooze` | `{deckSlugs: DeckSlug[1..200]}` → `Deck[]` |
+| POST | `/decks/delete` | `{deckSlugs: DeckSlug[1..200]}` → `{failed: DeckSlug[]}`: each deck deleted as `DELETE /decks/:deckSlug` does; the ones missing, already deleted or not the Learner's are listed, the rest are gone (FR-28) |
 | GET | `/decks/:deckSlug/flashcards` | `?size=7\|10\|15\|20` (absent: all) → `Word[]` in a fresh random order; reads only (FR-21) |
 | GET | `/decks/:deckSlug/words` | `?q&cursor&limit` → `Page<WordWithCard>` |
 | POST | `/decks/:deckSlug/words` | `{term, meaning, reading?, example?, notes?}` → `Word` |
