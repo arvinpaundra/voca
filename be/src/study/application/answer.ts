@@ -225,7 +225,8 @@ export const answerQuestion = (
           nextDue,
           retry,
           completed,
-          leech
+          leech,
+          reading: prompt.reading
         } satisfies AnswerResult
       })
     )
