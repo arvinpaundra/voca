@@ -60,10 +60,11 @@ The node `mio-vnc` is **arm64**. The release builds the image on GitHub's `ubunt
 
 There is no Helm or Kustomize for 6 files.
 
-**Migrations** never run at boot. The owner runs them before tagging a release that adds one, with the same binary's `migrate` command, through a port-forward:
+**Migrations** never run at boot. The owner runs them before tagging a release that adds one, with the same binary's `migrate` command, through a port-forward. The URL is the cluster's own `DATABASE_URL` with the host swapped for the tunnel, so the password is never typed:
 ```bash
 kubectl -n database port-forward svc/postgres-postgresql 5432:5432 &
-DATABASE_URL='postgres://voca:<pw>@localhost:5432/voca' bun run --cwd be migrate
+DATABASE_URL=$(kubectl -n voca get secret voca-api -o jsonpath='{.data.DATABASE_URL}' | base64 -d | sed 's|@[^/]*/|@localhost:5432/|') \
+  bun run --cwd be migrate
 ```
 The `effect/sql` Migrator takes a lock, so two runs at once are safe.
 
@@ -93,7 +94,7 @@ Master is protected by the required `verify` check, so a master commit has alrea
 | Secret | Value |
 |---|---|
 | `KUBECONFIG` | base64 of a kubeconfig holding only the `kube-oci` context, set as its current context |
-| `DATABASE_URL` | `postgres://voca:<pw>@postgres-postgresql.database.svc.cluster.local:5432/voca` |
+| `DATABASE_URL` | `postgres://voca:<password>@postgres-postgresql.database.svc.cluster.local:5432/voca`, set by the owner; the only place the `voca` role's password lives |
 | `JWT_SECRET` | at least 32 random bytes |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | the Google OAuth client; the ID is also built into the web app |
 | `CLOUDFLARE_API_TOKEN` | a token with *Cloudflare Pages: Edit* |
@@ -122,7 +123,7 @@ One-time steps only the owner does, in order. Steps 2–4 cannot be undone, and 
 4. **Old database:** `kubectl -n database exec -it postgres-postgresql-0 -- psql -U postgres`, then `DROP DATABASE <old_db>; DROP ROLE <old_role>;` (names from step 2). `\l` and `\du` must no longer list them. Nothing moves to the new app.
 5. **Fresh database**, in the same `psql`; check `SHOW max_connections;` leaves room for 20 more:
    ```sql
-   CREATE ROLE voca LOGIN PASSWORD '<generated>';
+   CREATE ROLE voca LOGIN PASSWORD '<the password in DATABASE_URL>';
    CREATE DATABASE voca OWNER voca;
    REVOKE ALL ON DATABASE voca FROM PUBLIC;
    ```
@@ -132,5 +133,5 @@ One-time steps only the owner does, in order. Steps 2–4 cannot be undone, and 
    kubectl config view --minify --flatten --context kube-oci | base64 | gh secret set KUBECONFIG
    ```
 8. **Cloudflare Pages:** `bunx wrangler@4.20.0 pages project create voca --production-branch master`, then Pages → voca → Custom domains → add `voca.arvinpaundra.dev`. The `voca-origin` record is created by external-dns from the ingress on the first release.
-9. **Migrate** the fresh database (the port-forward command under *Migrations* above).
-10. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. GHCR makes a new package private: if the rollout fails with `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release.
+9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. GHCR makes a new package private: if the rollout fails with `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release. The API turns healthy on the empty database (`/api/healthz` only runs `SELECT 1`).
+10. **Migrate** the fresh database with the command under *Migrations* above; it reads `DATABASE_URL` from the `voca-api` secret the first release created.
