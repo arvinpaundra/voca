@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { DateTime, Result } from "effect";
-import type { DeckDetail, DeckStats, ImportResult, SnoozeDays, Word, WordWithCards } from "@voca/contract";
+import type { DeckDetail, SnoozeDays, WordWithCards } from "@voca/contract";
 import { wordLabels } from "@voca/contract";
 import { ArrowRight, Plus } from "lucide-react";
 import { Badge } from "../../components/Badge";
@@ -13,6 +14,8 @@ import { SearchInput } from "../../components/SearchInput";
 import { Skeleton } from "../../components/Skeleton";
 import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
+import { deckStatsQuery, meQuery, wordsQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { DeckModal } from "../decks/DeckModal";
 import { DeleteDeckModal } from "../decks/DeleteDeckModal";
 import { SnoozeModal } from "../decks/SnoozeModal";
@@ -29,7 +32,6 @@ import { WordList } from "./WordList";
 
 type DeckViewProps = {
   deck: DeckDetail;
-  onDeckChanged: (deck: DeckDetail) => void;
 };
 
 type WordEditor = { kind: "add" } | { kind: "edit"; word: WordWithCards } | null;
@@ -37,23 +39,15 @@ type WordEditor = { kind: "add" } | { kind: "edit"; word: WordWithCards } | null
 // The search box fills `q` only when it has text, so an empty search lists every word.
 const searchQuery = (query: string) => (query === "" ? {} : { q: query });
 
-export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
-  const labels = wordLabels(deck.termLang);
+// Every write refreshes the whole cache: the deck, its stats and its words are read back from the server.
+const refreshCache = () => void queryClient.invalidateQueries();
 
-  const [words, setWords] = useState<readonly WordWithCards[] | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+export function DeckView({ deck }: DeckViewProps) {
+  const labels = wordLabels(deck.termLang);
 
   const [searchInput, setSearchInput] = useState("");
   const [query, setQuery] = useState("");
-  const [reloadKey, setReloadKey] = useState(0);
   const [filter, setFilter] = useState<WordFilter>("all");
-
-  // The stats bar reloads whenever a word is added or removed, not only when the search changes.
-  const [stats, setStats] = useState<DeckStats | null>(null);
-  const [statsVersion, setStatsVersion] = useState(0);
-  const [wordDelta, setWordDelta] = useState(0);
 
   // The modal reads the word from the list, so an edit saved there shows in the modal too.
   const [openSlug, setOpenSlug] = useState<string | null>(null);
@@ -65,58 +59,26 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [timezone, setTimezone] = useState("UTC");
   const [snoozing, setSnoozing] = useState(false);
   const [snoozeBusy, setSnoozeBusy] = useState(false);
   const [snoozeError, setSnoozeError] = useState<string | null>(null);
 
   // The snooze's end is shown on the Learner's day, so the header needs their timezone.
-  useEffect(() => {
-    let active = true;
-
-    void session.call((client) => client.me.get()).then((result) => {
-      if (active && Result.isSuccess(result)) setTimezone(result.success.settings.timezone);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    setLoadError(null);
-
-    session
-      .call((client) => client.library.listWords({ params: { deckSlug: deck.slug }, query: searchQuery(query) }))
-      .then((result) => {
-        if (!active) return;
-        if (Result.isSuccess(result)) {
-          setWords(result.success.items);
-          setNextCursor(result.success.nextCursor);
-        } else {
-          setLoadError("Could not load the words.");
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [deck.slug, query, reloadKey]);
+  const me = useQuery(meQuery(), queryClient);
+  const timezone = me.data?.settings.timezone ?? "UTC";
 
   // The stats endpoint can fail while the insight data is unavailable; the page works without the bar.
-  useEffect(() => {
-    let active = true;
-    setStats(null);
+  const statsResult = useQuery(deckStatsQuery(deck.slug), queryClient);
+  const stats = statsResult.data ?? null;
 
-    session.call((client) => client.insight.deckStats({ params: { deckSlug: deck.slug } })).then((result) => {
-      if (active && Result.isSuccess(result)) setStats(result.success);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [deck.slug, statsVersion]);
+  const wordsResult = useInfiniteQuery(wordsQuery(deck.slug, searchQuery(query)), queryClient);
+  const words = wordsResult.data?.pages.flatMap((page) => page.items) ?? null;
+  const loadingMore = wordsResult.isFetchingNextPage;
+  const loadError = wordsResult.isError
+    ? words === null
+      ? "Could not load the words."
+      : "Could not load more words."
+    : null;
 
   // The words are searched on the server, so typing waits a moment before asking.
   useEffect(() => {
@@ -125,49 +87,24 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const loadMore = async () => {
-    if (nextCursor === null || loadingMore) return;
+  const loadMore = () => {
+    if (!wordsResult.hasNextPage || loadingMore) return;
 
-    const cursor = nextCursor;
-    setLoadingMore(true);
-
-    const result = await session.call((client) =>
-      client.library.listWords({ params: { deckSlug: deck.slug }, query: { ...searchQuery(query), cursor } }),
-    );
-
-    setLoadingMore(false);
-    if (Result.isSuccess(result)) {
-      setWords((previous) => [...(previous ?? []), ...result.success.items]);
-      setNextCursor(result.success.nextCursor);
-    } else {
-      setLoadError("Could not load more words.");
-    }
+    void wordsResult.fetchNextPage();
   };
 
-  const wordSaved = (saved: Word) => {
-    if (wordEditor?.kind === "edit") {
-      setWords((previous) =>
-        previous === null
-          ? previous
-          : previous.map((word) => (word.slug === saved.slug ? { ...word, ...saved } : word)),
-      );
-    } else {
-      setReloadKey((key) => key + 1);
-      setStatsVersion((version) => version + 1);
-      setWordDelta((delta) => delta + 1);
-    }
+  const wordSaved = () => {
     setWordEditor(null);
+    refreshCache();
   };
 
-  const wordDeleted = (slug: string) => {
-    setWords((previous) => (previous === null ? previous : previous.filter((word) => word.slug !== slug)));
-    setStatsVersion((version) => version + 1);
-    setWordDelta((delta) => delta - 1);
+  const wordDeleted = () => {
     setDeletingWord(null);
     setOpenSlug(null);
+    refreshCache();
   };
 
-  // The server answers with the deck's snooze after the change, so the header shows what was saved.
+  // The server answers with the deck's snooze after the change; the refreshed deck shows what was saved.
   const snoozeThis = async (days: SnoozeDays | null) => {
     setSnoozeBusy(true);
     setSnoozeError(null);
@@ -183,8 +120,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     }
 
     setSnoozing(false);
-    const [changed] = result.success;
-    if (changed !== undefined) onDeckChanged({ ...deck, ...changed });
+    refreshCache();
   };
 
   const unsnoozeThis = async () => {
@@ -199,8 +135,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
       return;
     }
 
-    const [changed] = result.success;
-    if (changed !== undefined) onDeckChanged({ ...deck, ...changed });
+    refreshCache();
   };
 
   const toggleVisibility = async () => {
@@ -217,18 +152,10 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
 
     setVisibilityBusy(false);
     if (Result.isSuccess(result)) {
-      onDeckChanged(result.success);
+      refreshCache();
       return;
     }
     setVisibilityError(isPublic ? "Could not unpublish the deck. Try again." : "Could not publish the deck. Try again.");
-  };
-
-  // Imported words change the word list and the counts, so the same reloads a single add or delete triggers run here.
-  // The dialog stays open so its summary stays visible until the user closes it.
-  const wordsImported = (result: ImportResult) => {
-    setReloadKey((key) => key + 1);
-    setStatsVersion((version) => version + 1);
-    setWordDelta((delta) => delta + result.imported);
   };
 
   const exportDeck = async () => {
@@ -256,9 +183,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const shown = words?.filter((word) => matchesWordFilter(word, filter, now)) ?? null;
   const unfiltered = query === "" && filter === "all";
 
-  // The deck's word count was read with the deck, so words added or removed since are applied on top.
-  const counted = { ...deck, ...(deck.wordCount !== undefined && { wordCount: deck.wordCount + wordDelta }) };
-  const { tabs: filterTabs, searchPlaceholder } = deckCounts(counted, stats);
+  const { tabs: filterTabs, searchPlaceholder } = deckCounts(deck, stats);
   const snoozeText = snoozeLabel(deck.snooze, timezone);
 
   const openedWord = words?.find((word) => word.slug === openSlug) ?? null;
@@ -366,7 +291,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
         <Tabs label="Filter words" tabs={filterTabs} value={filter} onChange={setFilter} />
       </div>
 
-      {loadError !== null && <ErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
+      {loadError !== null && <ErrorState message={loadError} onRetry={() => void wordsResult.refetch()} />}
 
       {shown === null && loadError === null && <Skeleton label="Loading words" rows={4} />}
 
@@ -395,9 +320,9 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
 
       {shown !== null && shown.length === 0 && !unfiltered && <EmptyState title="No words match this view." />}
 
-      {nextCursor !== null && (
+      {wordsResult.hasNextPage && (
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <Button variant="ghost" disabled={loadingMore} onClick={() => void loadMore()}>
+          <Button variant="ghost" disabled={loadingMore} onClick={loadMore}>
             {loadingMore ? "Loading…" : "Load more"}
           </Button>
         </div>
@@ -416,16 +341,16 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
         open={importing}
         deckSlug={deck.slug}
         onClose={() => setImporting(false)}
-        onImported={wordsImported}
+        onImported={refreshCache}
       />
 
       <DeckModal
         open={editingDeck}
         deck={deck}
         onClose={() => setEditingDeck(false)}
-        onSaved={(saved) => {
+        onSaved={() => {
           setEditingDeck(false);
-          onDeckChanged(saved);
+          refreshCache();
         }}
       />
 

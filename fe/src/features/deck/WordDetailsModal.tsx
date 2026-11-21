@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Result } from "effect";
+import { useQuery } from "@tanstack/react-query";
 import type { Word, WordDrillStats } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { StatStrip } from "../../components/StatStrip";
-import { session } from "../../lib/appSession";
+import { wordStatsQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { wordHref } from "../word/wordHref";
 import { percent, stability } from "../word/wordFormat";
 
@@ -48,30 +48,14 @@ type WordDetailsDialogProps = Omit<WordDetailsModalProps, "word" | "own"> & {
 };
 
 function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDetailsDialogProps) {
-  const [metrics, setMetrics] = useState<Metrics>({ kind: "loading" });
   const owned = own !== undefined;
-  const wordSlug = word.slug;
 
   // A preview has no Learner's card for the word, so it makes no request.
-  useEffect(() => {
-    if (!owned) return;
+  const stats = useQuery({ ...wordStatsQuery(word.slug), enabled: owned }, queryClient);
 
-    let active = true;
-    setMetrics({ kind: "loading" });
-
-    session
-      .call((client) => client.insight.wordStats({ params: { wordSlug } }))
-      .then((result) => {
-        if (!active) return;
-
-        if (Result.isSuccess(result)) setMetrics({ kind: "ready", drills: result.success.drills });
-        else setMetrics({ kind: "failed" });
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [owned, wordSlug]);
+  let metrics: Metrics = { kind: "loading" };
+  if (stats.isError) metrics = { kind: "failed" };
+  else if (stats.data !== undefined) metrics = { kind: "ready", drills: stats.data.drills };
 
   const example = word.example !== null && word.example !== "" ? word.example : null;
   const notes = word.notes !== null && word.notes !== "" ? word.notes : null;
