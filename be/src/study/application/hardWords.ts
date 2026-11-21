@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { DateTime, Effect } from "effect"
 import { CurrentLearner } from "@voca/contract"
 import type { Drill } from "@voca/contract"
 import { CardNotFound } from "../domain/errors.ts"
@@ -17,15 +17,18 @@ export const listHardWords = (query: {
   Effect.gen(function* () {
     const { id: learnerId } = yield* CurrentLearner
     const repo = yield* StudyRepo
+    const now = yield* DateTime.now
 
-    // Stub: leave out the words of decks whose snooze is live.
-    yield* Effect.die("not implemented: BS")
-
-    return yield* repo.hardWords(learnerId, {
-      drill: query.drill ?? null,
-      cursor: query.cursor ?? null,
-      limit: query.limit ?? DEFAULT_PAGE_SIZE
-    })
+    // A snoozed deck's words are left out while its snooze is live, so the clock decides them.
+    return yield* repo.hardWords(
+      learnerId,
+      {
+        drill: query.drill ?? null,
+        cursor: query.cursor ?? null,
+        limit: query.limit ?? DEFAULT_PAGE_SIZE
+      },
+      now
+    )
   })
 
 /** Sets the hard flag of the Learner's card for the word and drill. NotFound when that card doesn't exist. */

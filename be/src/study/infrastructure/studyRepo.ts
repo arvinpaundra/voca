@@ -284,18 +284,29 @@ export const StudyRepoLive = Layer.effect(
         WHERE w.id = ${wordId}`
     })
 
-    // The Learner's hard cards in the drills, of live words in live decks they own.
+    // The Learner's hard cards in the drills, of live words in live decks they own that aren't snoozed at `now`.
+    // The snooze is decided by the clock passed in, not by SQL's now(), so the Learner's clock is the one that counts.
     const hardCardsOf = SqlSchema.findAll({
-      Request: Schema.Struct({ learnerId: Schema.BigInt, drills: Schema.Array(Schema.String) }),
+      Request: Schema.Struct({
+        learnerId: Schema.BigInt,
+        drills: Schema.Array(Schema.String),
+        now: Schema.Number
+      }),
       Result: HardCardRow,
-      execute: ({ learnerId, drills }) => sql`
+      execute: ({ learnerId, drills, now }) => {
+        const nowAt = new Date(now)
+
+        return sql`
         SELECT c.word_id::text AS "wordId", c.drill, c.due, d.id::text AS "deckId", d.term_lang AS "termLang"
         FROM cards c
           JOIN words w ON w.id = c.word_id
           JOIN decks d ON d.id = w.deck_id
         WHERE c.learner_id = ${learnerId} AND c.is_hard AND c.deleted_at IS NULL
           AND c.drill IN ${sql.in(drills)}
-          AND w.deleted_at IS NULL AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL`
+          AND w.deleted_at IS NULL AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL
+          AND NOT (d.snoozed_at IS NOT NULL
+                   AND (d.snoozed_until IS NULL OR d.snoozed_until > ${nowAt}::timestamptz))`
+      }
     })
 
     // One row per word, with the Learner's hard cards as a JSON array. The keyset works as in the word list.
@@ -304,12 +315,14 @@ export const StudyRepoLive = Layer.effect(
         learnerId: Schema.BigInt,
         drill: Schema.NullOr(Drill),
         after: Schema.NullOr(Schema.Struct({ createdAt: Schema.Number, id: Schema.BigInt })),
+        now: Schema.Number,
         limit: Schema.Number
       }),
       Result: HardWordRow,
-      execute: ({ learnerId, drill, after, limit }) => {
+      execute: ({ learnerId, drill, after, now, limit }) => {
         const afterAt = after === null ? null : new Date(after.createdAt)
         const afterId = after === null ? null : after.id
+        const nowAt = new Date(now)
 
         return sql`
           SELECT w.id::text AS id, w.slug, w.term, w.reading, w.meaning, w.example, w.notes,
@@ -323,6 +336,8 @@ export const StudyRepoLive = Layer.effect(
                  ), '[]'::json) AS cards
           FROM words w JOIN decks d ON d.id = w.deck_id
           WHERE d.owner_id = ${learnerId} AND d.deleted_at IS NULL AND w.deleted_at IS NULL
+            AND NOT (d.snoozed_at IS NOT NULL
+                     AND (d.snoozed_until IS NULL OR d.snoozed_until > ${nowAt}::timestamptz))
             AND EXISTS (
               SELECT 1 FROM cards h
               WHERE h.word_id = w.id AND h.learner_id = ${learnerId} AND h.is_hard AND h.deleted_at IS NULL
@@ -461,15 +476,17 @@ export const StudyRepoLive = Layer.effect(
             scheduled_days: review.scheduledDays
           })}`.pipe(Effect.asVoid, Effect.orDie),
 
-      hardCards: (learnerId, drills) => hardCardsOf({ learnerId, drills: [...drills] }).pipe(Effect.orDie),
+      hardCards: (learnerId, drills, now) =>
+        hardCardsOf({ learnerId, drills: [...drills], now: DateTime.toEpochMillis(now) }).pipe(Effect.orDie),
 
-      hardWords: (learnerId, query: HardWordQuery) =>
+      hardWords: (learnerId, query: HardWordQuery, now) =>
         Effect.gen(function* () {
           // One extra row tells whether a next page exists.
           const rows = yield* hardWordRows({
             learnerId,
             drill: query.drill,
             after: Option.getOrNull(decodeCursor(query.cursor)),
+            now: DateTime.toEpochMillis(now),
             limit: query.limit + 1
           })
           const page = rows.slice(0, query.limit)

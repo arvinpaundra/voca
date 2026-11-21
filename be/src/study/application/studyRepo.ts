@@ -154,10 +154,10 @@ export class StudyRepo extends Context.Service<StudyRepo, {
   /** Creates the Learner's card for this word and drill, or replaces its scheduling. */
   saveCard(learnerId: bigint, wordId: bigint, drill: Drill, card: CardWrite): Effect.Effect<void>
   insertReview(learnerId: bigint, review: ReviewWrite): Effect.Effect<void>
-  /** The Learner's hard cards in these drills, of live words in live decks they own. */
-  hardCards(learnerId: bigint, drills: ReadonlyArray<Drill>): Effect.Effect<ReadonlyArray<HardCard>>
-  /** The Learner's hard words, keyset-paged; each carries its hard cards and its deck. */
-  hardWords(learnerId: bigint, query: HardWordQuery): Effect.Effect<HardWordPage>
+  /** The Learner's hard cards in these drills, of live words in live decks they own that aren't snoozed at `now`. */
+  hardCards(learnerId: bigint, drills: ReadonlyArray<Drill>, now: DateTime.Utc): Effect.Effect<ReadonlyArray<HardCard>>
+  /** The Learner's hard words, keyset-paged; each carries its hard cards and its deck. Snoozed decks at `now` are out. */
+  hardWords(learnerId: bigint, query: HardWordQuery, now: DateTime.Utc): Effect.Effect<HardWordPage>
   /** Sets or clears the hard flag of the Learner's card; false when there is no such card. */
   setHard(learnerId: bigint, wordSlug: string, drill: Drill, isHard: boolean): Effect.Effect<boolean>
   /** The deck a word lives in, deleted or not: a question keeps the pool it was asked from. */
