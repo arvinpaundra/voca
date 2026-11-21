@@ -11,6 +11,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.108.2",
     "@tanstack/react-router": "^1.0.0",
     "@voca/contract": "workspace:*",
     "effect": "4.1.2",
