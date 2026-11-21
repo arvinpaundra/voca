@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { AlertCircle, ArrowRight, Check } from "lucide-react";
 import { Button } from "../../components/Button";
+import { WORD_FONT_CLASS } from "../../lib/wordFont";
+
+// The word's own text gets its own element, so the sentence around it keeps the interface font.
+const wordText = (text: string) => <span className={WORD_FONT_CLASS}>{text}</span>;
 
 // The bar under the question once it is answered; it holds the Next button.
 export function Verdict({
@@ -37,16 +41,20 @@ export function Verdict({
     <div className={correct ? "verdict ok" : "verdict no"} role="status">
       {correct ? <Check className="i" aria-hidden="true" /> : <AlertCircle className="i" aria-hidden="true" />}
 
-      {reading !== null && <span className="reading" lang={readingLang}>{reading}</span>}
+      {reading !== null && (
+        <span className={`reading ${WORD_FONT_CLASS}`} lang={readingLang}>
+          {reading}
+        </span>
+      )}
 
       <span className="grow">
         {correct ? (
           <>
-            <b>Correct.</b> {term} means “{answer}”.
+            <b>Correct.</b> {wordText(term)} means “{wordText(answer)}”.
           </>
         ) : (
           <>
-            <b>Not quite.</b> {term} means “{answer}”. It comes back later in this session.
+            <b>Not quite.</b> {wordText(term)} means “{wordText(answer)}”. It comes back later in this session.
           </>
         )}
       </span>

@@ -3,6 +3,7 @@ import type { Drill } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
+import { WORD_FONT_CLASS } from "../../lib/wordFont";
 
 /** A word answered in this tab's session: its first attempt, and whether it is (or should be) hard. */
 export type SessionWordItem = {
@@ -38,12 +39,12 @@ export function SessionWords({
         {items.map((item) => (
           <li key={item.wordSlug}>
             <article className="word">
-              <span className="w-term" lang={item.lang} dir="auto">
+              <span className={`w-term ${WORD_FONT_CLASS}`} lang={item.lang} dir="auto">
                 {item.term}
               </span>
 
               <div className="w-body">
-                <span className="w-meaning">{item.meaning}</span>
+                <span className={`w-meaning ${WORD_FONT_CLASS}`}>{item.meaning}</span>
               </div>
 
               {/* A fixed width keeps the dot aligned whether or not the "Suggested" badge is shown. */}

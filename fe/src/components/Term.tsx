@@ -1,3 +1,4 @@
+import { WORD_FONT_CLASS } from "../lib/wordFont";
 import { cx } from "./cx";
 
 type TermProps = {
@@ -12,11 +13,16 @@ type TermProps = {
 };
 
 // The term font and weight are the design's `.prompt .term` (--f-term); the readings follow `ruby rt` in globals.css.
+// The face is a class, not an inline style, so the word font can override it.
 export function Term({ term, reading, lang, readingLang, dir, size = "md", className }: TermProps) {
   return (
     <span
-      className={cx("font-medium leading-[1.2]", size === "lg" ? "text-[76px]" : "text-[48px]", className)}
-      style={{ fontFamily: "var(--f-term)" }}
+      className={cx(
+        "term-face font-medium leading-[1.2]",
+        WORD_FONT_CLASS,
+        size === "lg" ? "text-[76px]" : "text-[48px]",
+        className,
+      )}
       lang={lang}
       dir={dir}
     >

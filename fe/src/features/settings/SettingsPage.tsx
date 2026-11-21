@@ -17,6 +17,7 @@ import { queryClient } from "../../lib/queryClient";
 import { changedSettings, draftFrom, parseDraft, type DraftErrors, type SettingsDraft } from "./settingsModel";
 import { SettingsRow } from "./SettingsRow";
 import { SettingsSection } from "./SettingsSection";
+import { WordFontSection } from "./WordFontSection";
 
 type Notice = { readonly kind: "saved" } | { readonly kind: "failed" } | null;
 
@@ -242,6 +243,8 @@ export function SettingsPage() {
           <ProfileSection learner={learner.data} />
 
           <StudyPreferences settings={learner.data.settings} />
+
+          <WordFontSection />
         </div>
       )}
     </>

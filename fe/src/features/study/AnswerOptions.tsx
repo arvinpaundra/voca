@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { cx } from "../../components/cx";
+import { WORD_FONT_CLASS } from "../../lib/wordFont";
 
 export type AnswerOption = { wordSlug: string; text: string };
 
@@ -58,7 +59,7 @@ export function AnswerOptions({
           >
             <kbd>{index + 1}</kbd>
 
-            <span className={cx("grow", lang !== undefined && "font-term")} lang={lang} dir="auto">
+            <span className={cx("grow", WORD_FONT_CLASS, lang !== undefined && "font-term")} lang={lang} dir="auto">
               {option.text}
             </span>
 

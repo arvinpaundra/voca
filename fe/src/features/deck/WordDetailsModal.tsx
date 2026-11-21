@@ -6,6 +6,7 @@ import { Modal } from "../../components/Modal";
 import { StatStrip } from "../../components/StatStrip";
 import { wordStatsQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
+import { WORD_FONT_CLASS } from "../../lib/wordFont";
 import { wordHref } from "../word/wordHref";
 import { percent, stability } from "../word/wordFormat";
 
@@ -68,22 +69,22 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
     );
 
   return (
-    <Modal open title={word.term} onClose={onClose} footer={footer}>
+    <Modal open title={word.term} titleClassName={WORD_FONT_CLASS} onClose={onClose} footer={footer}>
       <div className="grid gap-3">
         {word.reading !== null && (
-          <p lang={termLang} dir="auto">
+          <p className={WORD_FONT_CLASS} lang={termLang} dir="auto">
             {word.reading}
           </p>
         )}
 
-        <p lang={meaningLang} dir="auto">
+        <p className={WORD_FONT_CLASS} lang={meaningLang} dir="auto">
           {word.meaning}
         </p>
 
         {example !== null && (
           <dl>
             <dt>Example</dt>
-            <dd lang={termLang} dir="auto">
+            <dd className={WORD_FONT_CLASS} lang={termLang} dir="auto">
               {example}
             </dd>
           </dl>
@@ -92,7 +93,9 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
         {notes !== null && (
           <dl>
             <dt>Notes</dt>
-            <dd dir="auto">{notes}</dd>
+            <dd className={WORD_FONT_CLASS} dir="auto">
+              {notes}
+            </dd>
           </dl>
         )}
 

@@ -6,6 +6,7 @@ const FOCUSABLE = "button, [href], input, select, textarea, [tabindex]:not([tabi
 export function Modal({
   open,
   title,
+  titleClassName,
   description,
   onClose,
   footer,
@@ -13,6 +14,7 @@ export function Modal({
 }: {
   open: boolean;
   title: string;
+  titleClassName?: string | undefined;
   description?: string;
   onClose: () => void;
   footer?: ReactNode;
@@ -60,7 +62,9 @@ export function Modal({
       <div className="modal">
         <div className="modal-head">
           <div>
-            <h3 id={titleId}>{title}</h3>
+            <h3 id={titleId} className={titleClassName}>
+              {title}
+            </h3>
             {description !== undefined && <p>{description}</p>}
           </div>
           <button type="button" className="btn-icon" aria-label="Close" onClick={onClose}>
