@@ -329,7 +329,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .deck-foot .mini { flex: 1; max-width: 120px; }
 .deck-foot .mbar { height: 4px; }
 .deck-grid { grid-template-columns: 1fr; gap: 0; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: #fff; }
-.deck { grid-template-columns: minmax(0, 1fr) 140px 64px 64px 84px 32px; grid-template-rows: none; align-items: center; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 10px 16px; gap: 16px; }
+.deck { grid-template-columns: minmax(0, 1fr) 220px 64px 64px 84px 32px; grid-template-rows: none; align-items: center; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 10px 16px; gap: 16px; }
 .deck-grid li:first-child .deck { border-top: 0; }
 .deck:hover { background: var(--sunken); }
 .deck-top { display: contents; }
@@ -346,6 +346,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .deck-foot { display: contents; }
 .deck-foot .mini { display: none; }
 .deck-tags { order: 1; }
+.deck .deck-tags { flex-wrap: nowrap; }
 .card .deck { grid-template-columns: minmax(0, 1fr) 40px 48px 76px; padding: 10px 14px; }
 .card .deck-tags { display: none; }
 .deck-moon { flex-shrink: 0; margin-top: 2px; color: var(--muted); }
@@ -353,7 +354,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .deck.snoozed .deck-title, .deck.snoozed .deck-stats > div { opacity: .55; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .list-head { display: none; }
-.list-head { display: grid; grid-template-columns: minmax(0, 1fr) 140px 64px 64px 84px 32px; gap: 16px; padding: 8px 16px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.list-head { display: grid; grid-template-columns: minmax(0, 1fr) 220px 64px 64px 84px 32px; gap: 16px; padding: 8px 16px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .list-head span:nth-child(3), .list-head span:nth-child(4) { text-align: right; }
 @media (max-width: 760px) {
   .deck, .card .deck {
