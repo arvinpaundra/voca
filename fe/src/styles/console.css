@@ -275,6 +275,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .side-user { margin-top: auto; border-top: 1px solid var(--dark-line); padding: 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #e7e5e4; }
 .side-user small { display: block; color: #78716c; font-size: 11px; }
 .main { min-width: 0; padding: clamp(20px, 3vw, 40px); display: grid; gap: var(--gap-lg); align-content: start; }
+.main { padding-bottom: calc(var(--import-dock-h, 0px) + 16px); }
 .content { max-width: 1120px; width: 100%; margin: 0 auto; display: grid; gap: var(--gap); align-content: start; min-width: 0; }
 .mobile-bar { display: none; height: 52px; align-items: center; justify-content: space-between; padding: 0 12px; background: var(--dark); }
 .mobile-bar .btn-icon { color: #d6d3d1; }

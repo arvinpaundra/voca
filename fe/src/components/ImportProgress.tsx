@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ImportBatch, ImportFile } from "@voca/contract";
 import { Check, ChevronDown, ChevronRight, ChevronUp, CircleAlert, Upload, X } from "lucide-react";
 import { dismissImport, importProgress, type ImportProgress as Progress } from "../lib/imports";
@@ -8,11 +8,47 @@ import { IconButton } from "./IconButton";
 // The batches still on the server, newest first. Docked bottom-right on every page while any batch is not dismissed.
 export function ImportProgress({ batches }: { batches: ReadonlyArray<ImportBatch> }) {
   const [folded, setFolded] = useState(false);
+  const [closeFailed, setCloseFailed] = useState(false);
+  const dock = useRef<HTMLElement>(null);
+  const shown = batches.length > 0;
+  const allFinished = shown && batches.every((batch) => importProgress(batch).finished);
 
-  if (batches.length === 0) return null;
+  // Publishes the dock's height so the page can leave room under its last items.
+  useEffect(() => {
+    const element = dock.current;
+
+    if (!shown || element === null) return;
+
+    const root = document.documentElement;
+    const publish = () => root.style.setProperty("--import-dock-h", `${element.offsetHeight}px`);
+
+    publish();
+
+    const observer = new ResizeObserver(publish);
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--import-dock-h");
+    };
+  }, [shown]);
+
+  if (!shown) return null;
+
+  const close = async () => {
+    setCloseFailed(false);
+
+    try {
+      await Promise.all(batches.map((batch) => dismissImport(batch.slug)));
+    } catch {
+      setCloseFailed(true);
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ["imports"] });
+  };
 
   return (
-    <section aria-label="Imports" className="import-dock">
+    <section ref={dock} aria-label="Imports" className="import-dock">
       <div className="import-panel">
         <div className="import-head">
           <h2>{headline(batches)}</h2>
@@ -20,7 +56,19 @@ export function ImportProgress({ batches }: { batches: ReadonlyArray<ImportBatch
           <IconButton label={folded ? "Expand" : "Fold"} onClick={() => setFolded((value) => !value)}>
             {folded ? <ChevronUp className="i" aria-hidden="true" /> : <ChevronDown className="i" aria-hidden="true" />}
           </IconButton>
+
+          {allFinished && (
+            <IconButton label="Close" onClick={() => void close()}>
+              <X className="i" aria-hidden="true" />
+            </IconButton>
+          )}
         </div>
+
+        {closeFailed && (
+          <p role="alert" className="import-alert">
+            Could not dismiss the import. Try again.
+          </p>
+        )}
 
         {!folded && (
           <div className="import-body">
