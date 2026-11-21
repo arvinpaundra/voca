@@ -36,7 +36,8 @@ const SAVE_FAILED = "Could not save the words. Try again.";
 export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalProps) {
   const nextId = useRef(1);
   const [rows, setRows] = useState<ReadonlyArray<Row>>([{ id: 0, draft: emptyDraft, problem: null }]);
-  const [openId, setOpenId] = useState(0);
+  // `null` folds every word, so the list can be saved with no word open.
+  const [openId, setOpenId] = useState<number | null>(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -134,14 +135,21 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
         </>
       }
     >
-      <div className="word-list">
+      <div className="add-list">
         {rows.map((row, index) => {
           const position = index + 1;
 
           return row.id === openId ? (
             <div key={row.id} className="word-item is-open">
               <div className="word-item-head">
-                <span className="muted">Word {position}</span>
+                <button
+                  type="button"
+                  className="word-fold muted"
+                  aria-expanded="true"
+                  onClick={() => setOpenId(null)}
+                >
+                  Word {position}
+                </button>
 
                 {count > 1 && (
                   <button
@@ -171,7 +179,7 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
           ) : (
             <div key={row.id} className="word-item">
               <div className="word-item-fold">
-                <button type="button" className="word-fold" onClick={() => setOpenId(row.id)}>
+                <button type="button" className="word-fold" aria-expanded="false" onClick={() => setOpenId(row.id)}>
                   {`${row.draft.term} · ${row.draft.meaning}`}
                 </button>
 
