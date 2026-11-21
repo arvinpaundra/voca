@@ -6,7 +6,7 @@ import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
-import type { Loadable } from "./useLoadable";
+import type { Loadable } from "./dashboardModel";
 
 export function DecksSection({ state }: { state: Loadable<readonly DeckSummary[]> }) {
   if (state.kind === "loading") return <Skeleton label="Loading decks" rows={4} />;

@@ -1,16 +1,17 @@
+import { useQuery } from "@tanstack/react-query";
 import { DateTime } from "effect";
 import { ErrorState } from "../../components/ErrorState";
 import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
-import { session } from "../../lib/appSession";
+import { decksQuery, learnerStatsQuery, meQuery, notificationsQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { ActivitySection } from "./ActivitySection";
 import { BacklogHint } from "./BacklogHint";
-import { localHour, longDate, studyDate } from "./dashboardModel";
+import { loadableOf, localHour, longDate, studyDate } from "./dashboardModel";
 import { DecksSection } from "./DecksSection";
 import { ProgressSection } from "./ProgressSection";
 import { StreakSection } from "./StreakSection";
 import { TodaySection } from "./TodaySection";
-import { useLoadable } from "./useLoadable";
 
 const greetingFor = (hour: number) => {
   if (hour < 12) return "Good morning";
@@ -19,11 +20,11 @@ const greetingFor = (hour: number) => {
 };
 
 export function DashboardPage() {
-  // Every section loads its own data: a failed call shows its own message and the rest of the page still renders.
-  const learner = useLoadable(() => session.call((client) => client.me.get()), []);
-  const stats = useLoadable(() => session.call((client) => client.insight.learnerStats()), []);
-  const notifications = useLoadable(() => session.call((client) => client.insight.notifications()), []);
-  const decks = useLoadable(() => session.call((client) => client.library.listDecks()), []);
+  // Every section reads its own query: a failed query shows its own message and the rest of the page still renders.
+  const learner = loadableOf(useQuery(meQuery(), queryClient));
+  const stats = loadableOf(useQuery(learnerStatsQuery(), queryClient));
+  const notifications = loadableOf(useQuery(notificationsQuery(), queryClient));
+  const decks = loadableOf(useQuery(decksQuery(), queryClient));
 
   if (learner.kind === "loading") return <Skeleton label="Loading dashboard" rows={4} />;
   if (learner.kind === "failed") return <ErrorState message="Couldn't load your dashboard." />;

@@ -4,7 +4,7 @@ import type { DeckStats, Learner, LearnerStats, Notifications } from "@voca/cont
 import { startFailure } from "../study/startFailure";
 import { estimateText, nextDueDate } from "./queueSummary";
 import { TodaySection } from "./TodaySection";
-import type { Loadable } from "./useLoadable";
+import type { Loadable } from "./dashboardModel";
 
 // Nothing to study is a state of its own: no Start button, the next due day instead, and no promise of
 // new words the decks don't have. A queue carries the time it is likely to take.
