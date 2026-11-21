@@ -1,29 +1,47 @@
 export const REFRESH_KEY = "voca.refreshToken"
+export const ACCESS_KEY = "voca.accessToken"
+export const ACCESS_EXPIRES_KEY = "voca.accessExpiresAt"
 
 type TokenStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">
 
 const REFRESH_MARGIN_MS = 60_000
 
-// Refresh token is persisted in the given storage; access token lives in this closure only.
+// Both tokens persist in the given storage, so a reload and every other tab reuse them.
 export const createTokenStore = (storage: TokenStorage) => {
-  let access: string | null = null
-  let expiresAt = 0
+  // Read on every call, never cached: another tab may have stored a newer token.
+  const readExpiresAt = (): number | null => {
+    const raw = storage.getItem(ACCESS_EXPIRES_KEY)
+    if (raw === null) return null
+
+    const value = Number(raw)
+    return Number.isFinite(value) ? value : null
+  }
 
   return {
     getRefresh: (): string | null => storage.getItem(REFRESH_KEY),
     setRefresh: (token: string): void => storage.setItem(REFRESH_KEY, token),
-    getAccess: (): string | null => access,
+    getAccess: (): string | null => storage.getItem(ACCESS_KEY),
+
     /** `expiresIn` is in seconds; `now` is epoch milliseconds. */
     setAccess: (token: string, expiresIn: number, now: number): void => {
-      access = token
-      expiresAt = now + expiresIn * 1000
+      storage.setItem(ACCESS_KEY, token)
+      storage.setItem(ACCESS_EXPIRES_KEY, String(now + expiresIn * 1000))
     },
-    /** True when there is no access token, or fewer than 60 s remain at `now` (epoch ms). */
-    needsRefresh: (now: number): boolean => access === null || expiresAt - now < REFRESH_MARGIN_MS,
+
+    /** True when there is no access token, its expiry is unreadable, or fewer than 60 s remain at `now` (epoch ms). */
+    needsRefresh: (now: number): boolean => {
+      if (storage.getItem(ACCESS_KEY) === null) return true
+
+      const expiresAt = readExpiresAt()
+      if (expiresAt === null) return true
+
+      return expiresAt - now < REFRESH_MARGIN_MS
+    },
+
     clear: (): void => {
       storage.removeItem(REFRESH_KEY)
-      access = null
-      expiresAt = 0
+      storage.removeItem(ACCESS_KEY)
+      storage.removeItem(ACCESS_EXPIRES_KEY)
     }
   }
 }
