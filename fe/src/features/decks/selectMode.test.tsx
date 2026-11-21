@@ -88,11 +88,12 @@ describe("DecksPage select mode", () => {
     spy = fakeSession([JAPANESE, MANDARIN]);
     render(<DecksPage />);
 
-    expect(await screen.findByText("Snoozed")).toBeDefined();
+    // The badge may carry its label twice (shown and for screen readers), so count matches instead of expecting one.
+    expect((await screen.findAllByText("Snoozed")).length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: "Select" }));
 
-    expect(screen.getByText("Snoozed")).toBeDefined();
+    expect(screen.getAllByText("Snoozed").length).toBeGreaterThan(0);
   });
 
   test("the bar shows only once a deck is ticked", async () => {
