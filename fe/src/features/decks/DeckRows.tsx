@@ -22,6 +22,9 @@ export function DeckRows({
   selected?: ReadonlySet<string>;
   onToggleSelect?: (deck: DeckSummary) => void;
 }) {
+  // In select mode the whole row is one tap target that ticks the deck; it has no link, Study button or menu.
+  const selecting = selected !== undefined && onToggleSelect !== undefined;
+
   return (
     <div>
       <div className="list-head">
@@ -38,36 +41,58 @@ export function DeckRows({
           const snoozeText = snoozeLabel(deck.snooze, timezone);
           const snoozed = snoozeText !== null;
 
+          const classes = ["deck"];
+          if (snoozed) classes.push("snoozed");
+          if (selecting) classes.push("selecting");
+
           return (
             <li key={deck.slug}>
-              <article className={snoozed ? "deck snoozed" : "deck"}>
+              <article
+                className={classes.join(" ")}
+                onClick={
+                  selecting
+                    ? () => {
+                        onToggleSelect(deck);
+                      }
+                    : undefined
+                }
+              >
                 <div className="deck-top">
                   {/* The checkbox shares the title's cell. */}
                   <div className="deck-head">
-                    {onToggleSelect !== undefined && (
+                    {selecting && (
+                      // Read-only: the click bubbles to the row, which does the toggle, so the checkbox ticks once.
                       <input
                         type="checkbox"
                         aria-label={`Select ${deck.title}`}
-                        checked={selected?.has(deck.slug) ?? false}
-                        onChange={() => onToggleSelect(deck)}
+                        checked={selected.has(deck.slug)}
+                        readOnly
                       />
                     )}
 
                     {snoozed && <Moon className="deck-moon" size={14} aria-hidden="true" />}
 
-                    <a className="deck-title" href={`/app/decks/${deck.slug}`} dir="auto">
-                      {deck.title}
-                    </a>
+                    {selecting ? (
+                      <span className="deck-title" dir="auto">
+                        {deck.title}
+                      </span>
+                    ) : (
+                      <a className="deck-title" href={`/app/decks/${deck.slug}`} dir="auto">
+                        {deck.title}
+                      </a>
+                    )}
                   </div>
 
-                  <Menu
-                    label={`Actions for ${deck.title}`}
-                    className="order-5 justify-self-end"
-                    items={[
-                      { label: "Edit deck", onSelect: () => onEdit(deck) },
-                      { label: "Delete deck", danger: true, onSelect: () => onDelete(deck) },
-                    ]}
-                  />
+                  {!selecting && (
+                    <Menu
+                      label={`Actions for ${deck.title}`}
+                      className="order-5 justify-self-end"
+                      items={[
+                        { label: "Edit deck", onSelect: () => onEdit(deck) },
+                        { label: "Delete deck", danger: true, onSelect: () => onDelete(deck) },
+                      ]}
+                    />
+                  )}
                 </div>
 
                 <div className="deck-tags">
@@ -96,27 +121,29 @@ export function DeckRows({
                   </div>
                 </div>
 
-                <div className="deck-foot">
-                  {deck.wordCount === 0 ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      href={`/app/decks/${deck.slug}`}
-                      aria-label={`Add words to ${deck.title}`}
-                    >
-                      Add words
-                    </Button>
-                  ) : (
-                    <Button
-                      variant={!snoozed && deck.dueCount > 0 ? "primary" : "secondary"}
-                      size="sm"
-                      href={`/app/decks/${deck.slug}/study`}
-                      aria-label={`Study ${deck.title}`}
-                    >
-                      Study
-                    </Button>
-                  )}
-                </div>
+                {!selecting && (
+                  <div className="deck-foot">
+                    {deck.wordCount === 0 ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        href={`/app/decks/${deck.slug}`}
+                        aria-label={`Add words to ${deck.title}`}
+                      >
+                        Add words
+                      </Button>
+                    ) : (
+                      <Button
+                        variant={!snoozed && deck.dueCount > 0 ? "primary" : "secondary"}
+                        size="sm"
+                        href={`/app/decks/${deck.slug}/study`}
+                        aria-label={`Study ${deck.title}`}
+                      >
+                        Study
+                      </Button>
+                    )}
+                  </div>
+                )}
               </article>
             </li>
           );
