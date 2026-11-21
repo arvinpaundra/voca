@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Result } from "effect";
 import { Plus } from "lucide-react";
-import type { DeckSummary } from "@voca/contract";
+import type { DeckSlug, DeckSummary, SnoozeDays } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
@@ -13,6 +13,8 @@ import { session } from "../../lib/appSession";
 import { DeckModal } from "./DeckModal";
 import { DeckRows } from "./DeckRows";
 import { DeleteDeckModal } from "./DeleteDeckModal";
+import { SelectionBar } from "./SelectionBar";
+import { SnoozeModal } from "./SnoozeModal";
 import {
   filterDecks,
   termLangsOf,
@@ -41,6 +43,11 @@ export function DecksPage() {
   const [filter, setFilter] = useState<DeckFilter>(initialFilter);
   const [form, setForm] = useState<FormTarget | null>(null);
   const [deleting, setDeleting] = useState<DeckSummary | null>(null);
+  const [timezone, setTimezone] = useState("UTC");
+  const [selected, setSelected] = useState<ReadonlySet<DeckSlug>>(new Set());
+  const [snoozing, setSnoozing] = useState(false);
+  const [snoozeBusy, setSnoozeBusy] = useState(false);
+  const [snoozeError, setSnoozeError] = useState<string | null>(null);
 
   // The whole list is loaded once; search, the language filter and sorting happen in the browser.
   const loadDecks = useCallback(async () => {
@@ -55,6 +62,76 @@ export function DecksPage() {
   useEffect(() => {
     void loadDecks();
   }, [loadDecks]);
+
+  // A snooze's end is shown on the Learner's day, so the list needs their timezone.
+  useEffect(() => {
+    let active = true;
+
+    void session.call((client) => client.me.get()).then((result) => {
+      if (active && Result.isSuccess(result)) setTimezone(result.success.settings.timezone);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const toggleSelect = (deck: DeckSummary) => {
+    setSelected((previous) => {
+      const next = new Set(previous);
+
+      if (next.has(deck.slug)) next.delete(deck.slug);
+      else next.add(deck.slug);
+
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  // The snooze endpoints take at least one slug, so an empty selection has nothing to send.
+  const selectedSlugs = (): readonly [DeckSlug, ...DeckSlug[]] | null => {
+    const [first, ...rest] = [...selected];
+
+    return first === undefined ? null : [first, ...rest];
+  };
+
+  const snoozeSelected = async (days: SnoozeDays | null) => {
+    const deckSlugs = selectedSlugs();
+    if (deckSlugs === null) return;
+
+    setSnoozeBusy(true);
+    setSnoozeError(null);
+
+    const result = await session.call((client) => client.library.snoozeDecks({ payload: { deckSlugs, days } }));
+
+    setSnoozeBusy(false);
+    if (Result.isFailure(result)) {
+      setSnoozeError("Could not snooze the decks. Try again.");
+      return;
+    }
+
+    setSnoozing(false);
+    clearSelection();
+    void loadDecks();
+  };
+
+  const unsnoozeSelected = async () => {
+    const deckSlugs = selectedSlugs();
+    if (deckSlugs === null) return;
+
+    setSnoozeError(null);
+
+    const result = await session.call((client) => client.library.unsnoozeDecks({ payload: { deckSlugs } }));
+
+    if (Result.isFailure(result)) {
+      setSnoozeError("Could not unsnooze the decks. Try again.");
+      return;
+    }
+
+    clearSelection();
+    void loadDecks();
+  };
 
   const decks = state.kind === "loaded" ? state.decks : [];
   const langs = termLangsOf(decks);
@@ -178,13 +255,35 @@ export function DecksPage() {
         />
       )}
 
+      {selected.size > 0 && (
+        <SelectionBar
+          count={selected.size}
+          onSnooze={() => setSnoozing(true)}
+          onUnsnooze={() => void unsnoozeSelected()}
+          onClear={clearSelection}
+        />
+      )}
+
+      {snoozeError !== null && <ErrorState message={snoozeError} />}
+
       {visible.length > 0 && (
         <DeckRows
           decks={visible}
+          timezone={timezone}
+          selected={selected}
+          onToggleSelect={toggleSelect}
           onEdit={(deck) => setForm({ kind: "edit", deck })}
           onDelete={(deck) => setDeleting(deck)}
         />
       )}
+
+      <SnoozeModal
+        open={snoozing}
+        count={selected.size}
+        busy={snoozeBusy}
+        onSnooze={(days) => void snoozeSelected(days)}
+        onClose={() => setSnoozing(false)}
+      />
 
       <DeckModal
         open={form !== null}

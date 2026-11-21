@@ -2,6 +2,7 @@ import type { DeckSummary } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { Menu } from "../../components/Menu";
+import { snoozeLabel } from "./snooze";
 
 export function DeckRows({
   decks,
@@ -20,9 +21,6 @@ export function DeckRows({
   selected?: ReadonlySet<string>;
   onToggleSelect?: (deck: DeckSummary) => void;
 }) {
-  void timezone;
-  void selected;
-
   return (
     <div>
       <div className="list-head">
@@ -39,7 +37,14 @@ export function DeckRows({
           <li key={deck.slug}>
             <article className="deck">
               <div className="deck-top">
-                {onToggleSelect !== undefined && <span>not implemented: FD</span>}
+                {onToggleSelect !== undefined && (
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${deck.title}`}
+                    checked={selected?.has(deck.slug) ?? false}
+                    onChange={() => onToggleSelect(deck)}
+                  />
+                )}
 
                 <a className="deck-title" href={`/app/decks/${deck.slug}`} dir="auto">
                   {deck.title}
@@ -60,7 +65,9 @@ export function DeckRows({
                   {`${deck.termLang} → ${deck.meaningLang}`}
                 </Badge>
                 {deck.visibility === "public" && <Badge variant="lime">Public</Badge>}
-                {deck.snooze != null && <span>not implemented: FD</span>}
+                {snoozeLabel(deck.snooze, timezone) !== null && (
+                  <Badge variant="navy">{snoozeLabel(deck.snooze, timezone)}</Badge>
+                )}
               </div>
 
               <div className="deck-stats">

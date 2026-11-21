@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DateTime, Result } from "effect";
-import type { DeckDetail, DeckStats, ImportResult, Word, WordWithCards } from "@voca/contract";
+import type { DeckDetail, DeckStats, ImportResult, SnoozeDays, Word, WordWithCards } from "@voca/contract";
 import { wordLabels } from "@voca/contract";
 import { ArrowRight, Plus } from "lucide-react";
 import { Badge } from "../../components/Badge";
@@ -15,6 +15,8 @@ import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
 import { DeckModal } from "../decks/DeckModal";
 import { DeleteDeckModal } from "../decks/DeleteDeckModal";
+import { SnoozeModal } from "../decks/SnoozeModal";
+import { snoozeLabel } from "../decks/snooze";
 import { CsvImportModal } from "./CsvImportModal";
 import { deckCounts } from "./deckCounts";
 import { DeckProgress } from "./DeckProgress";
@@ -60,6 +62,23 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState("UTC");
+  const [snoozing, setSnoozing] = useState(false);
+  const [snoozeBusy, setSnoozeBusy] = useState(false);
+  const [snoozeError, setSnoozeError] = useState<string | null>(null);
+
+  // The snooze's end is shown on the Learner's day, so the header needs their timezone.
+  useEffect(() => {
+    let active = true;
+
+    void session.call((client) => client.me.get()).then((result) => {
+      if (active && Result.isSuccess(result)) setTimezone(result.success.settings.timezone);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -144,6 +163,42 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
     setDeletingWord(null);
   };
 
+  // The server answers with the deck's snooze after the change, so the header shows what was saved.
+  const snoozeThis = async (days: SnoozeDays | null) => {
+    setSnoozeBusy(true);
+    setSnoozeError(null);
+
+    const result = await session.call((client) =>
+      client.library.snoozeDecks({ payload: { deckSlugs: [deck.slug], days } }),
+    );
+
+    setSnoozeBusy(false);
+    if (Result.isFailure(result)) {
+      setSnoozeError("Could not snooze the deck. Try again.");
+      return;
+    }
+
+    setSnoozing(false);
+    const [changed] = result.success;
+    if (changed !== undefined) onDeckChanged({ ...deck, ...changed });
+  };
+
+  const unsnoozeThis = async () => {
+    setSnoozeError(null);
+
+    const result = await session.call((client) =>
+      client.library.unsnoozeDecks({ payload: { deckSlugs: [deck.slug] } }),
+    );
+
+    if (Result.isFailure(result)) {
+      setSnoozeError("Could not unsnooze the deck. Try again.");
+      return;
+    }
+
+    const [changed] = result.success;
+    if (changed !== undefined) onDeckChanged({ ...deck, ...changed });
+  };
+
   const toggleVisibility = async () => {
     const isPublic = deck.visibility === "public";
 
@@ -200,6 +255,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
   // The deck's word count was read with the deck, so words added or removed since are applied on top.
   const counted = { ...deck, ...(deck.wordCount !== undefined && { wordCount: deck.wordCount + wordDelta }) };
   const { tabs: filterTabs, searchPlaceholder } = deckCounts(counted, stats);
+  const snoozeText = snoozeLabel(deck.snooze, timezone);
 
   return (
     <>
@@ -213,6 +269,7 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
                 {`${deck.termLang} → ${deck.meaningLang}`}
               </Badge>
               {deck.visibility === "public" && <Badge variant="lime">Public</Badge>}
+              {snoozeText !== null && <Badge variant="navy">{snoozeText}</Badge>}
               {deck.visibility === "public" && <span>{deck.forkCount} forks</span>}
               {deck.forkedFrom !== null && (
                 <>
@@ -234,6 +291,9 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
           {...(deck.description !== "" && { description: deck.description })}
           actions={
             <>
+              <Button variant="secondary" href={`/app/decks/${deck.slug}/flashcards`}>
+                Flashcards
+              </Button>
               <Button href={`/app/decks/${deck.slug}/study`}>
                 {stats === null ? "Study" : `Study ${stats.dueToday} due`}
                 <ArrowRight className="i" aria-hidden="true" />
@@ -243,6 +303,9 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
                 label="More actions"
                 items={[
                   { label: "Edit deck", onSelect: () => setEditingDeck(true) },
+                  snoozeText === null
+                    ? { label: "Snooze deck", onSelect: () => setSnoozing(true) }
+                    : { label: "Unsnooze deck", onSelect: () => void unsnoozeThis() },
                   {
                     label: deck.visibility === "public" ? "Unpublish" : "Publish",
                     onSelect: () => void toggleVisibility(),
@@ -262,6 +325,8 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
       {visibilityError !== null && <ErrorState message={visibilityError} />}
 
       {exportError !== null && <ErrorState message={exportError} />}
+
+      {snoozeError !== null && <ErrorState message={snoozeError} />}
 
       <div className="grid gap-3">
         <div className="toolbar">
@@ -344,6 +409,14 @@ export function DeckView({ deck, onDeckChanged }: DeckViewProps) {
       />
 
       <DeleteWordModal word={deletingWord} onClose={() => setDeletingWord(null)} onDeleted={wordDeleted} />
+
+      <SnoozeModal
+        open={snoozing}
+        count={1}
+        busy={snoozeBusy}
+        onSnooze={(days) => void snoozeThis(days)}
+        onClose={() => setSnoozing(false)}
+      />
 
       <DeleteDeckModal
         deck={confirmingDelete ? deck : null}
