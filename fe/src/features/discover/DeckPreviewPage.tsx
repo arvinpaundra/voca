@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { Option, Result, Schema } from "effect";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Option, Schema } from "effect";
 import { DeckSlug, type PublicDeckDetail } from "@voca/contract";
 import { ArrowLeft, GitFork } from "lucide-react";
 import { Avatar } from "../../components/Avatar";
@@ -9,51 +10,32 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
-import { session } from "../../lib/appSession";
+import { publicDeckQuery } from "../../lib/queries";
+import { queryClient } from "../../lib/queryClient";
 import { forkDeck, forkMessage } from "./fork";
 import { PreviewList } from "./PreviewList";
 import { forkLabel } from "./PublicDeckRows";
 
-type PreviewState =
-  | { kind: "loading" }
-  | { kind: "missing" }
-  | { kind: "failed" }
-  | { kind: "loaded"; deck: PublicDeckDetail };
-
 export function DeckPreviewPage({ deckSlug }: { deckSlug: string }) {
-  const [state, setState] = useState<PreviewState>({ kind: "loading" });
+  // A URL segment is a plain string; a malformed slug is answered as a missing deck without calling the API.
+  const parsed = Schema.decodeUnknownOption(DeckSlug)(deckSlug);
+
+  return (
+    <div className="content" style={{ maxWidth: 820 }}>
+      <a className="back" href="/app/discover">
+        <ArrowLeft className="i" aria-hidden="true" />
+        Discover
+      </a>
+
+      {Option.isSome(parsed) ? <LoadedPreview key={parsed.value} deckSlug={parsed.value} /> : <DeckNotFound />}
+    </div>
+  );
+}
+
+function LoadedPreview({ deckSlug }: { deckSlug: DeckSlug }) {
+  const preview = useQuery(publicDeckQuery(deckSlug), queryClient);
   const [forking, setForking] = useState(false);
   const [forkError, setForkError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    setState({ kind: "loading" });
-
-    // A URL segment is a plain string; a malformed slug is answered as a missing deck without calling the API.
-    const parsed = Schema.decodeUnknownOption(DeckSlug)(deckSlug);
-    if (Option.isNone(parsed)) {
-      setState({ kind: "missing" });
-      return;
-    }
-
-    session.call((client) => client.community.get({ params: { deckSlug: parsed.value } })).then((result) => {
-      if (!active) return;
-
-      if (Result.isSuccess(result)) {
-        setState({ kind: "loaded", deck: result.success });
-      } else {
-        const failure = result.failure;
-        const notFound =
-          typeof failure === "object" && failure !== null && "_tag" in failure && failure._tag === "NotFound";
-
-        setState({ kind: notFound ? "missing" : "failed" });
-      }
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [deckSlug]);
 
   const fork = async (slug: DeckSlug) => {
     setForking(true);
@@ -70,37 +52,36 @@ export function DeckPreviewPage({ deckSlug }: { deckSlug: string }) {
     setForkError(forkMessage(outcome));
   };
 
+  if (preview.isPending) return <Skeleton label="Loading deck" rows={4} />;
+
+  if (preview.isError) {
+    const failure: unknown = preview.error;
+    const notFound =
+      typeof failure === "object" && failure !== null && "_tag" in failure && failure._tag === "NotFound";
+
+    return notFound ? <DeckNotFound /> : <ErrorState message="This deck could not be loaded." />;
+  }
+
   return (
-    <div className="content" style={{ maxWidth: 820 }}>
-      <a className="back" href="/app/discover">
-        <ArrowLeft className="i" aria-hidden="true" />
-        Discover
-      </a>
+    <PreviewBody
+      deck={preview.data}
+      forking={forking}
+      forkError={forkError}
+      onFork={() => void fork(preview.data.slug)}
+    />
+  );
+}
 
-      {state.kind === "loading" && <Skeleton label="Loading deck" rows={4} />}
-
-      {state.kind === "failed" && <ErrorState message="This deck could not be loaded." />}
-
-      {state.kind === "missing" && (
-        <EmptyState
-          title="Deck not found"
-          action={
-            <Button variant="secondary" size="sm" href="/app/discover">
-              Back to Discover
-            </Button>
-          }
-        />
-      )}
-
-      {state.kind === "loaded" && (
-        <PreviewBody
-          deck={state.deck}
-          forking={forking}
-          forkError={forkError}
-          onFork={() => void fork(state.deck.slug)}
-        />
-      )}
-    </div>
+function DeckNotFound() {
+  return (
+    <EmptyState
+      title="Deck not found"
+      action={
+        <Button variant="secondary" size="sm" href="/app/discover">
+          Back to Discover
+        </Button>
+      }
+    />
   );
 }
 
