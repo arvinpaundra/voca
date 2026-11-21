@@ -597,6 +597,25 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
 .cmp td:first-child { color: var(--muted); white-space: nowrap; }
 .refs { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: var(--ink-2); }
 .refs a { color: var(--navy); }
+
+/* Import decks (FR-29): the panel sits above the page content on every screen while a batch is not dismissed. */
+.import-panel { display: grid; gap: 12px; }
+.import-title { font: 600 15px/1.3 var(--f-display); }
+.import-meta { font-size: var(--small); color: var(--muted); }
+.import-track { height: 6px; border-radius: 999px; background: var(--sunken); overflow: hidden; }
+.import-track span { display: block; height: 100%; background: var(--navy); }
+.import-files { display: grid; gap: 0; list-style: none; padding: 0; margin: 0; }
+.import-file { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 4px 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: var(--small); }
+.import-file:first-child { border-top: 0; padding-top: 0; }
+.import-file > .i { width: 16px; height: 16px; margin-top: 2px; }
+.import-file .ok { color: var(--good, #15803d); }
+.import-file .bad { color: var(--bad); }
+.import-name { font-weight: 600; overflow-wrap: anywhere; }
+.import-file a { color: var(--ink); }
+.import-errors { grid-column: 2; display: grid; gap: 2px; color: #991b1b; font-size: var(--tiny); }
+.file-drop { border: 1.5px dashed var(--line-2, var(--line)); border-radius: var(--r-sm); padding: 18px; display: grid; gap: 6px; justify-items: center; text-align: center; font-size: var(--small); color: var(--muted); }
+.file-list { display: grid; gap: 4px; font-size: var(--small); list-style: none; padding: 0; margin: 0; }
+.file-list li { display: flex; justify-content: space-between; gap: 8px; }
 </style>
 </head>
 <body data-opt="paper">
@@ -991,7 +1010,7 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
     <div class="screen-body"><div class="content">
       <div class="page-head">
         <div class="ph-text"><h1 class="h1">Decks</h1><div class="ph-meta"><span>6 decks</span><span class="dot"></span><span>1,118 words</span><span class="dot"></span><span>32 due today</span></div></div>
-        <div class="ph-actions"><button class="btn btn-secondary"><svg class="i"><use href="#i-upload"/></svg>Import CSV</button><button class="btn btn-primary"><svg class="i"><use href="#i-plus"/></svg>New deck</button></div>
+        <div class="ph-actions"><button class="btn btn-secondary"><svg class="i"><use href="#i-upload"/></svg>Import decks</button><button class="btn btn-primary"><svg class="i"><use href="#i-plus"/></svg>New deck</button></div>
       </div>
       <div class="toolbar">
         <div class="search"><svg class="i"><use href="#i-search"/></svg><input class="input" placeholder="Search decks"></div>
@@ -1003,6 +1022,126 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
       <ul class="deck-grid" id="decks"></ul>
       </div>
     </div></div>
+  </div>
+</section>
+
+<!-- ============================================================ 6b. IMPORT DECKS -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Modal + panel · every page</span>
+    <h2>Import decks</h2>
+    <p>“Import decks” on the Decks list takes up to 20 CSV files; each becomes a new deck named after its file, all in the two languages picked once. The import runs on the server, so the panel above the page shows it on every screen, updates live, and stays after a reload or a new sign-in until dismissed. Two batches show as two cards, newest first.</p>
+  </header>
+
+  <div class="spec">
+    <h3>Modal (files picked · too many files)</h3>
+    <div class="doc-grid">
+      <div class="modal-stage">
+        <div class="modal" role="dialog">
+          <div class="modal-head"><div><h3>Import decks</h3><p>Each CSV file becomes a new deck named after the file.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+          <div class="modal-body">
+            <div class="field"><span class="lbl">CSV files <span class="faint" style="font-weight:400">· up to 20</span></span>
+              <div class="file-drop"><svg class="i i-lg"><use href="#i-upload"/></svg><span><b style="color:var(--ink)">Choose files</b> or drop them here</span><span class="hint">term, meaning, reading, example, notes · UTF-8 · 5 MB each</span></div>
+              <ul class="file-list"><li><span>N5 verbs.csv</span><span class="faint">12 KB</span></li><li><span>N5 nouns.csv</span><span class="faint">18 KB</span></li><li><span>N5 adjectives.csv</span><span class="faint">6 KB</span></li><li><span>Particles.csv</span><span class="faint">2 KB</span></li><li><span>Counters.csv</span><span class="faint">3 KB</span></li></ul>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label>Term language</label><input class="input" value="ja"></div>
+              <div class="field"><label>Meaning language</label><input class="input" value="en"></div>
+            </div>
+          </div>
+          <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Import 5 decks</button></div>
+        </div>
+      </div>
+      <div class="modal-stage">
+        <div class="modal" role="dialog">
+          <div class="modal-head"><div><h3>Import decks</h3><p>Each CSV file becomes a new deck named after the file.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+          <div class="modal-body">
+            <div class="field"><span class="lbl">CSV files <span class="faint" style="font-weight:400">· up to 20</span></span>
+              <div class="file-drop"><svg class="i i-lg"><use href="#i-upload"/></svg><span><b style="color:var(--ink)">Choose files</b> or drop them here</span></div>
+            </div>
+            <div class="alert alert-bad"><svg class="i"><use href="#i-alert"/></svg><span class="grow">23 files picked. Import up to 20 at a time.</span></div>
+            <div class="form-grid">
+              <div class="field"><label>Term language</label><input class="input" value="ja"></div>
+              <div class="field"><label>Meaning language</label><input class="input" value="en"></div>
+            </div>
+          </div>
+          <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary" disabled>Import 23 decks</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen"><div class="screen-bar"><i></i><i></i><i></i><span>voca.app/app/decks · import running</span></div>
+    <div class="app">
+      <aside class="side">
+        <div class="side-top"><span class="wordmark">Vo<span>ca</span></span><button class="btn-icon" aria-label="Collapse" style="color:#78716c"><svg class="i"><use href="#i-panel"/></svg></button></div>
+        <nav>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-dash"/></svg>Dashboard</a>
+          <a class="nav on" href="#"><svg class="i i-lg"><use href="#i-layers"/></svg>Decks<span class="cnt">32</span></a>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-flame"/></svg>Hard words</a>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-compass"/></svg>Discover</a>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-gear"/></svg>Settings</a>
+        </nav>
+        <div class="side-user"><span class="avatar dark">A</span><div>Arvin<small>arvin@…</small></div></div>
+      </aside>
+      <div>
+        <div class="mobile-bar"><button class="btn-icon" aria-label="Menu"><svg class="i i-lg"><use href="#i-menu"/></svg></button><span class="wordmark">Vo<span>ca</span></span><span class="avatar dark" style="width:28px;height:28px">A</span></div>
+        <div class="main">
+          <div class="content">
+            <section class="import-panel" aria-label="Imports">
+              <section class="card" aria-label="Import running">
+                <div class="card-head"><h2 class="import-title">Importing decks</h2><span class="import-meta">ja → en</span></div>
+                <div class="import-track" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="3"><span style="width:60%"></span></div>
+                <p class="import-meta">3 of 5 files · Particles.csv</p>
+              </section>
+            </section>
+            <div class="page-head">
+              <div class="ph-text"><h1 class="h1">Decks</h1><div class="ph-meta"><span>9 decks</span><span class="dot"></span><span>1,544 words</span><span class="dot"></span><span>32 due today</span></div></div>
+              <div class="ph-actions"><button class="btn btn-secondary"><svg class="i"><use href="#i-upload"/></svg>Import decks</button><button class="btn btn-primary"><svg class="i"><use href="#i-plus"/></svg>New deck</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen"><div class="screen-bar"><i></i><i></i><i></i><span>voca.app/app · import finished</span></div>
+    <div class="app">
+      <aside class="side">
+        <div class="side-top"><span class="wordmark">Vo<span>ca</span></span><button class="btn-icon" aria-label="Collapse" style="color:#78716c"><svg class="i"><use href="#i-panel"/></svg></button></div>
+        <nav>
+          <a class="nav on" href="#"><svg class="i i-lg"><use href="#i-dash"/></svg>Dashboard</a>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-layers"/></svg>Decks<span class="cnt">32</span></a>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-flame"/></svg>Hard words</a>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-compass"/></svg>Discover</a>
+          <a class="nav" href="#"><svg class="i i-lg"><use href="#i-gear"/></svg>Settings</a>
+        </nav>
+        <div class="side-user"><span class="avatar dark">A</span><div>Arvin<small>arvin@…</small></div></div>
+      </aside>
+      <div>
+        <div class="mobile-bar"><button class="btn-icon" aria-label="Menu"><svg class="i i-lg"><use href="#i-menu"/></svg></button><span class="wordmark">Vo<span>ca</span></span><span class="avatar dark" style="width:28px;height:28px">A</span></div>
+        <div class="main">
+          <div class="content">
+            <section class="import-panel" aria-label="Imports">
+              <section class="card" aria-label="Import finished">
+                <div class="card-head"><h2 class="import-title">Import finished · 4 of 5 decks created</h2><button class="btn btn-ghost btn-sm">Dismiss</button></div>
+                <ul class="import-files">
+                  <li class="import-file"><svg class="i ok"><use href="#i-check"/></svg><div><span class="import-name">N5 verbs.csv</span> → <a href="#">N5 verbs</a><div class="import-meta">248 words added · 3 duplicates skipped</div></div></li>
+                  <li class="import-file"><svg class="i ok"><use href="#i-check"/></svg><div><span class="import-name">N5 nouns.csv</span> → <a href="#">N5 nouns</a><div class="import-meta">412 words added · 0 duplicates skipped</div></div></li>
+                  <li class="import-file"><svg class="i bad"><use href="#i-alert"/></svg><div><span class="import-name">N5 adjectives.csv</span><div class="import-meta">No deck created · 104 problems</div></div>
+                    <div class="import-errors"><span>Row 14: meaning is required</span><span>Row 31: term is longer than 200 characters</span><span>Row 52: unknown column “meening”</span><span>…and 101 more</span></div></li>
+                  <li class="import-file"><svg class="i ok"><use href="#i-check"/></svg><div><span class="import-name">Particles.csv</span> → <a href="#">Particles</a><div class="import-meta">0 words added · 0 duplicates skipped</div></div></li>
+                  <li class="import-file"><svg class="i ok"><use href="#i-check"/></svg><div><span class="import-name">Counters.csv</span> → <a href="#">Counters</a><div class="import-meta">38 words added · 0 duplicates skipped</div></div></li>
+                </ul>
+              </section>
+            </section>
+            <div class="page-head">
+              <div class="ph-text"><span class="eyebrow">Wednesday, 18 November</span><h1 class="h1">Good evening, Arvin</h1></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
