@@ -1,6 +1,14 @@
 import { Clock, Effect, Option } from "effect"
 import { CurrentLearner, SLUG_LENGTH } from "@voca/contract"
-import type { CreateDeck, Deck, DeckDetail, DeckSummary, UpdateDeck } from "@voca/contract"
+import type {
+  CreateDeck,
+  Deck,
+  DeckDetail,
+  DeckSummary,
+  DeleteDecks,
+  DeleteDecksResult,
+  UpdateDeck
+} from "@voca/contract"
 import { DeckNotFound, TermLangLocked } from "../domain/errors.ts"
 import { newSlug } from "../domain/slug.ts"
 import { Transaction } from "../../shared/transaction.ts"
@@ -120,4 +128,22 @@ export const deleteDeck = (slug: string): Effect.Effect<void, DeckNotFound, Need
         yield* decks.softDelete(owned.id, at)
       })
     )
+  })
+
+/**
+ * Deletes each deck as `deleteDeck` does, one transaction per deck. A slug that can't be deleted (missing, already
+ * deleted, or another Learner's) is listed in `failed`; it never fails the batch.
+ */
+export const deleteDecks = (
+  input: typeof DeleteDecks.Type
+): Effect.Effect<typeof DeleteDecksResult.Type, never, Needs> =>
+  Effect.gen(function* () {
+    const outcomes = yield* Effect.forEach(input.deckSlugs, (slug) =>
+      deleteDeck(slug).pipe(
+        Effect.map(() => Option.none()),
+        Effect.catchTag("DeckNotFound", () => Effect.succeed(Option.some(slug)))
+      )
+    )
+
+    return { failed: outcomes.flatMap(Option.toArray) }
   })
