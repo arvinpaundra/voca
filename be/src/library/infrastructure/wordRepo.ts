@@ -216,6 +216,17 @@ export const WordRepoLive = Layer.effect(
         LIMIT ${limit}`
     })
 
+    const liveWordRows = SqlSchema.findAll({
+      Request: Schema.BigInt,
+      Result: WordRow,
+      execute: (deckId) => sql`
+        SELECT w.id::text AS id, w.slug, w.term, w.reading, w.meaning, w.example, w.notes,
+               w.created_at AS "createdAt"
+        FROM words w
+        WHERE w.deck_id = ${deckId} AND w.deleted_at IS NULL
+        ORDER BY w.created_at ASC, w.id ASC`
+    })
+
     const liveRows = SqlSchema.findAll({
       Request: Schema.BigInt,
       Result: Schema.Struct({
@@ -322,6 +333,12 @@ export const WordRepoLive = Layer.effect(
 
       preview: (deckId, limit) =>
         previewRows({ deckId, limit }).pipe(
+          Effect.map((rows) => rows.map(toWord)),
+          Effect.orDie
+        ),
+
+      liveWords: (deckId) =>
+        liveWordRows(deckId).pipe(
           Effect.map((rows) => rows.map(toWord)),
           Effect.orDie
         ),

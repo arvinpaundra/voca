@@ -1,7 +1,7 @@
 import { DateTime, Effect, Layer, Option, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
 import { Count, DeckDescription, DeckSlug, DeckTitle, LangTag, Visibility } from "@voca/contract"
-import type { Deck, PublicDeck, UpdateDeck } from "@voca/contract"
+import type { Deck, DeckSnooze, PublicDeck, UpdateDeck } from "@voca/contract"
 import { DeckRepo } from "../application/deckRepo.ts"
 import type {
   DeckCounts,
@@ -10,7 +10,8 @@ import type {
   OwnedDeck,
   PublicDeckFound,
   PublicDeckPage,
-  PublicDeckQuery
+  PublicDeckQuery,
+  StudyClock
 } from "../application/deckRepo.ts"
 
 /** The source deck of a fork, `deleted` says whether it has since been deleted. Null for a deck that is not a fork. */
@@ -18,7 +19,8 @@ const ForkedFrom = Schema.NullOr(Schema.Struct({ slug: DeckSlug, title: DeckTitl
 
 /**
  * A `decks` row as selected below: `id::text`, columns aliased to camelCase. Every select reads `forkedFrom` from the
- * source deck, so the attribution stays when the source is deleted.
+ * source deck, so the attribution stays when the source is deleted. `snoozedAt` and `snoozedUntil` are the raw columns:
+ * whether a snooze is still on is decided against the clock when the row becomes a Deck.
  */
 const DeckRow = Schema.Struct({
   id: Schema.BigIntFromString,
@@ -32,7 +34,9 @@ const DeckRow = Schema.Struct({
   forkedFrom: ForkedFrom,
   forkCount: Count,
   createdAt: Schema.DateTimeUtcFromDate,
-  updatedAt: Schema.DateTimeUtcFromDate
+  updatedAt: Schema.DateTimeUtcFromDate,
+  snoozedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  snoozedUntil: Schema.NullOr(Schema.DateTimeUtcFromDate)
 })
 
 const DeckSummaryRow = Schema.Struct({
@@ -91,7 +95,23 @@ const encodeCursor = (sortKey: number, publishedAt: number, id: bigint): string 
   return `${sortKey}:${publishedAt}:${id}`
 }
 
-const toDeck = (row: typeof DeckRow.Type): Deck => {
+/**
+ * The snooze as of `now` (epoch millis): a snooze is on while it has no end or its end is still ahead. A snooze whose
+ * end has passed reads as no snooze, and nothing clears its row.
+ */
+const snoozeAt = (row: typeof DeckRow.Type, now: number): DeckSnooze | null => {
+  if (row.snoozedAt === null) {
+    return null
+  }
+
+  if (row.snoozedUntil === null) {
+    return { until: null }
+  }
+
+  return DateTime.toEpochMillis(row.snoozedUntil) > now ? { until: row.snoozedUntil } : null
+}
+
+const toDeck = (row: typeof DeckRow.Type, now: number): Deck => {
   return {
     slug: row.slug,
     title: row.title,
@@ -103,7 +123,8 @@ const toDeck = (row: typeof DeckRow.Type): Deck => {
     forkedFrom: row.forkedFrom,
     forkCount: row.forkCount,
     createdAt: row.createdAt,
-    updatedAt: row.updatedAt
+    updatedAt: row.updatedAt,
+    snooze: snoozeAt(row, now)
   }
 }
 
@@ -170,7 +191,7 @@ export const DeckRepoLive = Layer.effect(
       execute: ({ learnerId, slug }) => sql`
         SELECT id::text AS id, slug, title, description, term_lang AS "termLang", meaning_lang AS "meaningLang",
                visibility, published_at AS "publishedAt", fork_count AS "forkCount", created_at AS "createdAt",
-               updated_at AS "updatedAt",
+               updated_at AS "updatedAt", snoozed_at AS "snoozedAt", snoozed_until AS "snoozedUntil",
                (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
                   FROM decks p WHERE p.id = decks.forked_from_id) AS "forkedFrom"
         FROM decks WHERE owner_id = ${learnerId} AND slug = ${slug} AND deleted_at IS NULL`
@@ -183,6 +204,7 @@ export const DeckRepoLive = Layer.effect(
         SELECT d.id::text AS id, d.slug, d.title, d.description, d.term_lang AS "termLang",
                d.meaning_lang AS "meaningLang", d.visibility, d.published_at AS "publishedAt",
                d.fork_count AS "forkCount", d.created_at AS "createdAt", d.updated_at AS "updatedAt",
+               d.snoozed_at AS "snoozedAt", d.snoozed_until AS "snoozedUntil",
                (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
                   FROM decks p WHERE p.id = d.forked_from_id) AS "forkedFrom",
                (SELECT count(*)::int FROM words w WHERE w.deck_id = d.id AND w.deleted_at IS NULL) AS "wordCount",
@@ -225,7 +247,7 @@ export const DeckRepoLive = Layer.effect(
         })}
         RETURNING id::text AS id, slug, title, description, term_lang AS "termLang", meaning_lang AS "meaningLang",
           visibility, published_at AS "publishedAt", fork_count AS "forkCount", created_at AS "createdAt",
-          updated_at AS "updatedAt",
+          updated_at AS "updatedAt", snoozed_at AS "snoozedAt", snoozed_until AS "snoozedUntil",
           (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
              FROM decks p WHERE p.id = decks.forked_from_id) AS "forkedFrom"`
     })
@@ -238,9 +260,43 @@ export const DeckRepoLive = Layer.effect(
         WHERE id = ${deckId}
         RETURNING id::text AS id, slug, title, description, term_lang AS "termLang", meaning_lang AS "meaningLang",
           visibility, published_at AS "publishedAt", fork_count AS "forkCount", created_at AS "createdAt",
-          updated_at AS "updatedAt",
+          updated_at AS "updatedAt", snoozed_at AS "snoozedAt", snoozed_until AS "snoozedUntil",
           (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
              FROM decks p WHERE p.id = decks.forked_from_id) AS "forkedFrom"`
+    })
+
+    // Snoozing sets both columns and leaves `updated_at` alone: a snooze is not an edit of the deck.
+    const snoozeRow = SqlSchema.findOne({
+      Request: Schema.Struct({ deckId: Schema.BigInt, snoozedAt: Schema.Number, until: Schema.NullOr(Schema.Number) }),
+      Result: DeckRow,
+      execute: ({ deckId, snoozedAt, until }) => sql`
+        UPDATE decks SET snoozed_at = ${new Date(snoozedAt)}, snoozed_until = ${until === null ? null : new Date(until)}
+        WHERE id = ${deckId}
+        RETURNING id::text AS id, slug, title, description, term_lang AS "termLang", meaning_lang AS "meaningLang",
+          visibility, published_at AS "publishedAt", fork_count AS "forkCount", created_at AS "createdAt",
+          updated_at AS "updatedAt", snoozed_at AS "snoozedAt", snoozed_until AS "snoozedUntil",
+          (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
+             FROM decks p WHERE p.id = decks.forked_from_id) AS "forkedFrom"`
+    })
+
+    const unsnoozeRow = SqlSchema.findOne({
+      Request: Schema.BigInt,
+      Result: DeckRow,
+      execute: (deckId) => sql`
+        UPDATE decks SET snoozed_at = NULL, snoozed_until = NULL
+        WHERE id = ${deckId}
+        RETURNING id::text AS id, slug, title, description, term_lang AS "termLang", meaning_lang AS "meaningLang",
+          visibility, published_at AS "publishedAt", fork_count AS "forkCount", created_at AS "createdAt",
+          updated_at AS "updatedAt", snoozed_at AS "snoozedAt", snoozed_until AS "snoozedUntil",
+          (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
+             FROM decks p WHERE p.id = decks.forked_from_id) AS "forkedFrom"`
+    })
+
+    const studyClockRow = SqlSchema.findOne({
+      Request: Schema.BigInt,
+      Result: Schema.Struct({ timezone: Schema.String, dayStartHour: Schema.Number }),
+      execute: (learnerId) => sql`
+        SELECT timezone, day_start_hour AS "dayStartHour" FROM learners WHERE id = ${learnerId}`
     })
 
     const hasWordsRow = SqlSchema.findOne({
@@ -309,13 +365,15 @@ export const DeckRepoLive = Layer.effect(
     return DeckRepo.of({
       listOwned: (learnerId, now) =>
         listOwned({ learnerId, now }).pipe(
-          Effect.map((rows) => rows.map((row) => ({ ...toDeck(row), wordCount: row.wordCount, dueCount: row.dueCount }))),
+          Effect.map((rows) =>
+            rows.map((row) => ({ ...toDeck(row, now), wordCount: row.wordCount, dueCount: row.dueCount }))
+          ),
           Effect.orDie
         ),
 
-      findOwned: (learnerId, slug) =>
+      findOwned: (learnerId, slug, now) =>
         findOwned({ learnerId, slug }).pipe(
-          Effect.map(Option.map((row): OwnedDeck => ({ id: row.id, deck: toDeck(row) }))),
+          Effect.map(Option.map((row): OwnedDeck => ({ id: row.id, deck: toDeck(row, now) }))),
           Effect.orDie
         ),
 
@@ -327,19 +385,43 @@ export const DeckRepoLive = Layer.effect(
 
       insert: (learnerId, deck: NewDeck) =>
         insert({ learnerId, ...deck }).pipe(
-          Effect.map((row): OwnedDeck => ({ id: row.id, deck: toDeck(row) })),
+          Effect.map((row): OwnedDeck => ({ id: row.id, deck: toDeck(row, deck.createdAt) })),
           Effect.orDie
         ),
 
       update: (deckId, patch, updatedAt) =>
-        updateRow({ deckId, columns: deckColumns(patch, updatedAt) }).pipe(Effect.map(toDeck), Effect.orDie),
+        updateRow({ deckId, columns: deckColumns(patch, updatedAt) }).pipe(
+          Effect.map((row) => toDeck(row, updatedAt)),
+          Effect.orDie
+        ),
 
       publish: (deckId, at) =>
-        updateRow({ deckId, columns: visibilityColumns("public", at, at) }).pipe(Effect.map(toDeck), Effect.orDie),
+        updateRow({ deckId, columns: visibilityColumns("public", at, at) }).pipe(
+          Effect.map((row) => toDeck(row, at)),
+          Effect.orDie
+        ),
 
       unpublish: (deckId, at) =>
         updateRow({ deckId, columns: visibilityColumns("private", null, at) }).pipe(
-          Effect.map(toDeck),
+          Effect.map((row) => toDeck(row, at)),
+          Effect.orDie
+        ),
+
+      snooze: (deckId, snoozedAt, until) =>
+        snoozeRow({ deckId, snoozedAt, until }).pipe(
+          Effect.map((row) => toDeck(row, snoozedAt)),
+          Effect.orDie
+        ),
+
+      unsnooze: (deckId, at) =>
+        unsnoozeRow(deckId).pipe(
+          Effect.map((row) => toDeck(row, at)),
+          Effect.orDie
+        ),
+
+      studyClock: (learnerId) =>
+        studyClockRow(learnerId).pipe(
+          Effect.map((row): StudyClock => ({ timezone: row.timezone, dayStartHour: row.dayStartHour })),
           Effect.orDie
         ),
 

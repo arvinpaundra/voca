@@ -67,6 +67,8 @@ export class WordRepo extends Context.Service<WordRepo, {
   softDeleteInDeck(deckId: bigint, at: number): Effect.Effect<void>
   /** The first `limit` live words of a deck, oldest first. */
   preview(deckId: bigint, limit: number): Effect.Effect<ReadonlyArray<Word>>
+  /** Every live word of a deck, oldest first, with no cards. */
+  liveWords(deckId: bigint): Effect.Effect<ReadonlyArray<Word>>
   /** The live words of a deck, oldest first, as a fork copies them: the keys come along, the ids and cards do not. */
   listLive(deckId: bigint): Effect.Effect<ReadonlyArray<WordCopy>>
   /** Inserts words with no cards; a fork's words, which cannot collide with each other. */
