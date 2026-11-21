@@ -388,16 +388,17 @@ Extends FR-4. A Learner moving a collection into Voca has one file per deck; cre
 
 ## FR-30 Choose the word font (S)
 
-Extends FR-3. The default font makes kanji hard to read, and Learners of any language pair may want a clearer typeface for what they study.
+Extends FR-3. The default font makes kanji, kana and hangul hard to read; Learners need a typeface that shows their strokes clearly. Alphabetic text already reads well in the app font.
 
 - In the settings, the Learner picks the font for word content from a fixed list of styles: **System default**, **Sans**, **Serif**, **Rounded**, **Handwriting** (textbook stroke forms).
-- Every style renders every language Voca supports, CJK (ja, zh-Hans, zh-Hant, ko), Latin (en, id, …), and right-to-left scripts alike. Where a style has no face for a script, it falls back to the same style's closest face for that script.
-- The font applies to all of a word's content (term, reading, meaning, example, notes) wherever it is shown: the deck page, the word modal, the word page, study sessions and flashcards.
+- The style applies only to word content in a CJK language: Japanese (kanji, hiragana, katakana), Chinese (`zh-Hans`, `zh-Hant`) and Korean. Content in any other language (`en`, `id`, right-to-left scripts, …) always uses the app font, whatever style is chosen.
+- It covers all of a word's content (term, reading, meaning, example, notes) that is in a CJK language, wherever it is shown: the deck page, the word modal, the word page, study sessions and flashcards.
 - The choice is remembered on that device; a new device starts with System default.
-- **Won't:** custom font upload, font size, syncing across devices, changing the interface's own font.
+- **Won't:** custom font upload, font size, syncing across devices, changing the interface's own font, a font choice for alphabetic languages.
 
 **Acceptance**
-- After choosing Handwriting, a `ja`→`id` word and an `id`→`en` word both render their term, reading, meaning and example in the Handwriting style on the deck page, in the word modal and in a study session.
+- After choosing Handwriting, a `ja`→`id` word renders its term and reading in the Handwriting style and its meaning in the app font, on the deck page, in the word modal and in a study session.
+- After choosing Handwriting, an `id`→`en` word renders entirely in the app font.
 - After a reload the choice still applies; in a fresh browser System default is used.
 - Buttons, labels and navigation keep their current font.
 
