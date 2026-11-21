@@ -627,6 +627,15 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
 .import-name { font-weight: 500; overflow-wrap: anywhere; }
 .import-file a { color: var(--ink); }
 .import-errors { grid-column: 2; display: grid; gap: 1px; color: #991b1b; font-size: var(--tiny); }
+/* Below the shell's 860px breakpoint the panel docks flush across the bottom edge, like a bottom sheet: no side gaps. */
+@media (max-width: 860px) {
+  .import-dock { left: 0; right: 0; width: auto; max-width: none; }
+  .import-panel { border-left: 0; border-right: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .import-body { max-height: 50vh; }
+}
+.dock-stage.phone { width: 390px; max-width: 100%; justify-self: center; }
+.dock-stage.phone .import-dock { left: 0; right: 0; width: auto; max-width: none; }
+.dock-stage.phone .import-panel { border-left: 0; border-right: 0; }
 .dock-stage { position: relative; min-height: 560px; background: var(--bg); border-radius: 12px; border: 1px solid var(--line); overflow: hidden; }
 .file-drop { border: 1.5px dashed var(--line-2, var(--line)); border-radius: var(--r-sm); padding: 18px; display: grid; gap: 6px; justify-items: center; text-align: center; font-size: var(--small); color: var(--muted); }
 .file-list { display: grid; gap: 4px; font-size: var(--small); list-style: none; padding: 0; margin: 0; }
@@ -1090,7 +1099,7 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
 
 
   <div class="spec">
-    <h3>Panel (two batches, the running one open · a finished batch open · folded)</h3>
+    <h3>Panel (two batches, the running one open · a finished batch open · folded) · desktop: docked bottom-right</h3>
     <div class="doc-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
       <div class="dock-stage">
           <div class="import-dock"><section class="import-panel" aria-label="Imports">
@@ -1134,6 +1143,40 @@ body[data-opt="console"] .pub-head span:nth-child(4) { text-align: right; }
           </section></div>
       </div>
       <div class="dock-stage">
+          <div class="import-dock"><section class="import-panel" aria-label="Imports">
+            <div class="import-head"><h2>Importing 3 of 5 files</h2><button class="btn-icon" aria-label="Expand"><svg class="i"><use href="#i-chev-u"/></svg></button></div>
+            
+          </section></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <h3>Phone (below 860px): docked flush across the bottom, open · folded</h3>
+    <div class="doc-grid">
+      <div class="dock-stage phone">
+          <div class="import-dock"><section class="import-panel" aria-label="Imports">
+            <div class="import-head"><h2>Importing 3 of 5 files</h2><button class="btn-icon" aria-label="Fold"><svg class="i"><use href="#i-chev-d"/></svg></button></div>
+            <div class="import-body">
+              <div class="import-batch">
+                <div class="import-sum"><svg class="i"><use href="#i-chev-d"/></svg><span><b>5 files</b> · ja → en</span><span class="import-meta">3 of 5</span>
+                  <div class="import-track" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="3"><span style="width:60%"></span></div></div>
+                <ul class="import-files">
+                  <li class="import-file"><svg class="i ok"><use href="#i-check"/></svg><div><span class="import-name">N5 verbs.csv</span><div class="import-meta"><a href="#">N5 verbs</a> · 248 added · 3 skipped</div></div></li>
+                  <li class="import-file"><svg class="i ok"><use href="#i-check"/></svg><div><span class="import-name">N5 nouns.csv</span><div class="import-meta"><a href="#">N5 nouns</a> · 412 added · 0 skipped</div></div></li>
+                  <li class="import-file"><svg class="i bad"><use href="#i-alert"/></svg><div><span class="import-name">N5 adjectives.csv</span><div class="import-meta">No deck created · 104 problems</div></div></li>
+                  <li class="import-file"><span class="run" aria-label="Importing"></span><div><span class="import-name">Particles.csv</span><div class="import-meta">Importing…</div></div></li>
+                  <li class="import-file"><svg class="i wait"><use href="#i-upload"/></svg><div><span class="import-name">Counters.csv</span><div class="import-meta">Waiting</div></div></li>
+                </ul>
+              </div>
+              <div class="import-batch">
+                <div class="import-sum"><svg class="i"><use href="#i-chev-r"/></svg><span><b>2 files</b> · zh-Hans → en</span><span class="import-meta" style="display:flex;align-items:center;gap:4px">2 decks created<button class="btn-icon" aria-label="Dismiss"><svg class="i"><use href="#i-x"/></svg></button></span>
+                  <div class="import-track"><span style="width:100%"></span></div></div>
+              </div>
+            </div>
+          </section></div>
+      </div>
+      <div class="dock-stage phone">
           <div class="import-dock"><section class="import-panel" aria-label="Imports">
             <div class="import-head"><h2>Importing 3 of 5 files</h2><button class="btn-icon" aria-label="Expand"><svg class="i"><use href="#i-chev-u"/></svg></button></div>
             
