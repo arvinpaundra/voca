@@ -658,3 +658,9 @@ dl.kpis, dl.kpis dd, .deck-stats-strip dd, .deck-stats-strip dl { margin: 0; }
 .import-name { font-weight: 500; overflow-wrap: anywhere; }
 .import-file a { color: var(--ink); }
 .import-errors { grid-column: 2; display: grid; gap: 1px; color: #991b1b; font-size: var(--tiny); }
+/* Below the shell's 860px breakpoint the panel docks flush across the bottom edge, like a bottom sheet. */
+@media (max-width: 860px) {
+  .import-dock { left: 0; right: 0; width: auto; max-width: none; }
+  .import-panel { border-left: 0; border-right: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .import-body { max-height: 50vh; }
+}
