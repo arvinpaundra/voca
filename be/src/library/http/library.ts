@@ -1,12 +1,21 @@
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
-import { DuplicateWord, Forbidden, IMPORT_MAX_BYTES, ImportRejected, NotFound, PayloadTooLarge, VocaApi } from "@voca/contract"
+import {
+  DuplicateWord,
+  DuplicateWords,
+  Forbidden,
+  IMPORT_MAX_BYTES,
+  ImportRejected,
+  NotFound,
+  PayloadTooLarge,
+  VocaApi
+} from "@voca/contract"
 import { createDeck, deleteDeck, getDeck, listDecks, publishDeck, unpublishDeck, updateDeck } from "../application/decks.ts"
 import type { DeckRepo } from "../application/deckRepo.ts"
 import { exportCsv as exportWords, importCsv as importWords } from "../application/csv.ts"
 import { flashcards } from "../application/flashcards.ts"
 import { snoozeDecks, unsnoozeDecks } from "../application/snooze.ts"
-import { createWord, deleteWord, listWords, updateWord } from "../application/words.ts"
+import { createWord, createWords, deleteWord, listWords, updateWord } from "../application/words.ts"
 import type { WordRepo } from "../application/wordRepo.ts"
 import type { Transaction } from "../../shared/transaction.ts"
 
@@ -62,7 +71,18 @@ export const LibraryHandlers = HttpApiBuilder.group(
           Effect.catchTag("DuplicateWordError", duplicate)
         ),
 
-      createWords: () => Effect.die("not implemented: LB"),
+      createWords: ({ params, payload }) =>
+        createWords(params.deckSlug, payload.words).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck")),
+          Effect.catchTag("DuplicateWordsError", (error) =>
+            Effect.fail(
+              new DuplicateWords({
+                message: "These words collide with the deck or with each other, so none was saved",
+                indexes: error.indexes
+              })
+            ))
+        ),
 
       updateWord: ({ params, payload }) =>
         updateWord(params.wordSlug, payload).pipe(

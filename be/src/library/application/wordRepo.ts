@@ -28,6 +28,12 @@ export interface NewWord {
   readonly createdAt: number
 }
 
+/** The keys that make a word unique within its deck. */
+export interface WordKeys {
+  readonly termKey: string
+  readonly readingKey: string
+}
+
 /** A live word as a fork copies it: everything but the new slug and the fork's clock time. */
 export type WordCopy = Omit<NewWord, "slug" | "createdAt">
 
@@ -73,6 +79,8 @@ export class WordRepo extends Context.Service<WordRepo, {
   listLive(deckId: bigint): Effect.Effect<ReadonlyArray<WordCopy>>
   /** Inserts words with no cards; a fork's words, which cannot collide with each other. */
   insertMany(deckId: bigint, words: ReadonlyArray<NewWord>): Effect.Effect<void>
+  /** The given keys that a live word of the deck already holds. */
+  findTakenKeys(deckId: bigint, keys: ReadonlyArray<WordKeys>): Effect.Effect<ReadonlyArray<WordKeys>>
   /** Inserts the words whose keys no live word of the deck holds, later rows of the same keys included. Returns how many were written. */
   insertNew(deckId: bigint, words: ReadonlyArray<NewWord>): Effect.Effect<number>
 }>()("voca/library/WordRepo") {}

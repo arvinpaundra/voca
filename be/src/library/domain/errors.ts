@@ -9,6 +9,11 @@ export class WordNotFound extends Data.TaggedError("WordNotFound")<{}> {}
 /** The deck already holds a word with the same normalized term and reading. */
 export class DuplicateWordError extends Data.TaggedError("DuplicateWordError")<{}> {}
 
+/** A batch of words saves none: `indexes` names every word, by its position in the request, that collides. */
+export class DuplicateWordsError extends Data.TaggedError("DuplicateWordsError")<{
+  readonly indexes: ReadonlyArray<number>
+}> {}
+
 /** A deck's term language can't change once it has words. */
 export class TermLangLocked extends Data.TaggedError("TermLangLocked")<{}> {}
 

@@ -1,11 +1,11 @@
 import { Clock, Effect, Option } from "effect"
 import { CurrentLearner, SLUG_LENGTH } from "@voca/contract"
 import type { CreateWord, UpdateWord, Word } from "@voca/contract"
-import { DeckNotFound, DuplicateWordError, WordNotFound } from "../domain/errors.ts"
+import { DeckNotFound, DuplicateWordError, DuplicateWordsError, WordNotFound } from "../domain/errors.ts"
 import { newSlug } from "../domain/slug.ts"
 import { normalizeKey, toStoredText } from "../domain/text.ts"
 import { Transaction } from "../../shared/transaction.ts"
-import type { NewWord, OwnedWord, WordChanges, WordPage } from "./wordRepo.ts"
+import type { NewWord, OwnedWord, WordChanges, WordKeys, WordPage } from "./wordRepo.ts"
 import { WordRepo } from "./wordRepo.ts"
 
 type Needs = CurrentLearner | WordRepo | Transaction
@@ -134,6 +134,63 @@ export const createWord = (
       onNone: () => Effect.fail(new DuplicateWordError()),
       onSome: Effect.succeed
     })
+  })
+
+/** A key pair as one string, so keys can be compared and put in a set. */
+const keyOf = (keys: WordKeys): string => {
+  return JSON.stringify([keys.termKey, keys.readingKey])
+}
+
+/** The positions of the words that collide with a live word of the deck, or with another word of the batch. */
+const collidingIndexes = (drafts: ReadonlyArray<WordKeys>, taken: ReadonlyArray<WordKeys>): ReadonlyArray<number> => {
+  const takenKeys = new Set(taken.map(keyOf))
+  const draftKeys = drafts.map(keyOf)
+
+  return draftKeys.flatMap((key, index) => {
+    const repeated = draftKeys.filter((other) => other === key).length > 1
+
+    return takenKeys.has(key) || repeated ? [index] : []
+  })
+}
+
+/**
+ * Saves every word of the batch, or none: a word that collides with the deck or with another word of the batch fails
+ * the whole batch, naming each colliding word by its position. Words come back in request order.
+ */
+export const createWords = (
+  deckSlug: string,
+  inputs: ReadonlyArray<typeof CreateWord.Type>
+): Effect.Effect<ReadonlyArray<Word>, DeckNotFound | DuplicateWordsError, Needs> =>
+  Effect.gen(function* () {
+    const { id } = yield* CurrentLearner
+    const words = yield* WordRepo
+    const transaction = yield* Transaction
+    const deckId = yield* findOwnedDeckId(id, deckSlug)
+    const createdAt = yield* Clock.currentTimeMillis
+    const drafts = yield* Effect.forEach(inputs, (input) =>
+      Effect.map(newSlug(SLUG_LENGTH.word), (slug) => newWordOf(slug, input, createdAt))
+    )
+    const taken = yield* words.findTakenKeys(deckId, drafts)
+    const indexes = collidingIndexes(drafts, taken)
+
+    if (indexes.length > 0) {
+      return yield* Effect.fail(new DuplicateWordsError({ indexes }))
+    }
+
+    // A word can still collide when a concurrent request commits the same keys after the check above: the insert then
+    // saves nothing, and the failure rolls back the words already inserted.
+    return yield* transaction.run(
+      Effect.forEach(drafts, (draft, index) =>
+        words.insert(deckId, draft).pipe(
+          Effect.flatMap(
+            Option.match({
+              onNone: () => Effect.fail(new DuplicateWordsError({ indexes: [index] })),
+              onSome: Effect.succeed
+            })
+          )
+        )
+      )
+    )
   })
 
 export const updateWord = (
