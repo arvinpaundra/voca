@@ -1,4 +1,5 @@
 import { DRILLS, type Question } from "@voca/contract";
+import { WORD_FONT_CLASS } from "../../lib/wordFont";
 import { promptLang } from "./scriptLang";
 
 // The question above the options: its direction label and its prompt, without the word's reading as a hint.
@@ -12,11 +13,11 @@ export function QuestionPrompt({ question, termLang }: { question: Question; ter
       <span className="drill" dir="auto">{question.drillLabel}</span>
 
       {promptIsTerm ? (
-        <p className="term" lang={promptLang(question.drill, termLang)}>
+        <p className={`term ${WORD_FONT_CLASS}`} lang={promptLang(question.drill, termLang)}>
           {question.prompt.text}
         </p>
       ) : (
-        <p className="term" dir="auto">{question.prompt.text}</p>
+        <p className={`term ${WORD_FONT_CLASS}`} dir="auto">{question.prompt.text}</p>
       )}
     </>
   );

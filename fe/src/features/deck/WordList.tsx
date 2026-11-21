@@ -3,6 +3,8 @@ import { Pencil, Trash2 } from "lucide-react";
 import { readingLang, type Deck, type WordWithCards } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { IconButton } from "../../components/IconButton";
+import { cx } from "../../components/cx";
+import { WORD_FONT_CLASS } from "../../lib/wordFont";
 
 const MATURE_DAYS = 21;
 
@@ -77,7 +79,7 @@ export function WordList({
       {words.map((word) => (
         <li key={word.slug}>
           <article className="word row-open" onClick={() => onOpen(word)}>
-            <span className="w-term" lang={deck.termLang} dir="auto">
+            <span className={cx("w-term", WORD_FONT_CLASS)} lang={deck.termLang} dir="auto">
               <button type="button" aria-label={`Open ${word.term}`} style={termButtonStyle}>
                 {word.reading === null ? (
                   word.term
@@ -91,11 +93,11 @@ export function WordList({
             </span>
 
             <div className="w-body">
-              <span className="w-meaning" lang={deck.meaningLang} dir="auto">
+              <span className={cx("w-meaning", WORD_FONT_CLASS)} lang={deck.meaningLang} dir="auto">
                 {word.meaning}
               </span>
               {word.example !== null && word.example !== "" && (
-                <span className="w-example" lang={deck.termLang} dir="auto">
+                <span className={cx("w-example", WORD_FONT_CLASS)} lang={deck.termLang} dir="auto">
                   <Example example={word.example} term={word.term} />
                 </span>
               )}
