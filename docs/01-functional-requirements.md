@@ -342,6 +342,65 @@ Extends FR-2 and FR-6. The word modal shows five metrics for each of up to four 
 - Unfolding a direction shows its recall now, stability, lapses, reviews and accuracy; folding hides them again.
 - The word page shows every FR-6 metric unchanged.
 
+## FR-28 Deck list and Add words fixes (M)
+
+Extends FR-2, FR-20 and FR-26. A deck's words can't be scrolled, the Add word modal can't be scrolled either and draws doubled borders, and cleaning up several decks means deleting them one by one.
+
+- On a deck page, every word row can be reached by scrolling, however many words the deck has.
+- In library select mode the actions are **Snooze**, **Unsnooze** and **Delete**; Delete is a danger button.
+- Delete asks for confirmation naming how many decks will go, then deletes each selected deck as a single delete does (FR-2).
+- In the Add word modal, adjacent words are separated by one border line, never two stacked.
+- Clicking a word's header toggles it: a folded word opens, the open word folds. Every word can be folded at once.
+- When the word list is taller than the modal, the list scrolls inside it and the "Add N words" button stays pinned at the bottom.
+- **Won't:** undo of a bulk delete, a restore UI.
+
+**Acceptance**
+- In a deck with 29 words, the 29th row can be scrolled to and clicked, on desktop and at phone width.
+- Selecting 3 decks and confirming Delete removes all 3 from the library, the dashboard and Community. Cancelling removes none.
+- Unsnooze in select mode unsnoozes every selected snoozed deck and leaves the others unchanged.
+- In the Add word modal, clicking the open word's header leaves 0 words open; clicking a folded word's header opens it.
+- With 50 words in the list, the 50th can be scrolled to and opened, and "Add N words" stays visible throughout.
+- Adjacent words never show a doubled border.
+
+## FR-29 Import several decks at once (S)
+
+Extends FR-4. A Learner moving a collection into Voca has one file per deck; creating each deck and importing into it one at a time is tedious.
+
+- From the library, "Import decks" takes up to **20** CSV files at once, each in the FR-4 format and within its limits.
+- The Learner picks `termLang` and `meaningLang` once; every deck in the batch uses them. Nothing is detected from the files.
+- Each file becomes a new deck named after the file without its extension (`N5 verbs.csv` → `N5 verbs`). A name already used by another deck is allowed.
+- A header-only file creates an empty deck.
+- Each file is all-or-nothing on its own (FR-4): an invalid file creates no deck, and the other files still do.
+- The import runs in the background. Its progress (files done out of total, the current file) is visible from any page and updates live, without a reload.
+- Progress and the final per-file result survive a reload and a sign-out and sign-in, until the Learner dismisses them. The result shows, per file, the deck created with N words added and M duplicates skipped, or its errors.
+- The Learner can start another batch while one is running; each batch shows its own progress.
+- **Won't:** a language per file, language detection, cancelling a running batch, importing into existing decks (FR-4 covers that).
+
+**Acceptance**
+- Importing 5 valid files creates 5 decks, each named after its file and with the chosen languages.
+- Progress updates without a reload while the Learner moves between pages, and reaches 5/5.
+- A file with an invalid row creates no deck and lists up to 100 errors with row numbers; the other files' decks are created.
+- A header-only file creates a deck with 0 words.
+- A file named like an existing deck creates a second deck with that name.
+- More than 20 files are refused before anything is imported.
+- After a reload, and after signing out and in, a running batch still shows its progress, and a finished one its result until dismissed.
+- Two batches started back to back both complete, each with its own progress.
+
+## FR-30 Choose the word font (S)
+
+Extends FR-3. The default font makes kanji hard to read, and Learners of any language pair may want a clearer typeface for what they study.
+
+- In the settings, the Learner picks the font for word content from a fixed list of styles: **System default**, **Sans**, **Serif**, **Rounded**, **Handwriting** (textbook stroke forms).
+- Every style renders every language Voca supports, CJK (ja, zh-Hans, zh-Hant, ko), Latin (en, id, …), and right-to-left scripts alike. Where a style has no face for a script, it falls back to the same style's closest face for that script.
+- The font applies to all of a word's content (term, reading, meaning, example, notes) wherever it is shown: the deck page, the word modal, the word page, study sessions and flashcards.
+- The choice is remembered on that device; a new device starts with System default.
+- **Won't:** custom font upload, font size, syncing across devices, changing the interface's own font.
+
+**Acceptance**
+- After choosing Handwriting, a `ja`→`id` word and an `id`→`en` word both render their term, reading, meaning and example in the Handwriting style on the deck page, in the word modal and in a study session.
+- After a reload the choice still applies; in a fresh browser System default is used.
+- Buttons, labels and navigation keep their current font.
+
 ## Extra ideas (not in your list)
 
 | Idea | Priority | Why |
