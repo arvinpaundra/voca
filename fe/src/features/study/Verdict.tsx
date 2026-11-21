@@ -37,7 +37,7 @@ export function Verdict({
     <div className={correct ? "verdict ok" : "verdict no"} role="status">
       {correct ? <Check className="i" aria-hidden="true" /> : <AlertCircle className="i" aria-hidden="true" />}
 
-      {reading !== null && <span className="reading" lang={readingLang}>not implemented: FS</span>}
+      {reading !== null && <span className="reading" lang={readingLang}>{reading}</span>}
 
       <span className="grow">
         {correct ? (
