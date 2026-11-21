@@ -47,8 +47,8 @@ export function DeckRows({
                     display: "flex",
                     alignItems: "flex-start",
                     gap: 8,
+                    flex: 1,
                     minWidth: 0,
-                    gridArea: "title",
                   }}
                 >
                   {onToggleSelect !== undefined && (
