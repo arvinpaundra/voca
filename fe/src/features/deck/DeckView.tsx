@@ -190,18 +190,11 @@ export function DeckView({ deck }: DeckViewProps) {
 
   return (
     <>
-      <p>not implemented: WR</p>
       <WordDetailsModal
         word={openedWord}
         termLang={deck.termLang}
         meaningLang={deck.meaningLang}
-        own={{
-          deckSlug: deck.slug,
-          onEdit: () => {
-            if (openedWord !== null) setWordEditor({ kind: "edit", word: openedWord });
-          },
-          onDelete: () => setDeletingWord(openedWord),
-        }}
+        own={{ deckSlug: deck.slug }}
         onClose={() => setOpenSlug(null)}
       />
 

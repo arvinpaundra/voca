@@ -96,7 +96,7 @@ export function DrillPanel({
         </div>
       </section>
 
-      <div className="dash" style={{ gridTemplateColumns: "minmax(0,1fr) 320px" }}>
+      <div className="dash">
         <Card aria-label="Effort">
           <div className="card-head">
             <h2 className="h2">Effort and fluency</h2>
@@ -167,27 +167,30 @@ export function DrillPanel({
           ))}
         </div>
 
-        <ul className="hist">
-          <li className="head">
-            <span>Date</span>
-            <span>Result</span>
-            <span>Rating</span>
-            <span className="num">Time</span>
-            <span className="num">Recall</span>
-            <span className="num">Interval</span>
-          </li>
-
-          {newestFirst.map((entry, index) => (
-            <li key={index}>
-              <span>{dateTime(entry.at, timezone)}</span>
-              <span className={entry.correct ? "ok" : "no"}>{entry.correct ? "Right" : "Wrong"}</span>
-              <span>{ratingLabel(entry.rating)}</span>
-              <span className="num">{seconds(entry.latencyMs)}</span>
-              <span className="num">{percent(entry.predictedRecall)}</span>
-              <span className="num">{dayCount(entry.intervalDays)}</span>
+        {/* Six columns stay on one line; on a phone the table scrolls sideways inside its card. */}
+        <div className="hist-scroll">
+          <ul className="hist">
+            <li className="head">
+              <span>Date</span>
+              <span>Result</span>
+              <span>Rating</span>
+              <span className="num">Time</span>
+              <span className="num">Recall</span>
+              <span className="num">Interval</span>
             </li>
-          ))}
-        </ul>
+
+            {newestFirst.map((entry, index) => (
+              <li key={index}>
+                <span>{dateTime(entry.at, timezone)}</span>
+                <span className={entry.correct ? "ok" : "no"}>{entry.correct ? "Right" : "Wrong"}</span>
+                <span>{ratingLabel(entry.rating)}</span>
+                <span className="num">{seconds(entry.latencyMs)}</span>
+                <span className="num">{percent(entry.predictedRecall)}</span>
+                <span className="num">{dayCount(entry.intervalDays)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </Card>
     </>
   );
