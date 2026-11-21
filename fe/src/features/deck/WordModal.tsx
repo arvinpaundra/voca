@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Result } from "effect";
-import type { Deck, Word, WordLabels, WordWithCards } from "@voca/contract";
+import type { Deck, WordLabels, WordWithCards } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { session } from "../../lib/appSession";
@@ -24,7 +24,7 @@ type WordModalProps = {
   // Set to edit that word; unset to add a new one.
   word?: WordWithCards | undefined;
   onClose: () => void;
-  onSaved: (word: Word) => void;
+  onSaved: () => void;
 };
 
 export function WordModal({ open, deck, labels, word, onClose, onSaved }: WordModalProps) {
@@ -32,7 +32,7 @@ export function WordModal({ open, deck, labels, word, onClose, onSaved }: WordMo
   if (!open) return null;
 
   if (word === undefined) {
-    return <AddWordsModal deck={deck} labels={labels} onClose={onClose} onSaved={() => onSaved(undefined as never)} />;
+    return <AddWordsModal deck={deck} labels={labels} onClose={onClose} onSaved={onSaved} />;
   }
 
   return <WordEditor deck={deck} labels={labels} word={word} onClose={onClose} onSaved={onSaved} />;
@@ -43,7 +43,7 @@ type WordEditorProps = {
   labels: WordLabels;
   word?: WordWithCards | undefined;
   onClose: () => void;
-  onSaved: (word: Word) => void;
+  onSaved: () => void;
 };
 
 function WordEditor({ deck, labels, word, onClose, onSaved }: WordEditorProps) {
@@ -71,7 +71,7 @@ function WordEditor({ deck, labels, word, onClose, onSaved }: WordEditorProps) {
 
     setBusy(false);
     if (Result.isSuccess(result)) {
-      onSaved(result.success);
+      onSaved();
       return;
     }
 

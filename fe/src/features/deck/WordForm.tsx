@@ -6,7 +6,7 @@ import { isComplete, type WordDraft } from "./wordModel";
 type WordFormProps = {
   labels: WordLabels;
   draft: WordDraft;
-  formRef: Ref<HTMLFormElement>;
+  formRef?: Ref<HTMLFormElement> | undefined;
   onChange: (name: keyof WordDraft, value: string) => void;
   onSubmit: () => void;
 };

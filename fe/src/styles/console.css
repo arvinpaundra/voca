@@ -204,6 +204,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .word-form { display: grid; gap: 16px; padding: 2px; max-height: min(calc(100dvh - 220px), 560px); overflow-y: auto; }
 .word-form .pair { display: grid; gap: 16px; }
 @media (min-width: 560px) { .word-form .pair { grid-template-columns: 1fr 1fr; } }
+
+/* The batch add modal: each word is one bordered row, folded to a single line or open to its fields. */
+.word-list { display: grid; gap: 8px; max-height: min(calc(100dvh - 300px), 480px); overflow-y: auto; }
+.word-item { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: #fff; }
+.word-item.is-open { border-color: var(--line-strong); gap: 14px; }
+.word-item-head, .word-item-fold { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.word-fold { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; background: transparent; border: 0; padding: 4px 0; font-size: 14px; color: var(--ink); cursor: pointer; }
+.word-fold:hover { color: var(--ink-2); }
+.word-item .err { font-size: var(--tiny); color: var(--bad); }
 .maturity { display: grid; gap: 10px; }
 .mbar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: #f0efee; gap: 2px; }
 .mbar { border-radius: 2px; height: 6px; }
