@@ -312,7 +312,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .deck:hover { border-color: var(--line-strong); }
 .deck-top { display: flex; align-items: flex-start; gap: 8px; }
 .deck-head { display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 0; }
-.deck-head input { flex-shrink: 0; margin-top: 4px; position: relative; z-index: 1; }
+/* The row checkbox looks like the design's .choice .box: a stone outline, ink with a lime tick when checked. */
+.deck-head input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 18px; height: 18px; margin: 1px 0 0; border-radius: 5px; border: 1.5px solid var(--line-strong); background: #fff center / 12px no-repeat; cursor: pointer; position: relative; z-index: 1; transition: background-color .15s, border-color .15s; }
+.deck-head input[type="checkbox"]:hover { border-color: var(--faint); }
+.deck-head input[type="checkbox"]:checked { background-color: var(--ink); border-color: var(--ink); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c1ff72' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E"); }
 .deck-title { flex: 1; min-width: 0; font-weight: 600; font-size: 16px; line-height: 1.35; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .deck-title::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .deck .btn-icon, .deck .btn { position: relative; z-index: 1; }
