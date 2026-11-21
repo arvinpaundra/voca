@@ -252,6 +252,29 @@ Sometimes a Learner wants to flip through a deck without the pressure of a grade
 - After k swipes, pressing Back k times returns to the first card, and the summary counts only the swipes that are left.
 - A flashcard run never changes any word's `due`, `stability` or `difficulty`, adds no review, and leaves the heatmap and streak unchanged.
 
+## FR-22 Release (M)
+
+The owner needs to ship Voca to `voca.arvinpaundra.dev`, and every later version, in one repeatable step. A broken build must never take down the working version. The first release also replaces the old Voca (the Go API at `vocaapi.arvinpaundra.dev`) and leaves nothing of it behind.
+
+- The owner releases by pushing a version tag `vX.Y.Z` on a master commit. Nothing else deploys; merging to master does not.
+- One release ships the API and the web app together, from the same commit. Both are served from `voca.arvinpaundra.dev`, with the API under `/api`.
+- A release runs only if that commit's CI `verify` passed. Otherwise nothing is deployed and the release is marked failed.
+- A release replaces the running version with no failed requests. If the new API never becomes healthy, the previous version keeps serving and the release is marked failed.
+- Production secrets live only in GitHub repository secrets. They are applied on every release and never committed.
+- The owner rolls back by re-running the release for an older tag.
+- Voca keeps a first-release checklist of its own: the one-time steps only the owner does, each with its command or the place to do it. It starts by setting the default kubectl context to `kube-oci` before any cluster command. It then covers removing the old Voca from the cluster (its deployment, service, ingress, secret and config), deleting the `vocaapi.arvinpaundra.dev` DNS record, dropping the old database and role, and creating a fresh, empty database. It ends with the Google OAuth redirect URIs, the GitHub secrets and the Cloudflare setup.
+- The new Voca starts with an empty database. No users, decks or progress move from the old app.
+- **Won't:** a staging environment, preview deploys per PR, automatic rollback, changelog generation, or migrating data from the old app.
+
+**Acceptance**
+- Pushing `v1.0.0` on a green master commit ends with `GET https://voca.arvinpaundra.dev/api/healthz` → 204, and the page at `https://voca.arvinpaundra.dev` is built from that commit.
+- Pushing a tag on a commit whose `verify` failed deploys nothing, and the running version is unchanged.
+- During a successful release, `GET /api/healthz` keeps answering 204.
+- A release whose API never becomes healthy leaves the previous version answering 204, and the workflow run fails.
+- No production secret value appears in the repository or in the workflow logs.
+- Re-running the release for the previous tag restores that version.
+- After the first release, `vocaapi.arvinpaundra.dev` no longer resolves, the cluster holds no resource of the old app, and the old database and role no longer exist.
+
 ---
 
 ## Extra ideas (not in your list)
