@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, Schema } from "effect"
+import { DateTime, Effect, Layer, Option, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
 import { DeckSlug, Drill, Example, Meaning, Mode, Notes, Rating, Reading, Term, WordSlug } from "@voca/contract"
 import {
@@ -132,15 +132,21 @@ export const InsightRepoLive = Layer.effect(
     })
 
     const unstudiedOf = SqlSchema.findOne({
-      Request: Schema.Struct(ScopeFields),
+      Request: Schema.Struct({
+        ...ScopeFields,
+        awakeAt: Schema.NullOr(Schema.DateTimeUtcFromDate)
+      }),
       Result: Schema.Struct({ count: Count }),
-      execute: ({ learnerId, deckId }) => sql`
+      execute: ({ learnerId, deckId, awakeAt }) => sql`
         SELECT COUNT(*)::int AS count
         FROM words w
         JOIN decks d ON d.id = w.deck_id AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL
         CROSS JOIN (VALUES ('term_meaning'), ('meaning_term'), ('term_reading'), ('reading_term')) AS drills(drill)
         WHERE w.deleted_at IS NULL
           AND (${deckId}::bigint IS NULL OR d.id = ${deckId}::bigint)
+          AND (${awakeAt}::timestamptz IS NULL
+            OR d.snoozed_at IS NULL
+            OR (d.snoozed_until IS NOT NULL AND d.snoozed_until <= ${awakeAt}::timestamptz))
           AND (drills.drill IN ('term_meaning', 'meaning_term')
             OR (w.reading IS NOT NULL AND w.reading_key <> '' AND w.reading_key <> w.term_key))
           AND NOT EXISTS (
@@ -307,10 +313,11 @@ export const InsightRepoLive = Layer.effect(
       Request: Schema.Struct({
         learnerId: Schema.BigInt,
         start: Schema.DateTimeUtcFromDate,
-        end: Schema.DateTimeUtcFromDate
+        end: Schema.DateTimeUtcFromDate,
+        now: Schema.DateTimeUtcFromDate
       }),
       Result: DeckDueRow,
-      execute: ({ learnerId, start, end }) => sql`
+      execute: ({ learnerId, start, end, now }) => sql`
         SELECT d.slug AS "deckSlug", d.title AS title, d.term_lang AS "termLang", c.drill AS drill,
           COUNT(*)::int AS due,
           COUNT(*) FILTER (WHERE c.due < ${start})::int AS overdue,
@@ -319,6 +326,8 @@ export const InsightRepoLive = Layer.effect(
         JOIN words w ON w.id = c.word_id AND w.deleted_at IS NULL
         JOIN decks d ON d.id = w.deck_id AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL
         WHERE c.learner_id = ${learnerId} AND c.deleted_at IS NULL AND c.due < ${end}
+          AND (d.snoozed_at IS NULL
+            OR (d.snoozed_until IS NOT NULL AND d.snoozed_until <= ${now}::timestamptz))
         GROUP BY d.id, d.slug, d.title, d.term_lang, c.drill`
     })
 
@@ -348,8 +357,8 @@ export const InsightRepoLive = Layer.effect(
       cardMaturity: (scope: Scope, matureDays) =>
         maturityOf({ ...scope, matureDays }).pipe(Effect.orDie),
 
-      unstudiedPairs: (scope: Scope) =>
-        unstudiedOf(scope).pipe(
+      unstudiedPairs: (scope: Scope, awakeAt?: DateTime.Utc) =>
+        unstudiedOf({ ...scope, awakeAt: awakeAt ?? null }).pipe(
           Effect.map((row) => row.count),
           Effect.orDie
         ),
@@ -406,8 +415,8 @@ export const InsightRepoLive = Layer.effect(
       pickedWords: (ids): Effect.Effect<ReadonlyArray<PickedWord>> =>
         ids.length === 0 ? Effect.succeed([]) : pickedWordsOf(ids).pipe(Effect.orDie),
 
-      dueByDeck: (learnerId, start, end): Effect.Effect<ReadonlyArray<DeckDue>> =>
-        dueByDeckOf({ learnerId, start, end }).pipe(Effect.orDie),
+      dueByDeck: (learnerId, start, end, now): Effect.Effect<ReadonlyArray<DeckDue>> =>
+        dueByDeckOf({ learnerId, start, end, now }).pipe(Effect.orDie),
 
       sessionPaces: (learnerId): Effect.Effect<ReadonlyArray<number>> =>
         sessionPacesOf({ learnerId }).pipe(

@@ -88,8 +88,11 @@ export class InsightRepo extends Context.Service<InsightRepo, {
   findLiveDeck(learnerId: bigint, deckSlug: string): Effect.Effect<Option.Option<bigint>>
   /** Live cards by stability: learning below `matureDays`, mature from it. */
   cardMaturity(scope: Scope, matureDays: number): Effect.Effect<{ readonly learning: number; readonly mature: number }>
-  /** Studyable (word, drill) pairs of live words that have no live card of the Learner yet. */
-  unstudiedPairs(scope: Scope): Effect.Effect<number>
+  /**
+   * Studyable (word, drill) pairs of live words that have no live card of the Learner yet. With `awakeAt`, the decks
+   * whose snooze is live at that instant are left out.
+   */
+  unstudiedPairs(scope: Scope, awakeAt?: DateTime.Utc): Effect.Effect<number>
   /** Live cards due before `end`, and of those the ones due before `start`. */
   dueCounts(
     scope: Scope,
@@ -119,8 +122,13 @@ export class InsightRepo extends Context.Service<InsightRepo, {
   wordAttempts(learnerId: bigint, wordId: bigint): Effect.Effect<ReadonlyArray<WordAttemptRow>>
   /** The words with these ids, for naming the ones the Learner picked by mistake. */
   pickedWords(ids: ReadonlyArray<bigint>): Effect.Effect<ReadonlyArray<PickedWord>>
-  /** The Learner's due cards per live deck and drill, due before `end`. */
-  dueByDeck(learnerId: bigint, start: DateTime.Utc, end: DateTime.Utc): Effect.Effect<ReadonlyArray<DeckDue>>
+  /** The Learner's due cards per live deck and drill, due before `end`, leaving out the decks whose snooze is live at `now`. */
+  dueByDeck(
+    learnerId: bigint,
+    start: DateTime.Utc,
+    end: DateTime.Utc,
+    now: DateTime.Utc
+  ): Effect.Effect<ReadonlyArray<DeckDue>>
   /** Seconds per first attempt in each of the Learner's latest 20 sessions with more than one first attempt, newest first. */
   sessionPaces(learnerId: bigint): Effect.Effect<ReadonlyArray<number>>
 }>()("voca/insight/InsightRepo") {}
