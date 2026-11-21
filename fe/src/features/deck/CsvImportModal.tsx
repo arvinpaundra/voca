@@ -4,7 +4,7 @@ import type { DeckDetail, ImportResult } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { session } from "../../lib/appSession";
-import { importFailure, importSummary, type ImportFailure } from "./csvModel";
+import { csvTemplateHref, importFailure, importSummary, type ImportFailure } from "./csvModel";
 
 type CsvImportModalProps = {
   open: boolean;
@@ -83,7 +83,7 @@ function CsvImportDialog({ deckSlug, onClose, onImported }: CsvImportDialogProps
         )
       }
     >
-      <a href={`data:text/csv;charset=utf-8,${encodeURIComponent("not implemented: DF")}`} download="voca-template.csv">
+      <a href={csvTemplateHref()} download="voca-template.csv">
         Download template
       </a>
 

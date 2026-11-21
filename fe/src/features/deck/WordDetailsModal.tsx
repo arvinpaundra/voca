@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Word, WordDrillStats } from "@voca/contract";
 import { Button } from "../../components/Button";
@@ -117,12 +118,12 @@ function MetricsPanel({ metrics }: { metrics: Metrics }) {
 
 // One direction's metrics, folded to its label and recall now until opened.
 function DirectionSection({ drill }: { drill: WordDrillStats }) {
-  const open = false;
+  const [open, setOpen] = useState(false);
 
   return (
     <section aria-label={drill.label}>
-      <button type="button" aria-expanded={open}>
-        not implemented: DF
+      <button type="button" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+        {`${drill.label} · ${percent(drill.recallNow)}`}
       </button>
 
       {open && <StatStrip stats={directionStats(drill)} />}
