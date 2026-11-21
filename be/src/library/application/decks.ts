@@ -10,10 +10,10 @@ import { WordRepo } from "./wordRepo.ts"
 type Needs = CurrentLearner | DeckRepo | WordRepo | Transaction
 
 /** The Learner's own deck, or `DeckNotFound`: another Learner's deck looks the same as a missing one. */
-const findOwnedDeck = (learnerId: bigint, slug: string) =>
+export const findOwnedDeck = (learnerId: bigint, slug: string, now: number) =>
   Effect.gen(function* () {
     const decks = yield* DeckRepo
-    const found = yield* decks.findOwned(learnerId, slug)
+    const found = yield* decks.findOwned(learnerId, slug, now)
 
     return yield* Option.match(found, {
       onNone: () => Effect.fail(new DeckNotFound()),
@@ -54,8 +54,8 @@ export const publishDeck = (slug: string): Effect.Effect<Deck, DeckNotFound, Nee
   Effect.gen(function* () {
     const { id } = yield* CurrentLearner
     const decks = yield* DeckRepo
-    const owned = yield* findOwnedDeck(id, slug)
     const at = yield* Clock.currentTimeMillis
+    const owned = yield* findOwnedDeck(id, slug, at)
 
     return yield* decks.publish(owned.id, at)
   })
@@ -64,8 +64,8 @@ export const unpublishDeck = (slug: string): Effect.Effect<Deck, DeckNotFound, N
   Effect.gen(function* () {
     const { id } = yield* CurrentLearner
     const decks = yield* DeckRepo
-    const owned = yield* findOwnedDeck(id, slug)
     const at = yield* Clock.currentTimeMillis
+    const owned = yield* findOwnedDeck(id, slug, at)
 
     return yield* decks.unpublish(owned.id, at)
   })
@@ -75,8 +75,8 @@ export const getDeck = (slug: string): Effect.Effect<DeckDetail, DeckNotFound, N
   Effect.gen(function* () {
     const { id } = yield* CurrentLearner
     const decks = yield* DeckRepo
-    const owned = yield* findOwnedDeck(id, slug)
     const now = yield* Clock.currentTimeMillis
+    const owned = yield* findOwnedDeck(id, slug, now)
     const counts = yield* decks.counts(owned.id, id, now)
 
     return { ...owned.deck, ...counts }
@@ -93,14 +93,13 @@ export const updateDeck = (
   Effect.gen(function* () {
     const { id } = yield* CurrentLearner
     const decks = yield* DeckRepo
-    const owned = yield* findOwnedDeck(id, slug)
+    const updatedAt = yield* Clock.currentTimeMillis
+    const owned = yield* findOwnedDeck(id, slug, updatedAt)
     const changesTermLang = patch.termLang !== undefined && patch.termLang !== owned.deck.termLang
 
     if (changesTermLang && (yield* decks.hasWords(owned.id))) {
       return yield* Effect.fail(new TermLangLocked())
     }
-
-    const updatedAt = yield* Clock.currentTimeMillis
 
     return yield* decks.update(owned.id, patch, updatedAt)
   })
@@ -112,8 +111,8 @@ export const deleteDeck = (slug: string): Effect.Effect<void, DeckNotFound, Need
     const decks = yield* DeckRepo
     const words = yield* WordRepo
     const transaction = yield* Transaction
-    const owned = yield* findOwnedDeck(id, slug)
     const at = yield* Clock.currentTimeMillis
+    const owned = yield* findOwnedDeck(id, slug, at)
 
     yield* transaction.run(
       Effect.gen(function* () {

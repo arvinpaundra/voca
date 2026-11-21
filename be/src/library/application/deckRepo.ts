@@ -25,6 +25,12 @@ export interface NewDeck {
   readonly forkedFromId: bigint | null
 }
 
+/** The Learner's timezone and day start hour: the study day a snooze's end falls on. */
+export interface StudyClock {
+  readonly timezone: string
+  readonly dayStartHour: number
+}
+
 /** A live deck of any Learner, public or not, with its internal id: what a fork starts from. */
 export type LiveDeck = { readonly id: bigint } & Pick<
   Deck,
@@ -60,8 +66,9 @@ export interface PublicDeckPage {
  */
 export class DeckRepo extends Context.Service<DeckRepo, {
   /** The owner's live decks, newest first; counts are taken at `now` (epoch millis). */
+  /** Every Deck returned carries its snooze as of `now` (epoch millis): a snooze whose end has passed reads as none. */
   listOwned(learnerId: bigint, now: number): Effect.Effect<ReadonlyArray<DeckSummary>>
-  findOwned(learnerId: bigint, slug: string): Effect.Effect<Option.Option<OwnedDeck>>
+  findOwned(learnerId: bigint, slug: string, now: number): Effect.Effect<Option.Option<OwnedDeck>>
   /** The live word count and the owner's due card count of one deck, the same numbers `listOwned` shows; `now` is epoch millis. */
   counts(deckId: bigint, learnerId: bigint, now: number): Effect.Effect<DeckCounts>
   insert(learnerId: bigint, deck: NewDeck): Effect.Effect<OwnedDeck>
@@ -71,6 +78,12 @@ export class DeckRepo extends Context.Service<DeckRepo, {
   publish(deckId: bigint, at: number): Effect.Effect<Deck>
   /** Makes the deck private and clears `published_at`. */
   unpublish(deckId: bigint, at: number): Effect.Effect<Deck>
+  /** Snoozes the deck from `snoozedAt` until `until` (epoch millis); `null` lasts until unsnoozed. Replaces any earlier snooze. */
+  snooze(deckId: bigint, snoozedAt: number, until: number | null): Effect.Effect<Deck>
+  /** Clears the snooze of the deck, timed or not; `at` is epoch millis. */
+  unsnooze(deckId: bigint, at: number): Effect.Effect<Deck>
+  /** The timezone and day start hour of the Learner, which decide where a snooze's end falls. */
+  studyClock(learnerId: bigint): Effect.Effect<StudyClock>
   incrementForkCount(deckId: bigint): Effect.Effect<void>
   hasWords(deckId: bigint): Effect.Effect<boolean>
   softDelete(deckId: bigint, at: number): Effect.Effect<void>
