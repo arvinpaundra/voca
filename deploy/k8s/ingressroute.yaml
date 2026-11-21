@@ -1,0 +1,17 @@
+# Reached only by the Pages Function; browsers call voca.arvinpaundra.dev/api. ORIGIN_SECRET is replaced by the
+# release. A request without the header matches no route, so Traefik answers 404 before any middleware runs.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: voca-api
+  namespace: voca
+spec:
+  routes:
+    - kind: Rule
+      match: Host(`voca-origin.arvinpaundra.dev`) && Header(`X-Voca-Origin`, `ORIGIN_SECRET`)
+      middlewares:
+        - name: cloudflare
+        - name: ratelimit
+      services:
+        - name: voca-api
+          port: 80

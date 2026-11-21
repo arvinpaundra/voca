@@ -25,16 +25,18 @@ jobs:
     outputs:
       sha: ${{ steps.gate.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: refs/tags/${{ env.TAG }}
           fetch-depth: 0
 
-      - name: gate (on master, verify green)
+      - name: gate (semver tag, on master, verify green)
         id: gate
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::$TAG is not vX.Y.Z"; exit 1; }
+
           sha=$(git rev-parse HEAD)
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
@@ -43,12 +45,17 @@ jobs:
           verify=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?check_name=verify" -q '.check_runs[0].conclusion // "missing"')
           [ "$verify" = success ] || { echo "::error::verify on $sha is $verify; nothing deployed"; exit 1; }
 
+      # Everything below runs this exact digest, so a re-pushed tag can't swap the image under a release.
       - name: image
+        id: image
         run: |
           echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker build -f be/Containerfile -t "$IMAGE:$TAG" .
           docker push "$IMAGE:$TAG"
 
+          echo "ref=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$TAG")" >> "$GITHUB_OUTPUT"
+
+      # A ServiceAccount token that can only touch the voca namespace, never the owner's own credentials.
       - name: kubeconfig
         env:
           KUBECONFIG_B64: ${{ secrets.KUBECONFIG }}
@@ -56,7 +63,7 @@ jobs:
           mkdir -p ~/.kube
           echo "$KUBECONFIG_B64" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
-          kubectl config use-context kube-oci
+          kubectl config use-context voca-deployer
 
       - name: secret
         env:
@@ -65,8 +72,6 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
-          kubectl apply -f deploy/k8s/namespace.yaml
-
           kubectl -n voca create secret generic voca-api \
             --from-literal=DATABASE_URL="$DATABASE_URL" \
             --from-literal=JWT_SECRET="$JWT_SECRET" \
@@ -74,13 +79,36 @@ jobs:
             --from-literal=GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
             --dry-run=client -o yaml | kubectl apply -f - > /dev/null
 
+      # A failed migration stops the release before any pod runs the new code.
+      - name: migrate
+        env:
+          REF: ${{ steps.image.outputs.ref }}
+        run: |
+          kubectl -n voca delete job voca-migrate --ignore-not-found --wait
+          sed -e "s|IMAGE|$REF|" deploy/k8s/migrate-job.yaml | kubectl apply -f -
+
+          # activeDeadlineSeconds guarantees the Job ends as succeeded or failed.
+          while :; do
+            state=$(kubectl -n voca get job voca-migrate -o jsonpath='{.status.succeeded}/{.status.failed}')
+            [ "$state" != "/" ] && break
+            sleep 3
+          done
+
+          kubectl -n voca logs job/voca-migrate || true
+          [ "$state" = "1/" ] || { echo "::error::migration failed; nothing rolled out"; exit 1; }
+
       # The old pod keeps serving until the new one is ready (maxUnavailable: 0). A pod that never becomes
       # ready is rolled back so its ReplicaSet doesn't linger; a release that became healthy is never undone.
       - name: rollout
+        env:
+          REF: ${{ steps.image.outputs.ref }}
+          ORIGIN_SECRET: ${{ secrets.ORIGIN_SECRET }}
         run: |
-          kubectl apply -f deploy/k8s/service.yaml -f deploy/k8s/ratelimit.yaml -f deploy/k8s/ingress.yaml
+          kubectl apply -f deploy/k8s/service.yaml -f deploy/k8s/cloudflare.yaml -f deploy/k8s/ratelimit.yaml
 
-          sed -e "s|IMAGE|$IMAGE:$TAG|" -e "s|RELEASE|$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT|" deploy/k8s/deployment.yaml \
+          sed -e "s|ORIGIN_SECRET|$ORIGIN_SECRET|" deploy/k8s/ingressroute.yaml | kubectl apply -f - > /dev/null
+
+          sed -e "s|IMAGE|$REF|" -e "s|RELEASE|$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT|" deploy/k8s/deployment.yaml \
             | kubectl apply -f -
 
           if ! kubectl -n voca rollout status deployment/voca-api --timeout=180s; then
@@ -94,11 +122,11 @@ jobs:
     needs: api # the web app only ships once the API it calls is healthy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ needs.api.outputs.sha }}
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.10
 
@@ -109,16 +137,25 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
         run: bun run --filter @voca/fe build
 
+      # The secret is set before the deploy, so the new deployment already sends it.
       - name: pages
         working-directory: fe
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ORIGIN_SECRET: ${{ secrets.ORIGIN_SECRET }}
         run: |
+          printf '%s' "$ORIGIN_SECRET" | bunx wrangler@4.20.0 pages secret put ORIGIN_SECRET --project-name voca > /dev/null
+
           bunx wrangler@4.20.0 pages deploy --branch master \
             --commit-hash "${{ needs.api.outputs.sha }}" --commit-message "$TAG"
 
-      - name: healthz
+      # Browser → Pages Function → origin secret + Cloudflare allowlist → Traefik → API → Postgres (SELECT 1).
+      - name: smoke
         run: |
-          curl -fsS -o /dev/null -w "%{http_code}\n" --retry 10 --retry-delay 3 --retry-all-errors \
-            https://voca.arvinpaundra.dev/api/healthz
+          code=$(curl -fsS -o /dev/null -w "%{http_code}" --retry 10 --retry-delay 3 --retry-all-errors \
+            https://voca.arvinpaundra.dev/api/healthz)
+          [ "$code" = 204 ] || { echo "::error::healthz answered $code through the Pages proxy"; exit 1; }
+
+          code=$(curl -sS -o /dev/null -w "%{http_code}" https://voca-origin.arvinpaundra.dev/api/healthz)
+          [ "$code" = 404 ] || { echo "::error::the origin answered $code without the origin secret"; exit 1; }

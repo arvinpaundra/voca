@@ -1,0 +1,32 @@
+# Run by the release before the rollout, on the same image. IMAGE is replaced by the release.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: voca-migrate
+  namespace: voca
+spec:
+  backoffLimit: 0
+  # Ends a hung migration as Failed, so the release never waits forever.
+  activeDeadlineSeconds: 170
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: migrate
+          image: IMAGE
+          args: ["migrate"]
+          envFrom:
+            - secretRef:
+                name: voca-api
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
