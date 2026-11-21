@@ -2,15 +2,24 @@ import type { DeckSummary } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { Menu } from "../../components/Menu";
+import { snoozeLabel } from "./snooze";
 
 export function DeckRows({
   decks,
   onEdit,
   onDelete,
+  timezone = "UTC",
+  selected,
+  onToggleSelect,
 }: {
   decks: readonly DeckSummary[];
   onEdit: (deck: DeckSummary) => void;
   onDelete: (deck: DeckSummary) => void;
+  // The Learner's timezone, for the date a snooze ends.
+  timezone?: string;
+  // Selection for snoozing several decks at once; rows have no checkbox without `onToggleSelect`.
+  selected?: ReadonlySet<string>;
+  onToggleSelect?: (deck: DeckSummary) => void;
 }) {
   return (
     <div>
@@ -28,9 +37,20 @@ export function DeckRows({
           <li key={deck.slug}>
             <article className="deck">
               <div className="deck-top">
-                <a className="deck-title" href={`/app/decks/${deck.slug}`} dir="auto">
-                  {deck.title}
-                </a>
+                {/* The checkbox shares the title's cell. */}
+                <div className="deck-head">
+                  {onToggleSelect !== undefined && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${deck.title}`}
+                      checked={selected?.has(deck.slug) ?? false}
+                      onChange={() => onToggleSelect(deck)}                    />
+                  )}
+
+                  <a className="deck-title" href={`/app/decks/${deck.slug}`} dir="auto">
+                    {deck.title}
+                  </a>
+                </div>
 
                 <Menu
                   label={`Actions for ${deck.title}`}
@@ -47,6 +67,9 @@ export function DeckRows({
                   {`${deck.termLang} → ${deck.meaningLang}`}
                 </Badge>
                 {deck.visibility === "public" && <Badge variant="lime">Public</Badge>}
+                {snoozeLabel(deck.snooze, timezone) !== null && (
+                  <Badge variant="navy">{snoozeLabel(deck.snooze, timezone)}</Badge>
+                )}
               </div>
 
               <div className="deck-stats">
