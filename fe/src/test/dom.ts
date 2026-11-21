@@ -18,7 +18,10 @@ Object.assign(globalThis, bunFetch);
 // Imported after the DOM exists: Testing Library reads `document` when it loads.
 const { afterEach } = await import("bun:test");
 const { cleanup } = await import("@testing-library/react");
+const { queryClient } = await import("../lib/queryClient");
 
+// One cache for the whole run: clearing it keeps one test's data out of the next.
 afterEach(() => {
   cleanup();
+  queryClient.clear();
 });
