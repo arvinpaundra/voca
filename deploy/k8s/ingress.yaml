@@ -1,0 +1,24 @@
+# Reached only by the Pages Function; browsers call the web app's /api. ${API_HOST} and ${API_TARGET_IP} are filled in by the release.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: voca-api
+  namespace: voca
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: ${API_HOST}
+    external-dns.alpha.kubernetes.io/target: ${API_TARGET_IP}
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: voca-ratelimit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${API_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: voca-api
+                port:
+                  number: 80

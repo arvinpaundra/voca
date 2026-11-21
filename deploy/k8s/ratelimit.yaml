@@ -1,0 +1,12 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ratelimit
+  namespace: voca
+spec:
+  rateLimit:
+    average: 10
+    burst: 20
+    # Traefik sees Cloudflare's addresses; the Pages Function forwards the client's IP in this header.
+    sourceCriterion:
+      requestHeaderName: X-Real-IP

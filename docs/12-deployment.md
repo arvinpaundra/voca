@@ -13,13 +13,14 @@ Browser ──▶ https://voca.arvinpaundra.dev  (Cloudflare, one origin)
                                             ns database: postgres-postgresql (PostgreSQL 18.3)
 ```
 
-**Status:** local PoC. Nothing below is deployed yet, and the cluster is untouched.
+**Status:** released by `.github/workflows/release.yml` (below). Before the first release, the owner works through the [first-release checklist](#first-release-checklist).
 
 ## Frontend: Cloudflare Pages
 - Custom domain: `voca.arvinpaundra.dev`.
 - Build: `bun install && bun run --filter @voca/fe build` produces `fe/dist`.
 - `fe/public/_redirects`: `/*  /index.html  200` (SPA fallback). Pages Functions take precedence, so `/api/*` never hits the fallback.
 - `fe/public/_headers`: the CSP from [08](08-auth.md), plus `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and long-lived caching for `/assets/*`.
+- Deployed by the release with `wrangler pages deploy`; `fe/wrangler.toml` holds the project name and `API_ORIGIN`.
 - Build-time environment: `VITE_GOOGLE_CLIENT_ID`. There is no API URL: the client calls relative `/api` paths.
 - Google Cloud Console: authorized redirect URIs `https://voca.arvinpaundra.dev/auth/callback` and `http://localhost:5173/auth/callback`.
 
@@ -35,7 +36,7 @@ export const onRequest = ({ request, env }: { request: Request; env: { API_ORIGI
 }
 ```
 
-- `API_ORIGIN = https://voca-origin.arvinpaundra.dev` is a Pages environment variable.
+- `API_ORIGIN = https://${API_HOST}` is a Pages variable in `fe/wrangler.toml`; the release fills in `API_HOST` from the GitHub variable.
 - **Client IP:** Traefik sees Cloudflare's addresses, so the rate limit is keyed on `X-Real-IP` (`sourceCriterion.requestHeaderName`). Someone calling the origin host directly could spoof it; accepted for the MVP, and fixable by locking the origin to Cloudflare later.
 - **Cost ceiling:** each API call is one Worker request. The free plan allows 100k a day, about 2,500 daily learners at ~40 calls each. Beyond that, Workers Paid is $5/month for 10M requests.
 - **Local development:** `vite.config.ts` sets `server.proxy: { "/api": "http://localhost:8000" }`, so local paths match production.
@@ -43,93 +44,94 @@ export const onRequest = ({ request, env }: { request: Request; env: { API_ORIGI
 ## Backend: kube-oci
 
 ### Image
-```dockerfile
-FROM oven/bun:1.3-alpine AS build
-WORKDIR /app
-COPY package.json bun.lock ./
-COPY contract/package.json contract/
-COPY be/package.json be/
-RUN bun install --frozen-lockfile --production --filter @voca/be
-COPY contract contract
-COPY be be
-RUN bun build be/src/main.ts --compile --minify --target=bun-linux-arm64-musl --outfile /voca-api
+`be/Containerfile`: `bun build --compile` produces a single self-contained binary with no `node_modules` at runtime, on `alpine` with `libstdc++` (the binary links it), run as UID 10001. The image is about 100 MB.
 
-FROM alpine:3.22
-RUN adduser -D -u 10001 app
-COPY --from=build /voca-api /voca-api
-USER 10001
-EXPOSE 8000
-ENTRYPOINT ["/voca-api"]
-```
-
-`--compile` produces a single self-contained binary with no `node_modules` at runtime, so the image is about 60 MB.
-
-The node `mio-vnc` is **arm64** (verified: 4 vCPU, 24 GiB RAM, about 20% memory in use). Build the image with `podman build --platform linux/arm64`, which works natively on Apple Silicon.
+The node `mio-vnc` is **arm64**. The release builds the image on GitHub's `ubuntu-24.04-arm` runner; locally, `podman build --platform linux/arm64 -f be/Containerfile .` works natively on Apple Silicon.
 
 ### Manifests (`deploy/k8s/`, plain YAML)
 | File | Content |
 |---|---|
 | `namespace.yaml` | `voca` |
-| `secret.example.yaml` | `DATABASE_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (the real values are applied by hand and never committed) |
-| `deployment.yaml` | 1 replica; resources `requests: 100m/128Mi`, `limits: 512Mi`; `readinessProbe` and `livenessProbe`; `securityContext` with `runAsNonRoot` and `readOnlyRootFilesystem`; config from env vars (`LOG_LEVEL`); probes on `GET /api/healthz` |
+| `secret.yaml` | `voca-api` with `${DATABASE_URL}`, `${JWT_SECRET}`, `${GOOGLE_CLIENT_ID}`, `${GOOGLE_CLIENT_SECRET}` placeholders, filled in by the release with `envsubst` from GitHub secrets |
+| `deployment.yaml` | 1 replica, rolling (below); resources `requests: 100m/128Mi`, `limits: 512Mi`; readiness and liveness probes on `GET /api/healthz`; `runAsNonRoot`, `readOnlyRootFilesystem` (with an `emptyDir` on `/tmp`); a 10 s `preStop` sleep. `IMAGE` and `RELEASE` are filled in by the release |
 | `service.yaml` | ClusterIP 80 → 8000 |
-| `ingress.yaml` | Traefik, with the same `external-dns` and Cloudflare-proxied annotations as the current deployment; host `voca-origin.arvinpaundra.dev`. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.dev/api` |
+| `ingress.yaml` | Traefik, external-dns with Cloudflare proxying; host `${API_HOST}` (`voca-origin.arvinpaundra.dev`) and target `${API_TARGET_IP}`, filled in by the release from GitHub variables. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.dev/api` |
 | `ratelimit.yaml` | A Traefik `Middleware` (`rateLimit`: average 10 req/s, burst 20, keyed on `X-Real-IP`) attached to the ingress |
 
-There is no Helm or Kustomize for 6 files. `kubectl apply -f deploy/k8s/` is enough.
+There is no Helm or Kustomize for 6 files.
 
-**Migrations** run at boot through the `effect/sql` Migrator, which takes a lock. Readiness stays false until they finish. There is no separate migration Job.
+**Migrations** never run at boot. The owner runs them before tagging a release that adds one, with the same binary's `migrate` command, through a port-forward. The URL is the cluster's own `DATABASE_URL` with the host swapped for the tunnel, so the password is never typed:
+```bash
+kubectl -n database port-forward svc/postgres-postgresql 5432:5432 &
+DATABASE_URL=$(kubectl -n voca get secret voca-api -o jsonpath='{.data.DATABASE_URL}' | base64 -d | sed 's|@[^/]*/|@localhost:5432/|') \
+  bun run --cwd be migrate
+```
+The `effect/sql` Migrator takes a lock, so two runs at once are safe.
 
-**Rollout:** the deployment uses `strategy: Recreate`, since there is 1 replica and migrations run at boot. That means a few seconds of downtime on deploy, which is acceptable for an MVP. Switch to `RollingUpdate` and 2 replicas once migrations are always backward compatible.
+**Rollout** (ADR 53): `RollingUpdate` with `maxSurge: 1`, `maxUnavailable: 0`. The old pod serves until the new one is ready; the `preStop` sleep takes a stopping pod out of the endpoints before SIGTERM. For that moment the old version runs against the new schema, so **every migration must work with the previous release**: add first, remove in a later release. During a rollout two pods hold up to 20 database connections.
 
 ### Database (existing `database/postgres-postgresql`)
-This is a one-time manual step run with admin credentials:
+Postgres 18.3. The `voca` database and role are created once (checklist step 5); the API reaches it at `postgres-postgresql.database.svc.cluster.local:5432/voca`.
 
-```sql
-CREATE ROLE voca LOGIN PASSWORD '<generated>';
-CREATE DATABASE voca OWNER voca;
-REVOKE ALL ON DATABASE voca FROM PUBLIC;
-```
+**Backups:** if none exist, add a `CronJob` that runs `pg_dump voca | gzip` to OCI Object Storage. Recommended, but outside the MVP code.
 
-Then:
+## Release (ADR 54)
 
-```
-DATABASE_URL=postgres://voca:<pw>@postgres-postgresql.database.svc.cluster.local:5432/voca
-```
+The owner pushes a tag `vX.Y.Z` on a master commit. Nothing else deploys. `.github/workflows/release.yml`, one run at a time:
 
-Before the first deploy, also check:
-- **Postgres version:** 18.3, confirmed.
-- **`max_connections` headroom** for 10 more connections.
-- **Backups:** if none exist, add a `CronJob` that runs `pg_dump voca | gzip` to OCI Object Storage. Recommended, but outside the MVP code.
+Master is protected by the required `verify` check, so a master commit has already passed it; tag only after master's CI has finished.
 
-## Cleaning up the current Voca deployment in kube-oci
+1. **image:** built on an arm64 runner, pushed to `ghcr.io/arvinpaundra/voca-api:<tag>`.
+2. **secret:** `secret.yaml` is filled in from the GitHub secrets on every run (values masked in logs).
+3. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
+4. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
+5. **healthz:** `GET $WEB_URL/api/healthz` must answer 204 through the Pages proxy.
 
-I inspected the cluster **read-only** on 2026-11-08. Nothing has been deleted yet.
+**Roll back:** re-run the older tag's release run (GitHub allows it for 30 days), or *Actions → release → Run workflow* with that tag. Migrations are not reversed, which is why they stay backward compatible.
 
-| Kind | Name | Notes |
-|---|---|---|
-| Namespace | `voca` | Created 237 days ago |
-| Deployment | `voca-api-deployment` (1/1 running, plus 3 old ReplicaSets) | The current API is serving traffic |
-| Service | `voca-api-service` | ClusterIP :80 |
-| Ingress | `voca-api-ingress` | Host `vocaapi.arvinpaundra.dev`; external-dns with Cloudflare proxying |
-| Secret | `voca-api-secret` | Keys: `DB_DSN`, `FRONTEND_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `JWT_SECRET_KEY` |
-| ConfigMap | `voca-api-config` | `APP_MODE=production` |
-| Postgres | Database and role inside `database/postgres-postgresql` | **Not verified.** Listing databases was blocked by permissions. The `DB_DSN` key shows the old app uses that Postgres |
+**GitHub repository secrets:**
 
-**Deferred:** the project is a local PoC, so none of this runs now. It has to happen before the first deploy, because the new manifests reuse the `voca` namespace. Run it **only after you confirm**:
+| Secret | Value |
+|---|---|
+| `KUBECONFIG` | base64 of a kubeconfig holding only the `kube-oci` context, set as its current context |
+| `DATABASE_URL` | `postgres://voca:<password>@postgres-postgresql.database.svc.cluster.local:5432/voca`, set by the owner; the only place the `voca` role's password lives |
+| `JWT_SECRET` | at least 32 random bytes |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | the Google OAuth client; the ID is also built into the web app |
+| `CLOUDFLARE_API_TOKEN` | a token with *Cloudflare Pages: Edit* |
+| `CLOUDFLARE_ACCOUNT_ID` | the account that holds the Pages project |
 
-```bash
-# 0. (optional) keep the Google OAuth client — it can be reused if its redirect URIs are updated
-kubectl --context kube-oci -n voca get secret voca-api-secret -o jsonpath='{.data.GOOGLE_CLIENT_ID}' | base64 -d
+**GitHub repository variables:**
 
-# 1. remove the old app (namespace delete removes deployment, svc, ingress, secret, configmap;
-#    external-dns then removes the DNS record if its policy is `sync`)
-kubectl --context kube-oci delete namespace voca
+| Variable | Value |
+|---|---|
+| `API_HOST` | `voca-origin.arvinpaundra.dev` |
+| `API_TARGET_IP` | `140.245.111.204` |
+| `WEB_URL` | `https://voca.arvinpaundra.dev` |
 
-# 2. drop the old database (find its name from DB_DSN first; back it up if it has data you want)
-kubectl --context kube-oci -n database exec -it postgres-postgresql-0 -- psql -U postgres
-#   \l                                -- identify the old voca DB + role
-#   DROP DATABASE <old_voca_db>; DROP ROLE <old_voca_role>;
-```
+## First-release checklist
 
-Steps 1 and 2 cannot be undone. Step 1 also takes `vocaapi.arvinpaundra.dev` offline until the new API is deployed.
+One-time steps only the owner does, in order. Steps 2–4 cannot be undone, and step 2 takes `vocaapi.arvinpaundra.dev` offline for good.
+
+1. **Cluster context:** `kubectl config use-context kube-oci`, before any command below.
+2. **Remove the old Voca from the cluster.** Note the old database name and role first, from `DB_DSN`:
+   ```bash
+   kubectl -n voca get secret voca-api-secret -o jsonpath='{.data.DB_DSN}' | base64 -d; echo
+   kubectl delete namespace voca   # deployment voca-api-deployment, service, ingress voca-api-ingress, secret voca-api-secret, configmap voca-api-config
+   kubectl get all,ingress,secret,configmap -A | grep -i voca-api   # expect nothing
+   ```
+3. **DNS:** Cloudflare → `arvinpaundra.dev` → DNS → delete the `vocaapi` record if external-dns left it. `dig +short vocaapi.arvinpaundra.dev` must print nothing.
+4. **Old database:** `kubectl -n database exec -it postgres-postgresql-0 -- psql -U postgres`, then `DROP DATABASE <old_db>; DROP ROLE <old_role>;` (names from step 2). `\l` and `\du` must no longer list them. Nothing moves to the new app.
+5. **Fresh database**, in the same `psql`; check `SHOW max_connections;` leaves room for 20 more:
+   ```sql
+   CREATE ROLE voca LOGIN PASSWORD '<the password in DATABASE_URL>';
+   CREATE DATABASE voca OWNER voca;
+   REVOKE ALL ON DATABASE voca FROM PUBLIC;
+   ```
+6. **Google OAuth:** Google Cloud Console → Credentials → the OAuth client → authorized redirect URIs `https://voca.arvinpaundra.dev/auth/callback` and `http://localhost:5173/auth/callback`; remove the old app's URIs.
+7. **GitHub secrets and variables:** repo → Settings → Secrets and variables → Actions, every secret and variable in the tables above. The kubeconfig:
+   ```bash
+   kubectl config view --minify --flatten --context kube-oci | base64 | gh secret set KUBECONFIG
+   ```
+8. **Cloudflare Pages:** `bunx wrangler@4.20.0 pages project create voca --production-branch master`, then Pages → voca → Custom domains → add `voca.arvinpaundra.dev`. The `voca-origin` record is created by external-dns from the ingress on the first release.
+9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. GHCR makes a new package private: if the rollout fails with `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release. The API turns healthy on the empty database (`/api/healthz` only runs `SELECT 1`).
+10. **Migrate** the fresh database with the command under *Migrations* above; it reads `DATABASE_URL` from the `voca-api` secret the first release created.

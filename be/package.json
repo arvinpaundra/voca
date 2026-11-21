@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/main.ts",
+    "dev": "bun src/main.ts migrate && bun --watch src/main.ts",
+    "migrate": "bun src/main.ts migrate",
     "start": "bun src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
