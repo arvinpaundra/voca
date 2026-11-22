@@ -1,7 +1,6 @@
 import * as BunSocket from "@effect/platform-bun/BunSocket"
-import { Data, Effect, Option, Semaphore } from "effect"
+import { Data, Effect, Exit, Option, Result, Scope, Semaphore } from "effect"
 import type { NonEmptyReadonlyArray } from "effect/Array"
-import type { Scope } from "effect"
 import * as Socket from "effect/socket/Socket"
 
 /** A beanstalkd reply the caller can act on (`NotFound`, `JobTooBig`, …) or a broken connection. */
@@ -233,4 +232,117 @@ export const connect = (
       )
 
     return { use, watch, ignore, put, reserve, delete: remove, bury }
+  })
+
+/** A connection and the scope that owns it: closing the scope closes the connection. */
+interface Live {
+  readonly client: BeanstalkClient
+  readonly scope: Scope.Closeable
+}
+
+type Command<A> = (client: BeanstalkClient) => Effect.Effect<A, BeanstalkError>
+
+// Milliseconds. A reply that misses its deadline counts as a closed connection.
+const COMMAND_DEADLINE = 5_000
+
+// A reserve may legitimately wait its whole timeout before the server replies.
+const RESERVE_SLACK = 5_000
+
+const openLive = (
+  endpoint: { readonly host: string; readonly port: number },
+  setup: (client: BeanstalkClient) => Effect.Effect<void, BeanstalkError>
+): Effect.Effect<Live, BeanstalkError> =>
+  Effect.gen(function* () {
+    const scope = yield* Scope.make()
+
+    return yield* Effect.gen(function* () {
+      const client = yield* connect(endpoint)
+
+      yield* setup(client)
+
+      return { client, scope }
+    }).pipe(
+      Scope.provide(scope),
+      Effect.onError(() => Scope.close(scope, Exit.void))
+    )
+  })
+
+/**
+ * Like `connect`, but survives a dropped connection. `setup` runs on every connection it opens (the `use` or
+ * `watch` the commands rely on). A command that finds the connection closed opens a new one, runs `setup` and runs
+ * once more; if the new one can't open either, the command fails with `ConnectionClosed` and the next command tries
+ * again. The first connection still fails fast.
+ *
+ * Under Bun, a connection the server closes while the client is idle is never reported: the next reply just never
+ * comes. So every command has a deadline (`reserve`: its own timeout plus 5 s; the rest: 5 s), and a reply that misses
+ * it counts as a closed connection. The same deadline catches a server that vanished without closing anything.
+ */
+export const connectRetrying = (
+  endpoint: { readonly host: string; readonly port: number },
+  setup: (client: BeanstalkClient) => Effect.Effect<void, BeanstalkError>
+): Effect.Effect<BeanstalkClient, BeanstalkError, Scope.Scope> =>
+  Effect.gen(function* () {
+    const permit = yield* Semaphore.make(1)
+
+    // The first connection fails fast: nothing retries at boot.
+    let live: Live | undefined = yield* openLive(endpoint, setup)
+
+    const reopen = Effect.gen(function* () {
+      const link = yield* openLive(endpoint, setup)
+
+      live = link
+
+      return link
+    })
+
+    const dropLink = (link: Live) => {
+      if (live === link) {
+        live = undefined
+      }
+
+      return Scope.close(link.scope, Exit.void)
+    }
+
+    const run = <A>(link: Live, deadline: number, command: Command<A>) =>
+      command(link.client).pipe(
+        Effect.timeoutOrElse({
+          duration: deadline,
+          orElse: () => Effect.fail(connectionClosed())
+        }),
+        Effect.tapError((error) => (error.reason === "ConnectionClosed" ? dropLink(link) : Effect.void))
+      )
+
+    // A failed open is reported as is: the next command tries again. A closed connection gets one reopen and one retry.
+    const call = <A>(deadline: number, command: Command<A>) =>
+      permit.withPermits(1)(
+        Effect.gen(function* () {
+          const link = live ?? (yield* reopen)
+          const first = yield* Effect.result(run(link, deadline, command))
+
+          if (Result.isSuccess(first)) {
+            return first.success
+          }
+
+          if (first.failure.reason !== "ConnectionClosed") {
+            return yield* Effect.fail(first.failure)
+          }
+
+          const fresh = yield* reopen
+
+          return yield* run(fresh, deadline, command)
+        })
+      )
+
+    yield* Effect.addFinalizer(() => (live === undefined ? Effect.void : Scope.close(live.scope, Exit.void)))
+
+    return {
+      use: (tube) => call(COMMAND_DEADLINE, (client) => client.use(tube)),
+      watch: (tube) => call(COMMAND_DEADLINE, (client) => client.watch(tube)),
+      ignore: (tube) => call(COMMAND_DEADLINE, (client) => client.ignore(tube)),
+      put: (body, options) => call(COMMAND_DEADLINE, (client) => client.put(body, options)),
+      reserve: (timeoutSeconds) =>
+        call(timeoutSeconds * 1000 + RESERVE_SLACK, (client) => client.reserve(timeoutSeconds)),
+      delete: (id) => call(COMMAND_DEADLINE, (client) => client.delete(id)),
+      bury: (id) => call(COMMAND_DEADLINE, (client) => client.bury(id))
+    }
   })
