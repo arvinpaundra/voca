@@ -410,7 +410,8 @@ Extends FR-3. The default font makes kanji, kana and hangul hard to read; Learne
 Extends FR-2, FR-5 and FR-8. A Learner with hundreds of decks or hard words waits for the whole list before seeing anything.
 
 - The library (My decks), Discover, a deck's words and Hard words each load **15 items at a time**, in their current order.
-- The next 15 load automatically when the Learner scrolls near the end. A "Load more" button is also shown, as a fallback.
+- Every list ends with a "Load more" button that loads the next 15.
+- On a phone (a screen 640 px wide or less) the next 15 also load by themselves when the Learner scrolls near the end. On a wider screen nothing loads until the button is used, so the page footer stays reachable.
 - Loading a page never reorders or repeats an item already shown, even if a deck or word is added or deleted meanwhile.
 - A search or filter change (Discover title, language, sort; deck word search; Hard words drill) starts again from the first page.
 - Counts that describe the whole collection (the library's "N decks", the dashboard and its backlog hint) cover every deck, not only the loaded ones.
@@ -418,7 +419,8 @@ Extends FR-2, FR-5 and FR-8. A Learner with hundreds of decks or hard words wait
 - **Won't:** page numbers, jumping to the end, changing the sort orders.
 
 **Acceptance**
-- With 40 decks, the library first shows 15; scrolling to the end shows 30, then 40. No deck appears twice.
+- With 40 decks, the library first shows 15; using "Load more" shows 30, then 40. On a phone, scrolling to the end does the same without the button. No deck appears twice.
+- On a screen wider than 640 px, scrolling to the end of a list loads nothing; the "Load more" button does.
 - The same holds for Discover (40 public decks), a deck with 40 words, and 40 hard words.
 - Hard words shows its first 15 without waiting for the rest.
 - Changing the Discover language filter resets the list to its first 15 matches.
