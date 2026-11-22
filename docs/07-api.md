@@ -79,7 +79,7 @@ Every `Deck` carries `snooze: {until: Instant | null} | null`: `null` when the d
 | GET | `/sessions/active` | → `Session \| null` (resume after reload) |
 | POST | `/sessions/:sessionSlug/answers` | `{position, chosenWordSlug, latencyMs}` → `{correct, correctWordSlug, nextDue \| null, retry: Question \| null, completed, leech, reading \| null}` (`reading`: the answered word's, for the feedback) |
 | POST | `/sessions/:sessionSlug/abandon` | → `204` (end early; uncleared words were already rescheduled on attempt 1) |
-| GET | `/hard-words` | `?drill&cursor&limit` → `Page<WordWithCard & {deck: {slug, title, termLang, meaningLang}}> & {summary: {total, dueToday, drills: [{drill, count, termLang}]}}` (the list spans decks). The summary covers every hard word, whatever `drill` and the page; `dueToday` counts words with a hard card due now; `drills` lists the drills that have hard cards, in drill order, with the first such word's `termLang` (FR-31) |
+| GET | `/hard-words` | `?drill&q&cursor&limit` → `Page<WordWithCard & {deck: {slug, title, termLang, meaningLang}}> & {summary: {total, dueToday, drills: [{drill, count, termLang}]}}` (the list spans decks). The summary covers every hard word, whatever `drill` and the page; `dueToday` counts words with a hard card due now; `drills` lists the drills that have hard cards, in drill order, with the first such word's `termLang` (FR-31). `q` keeps the words whose term, reading or meaning contains it (same matching as a deck's word search) and combines with `drill`; the summary ignores it |
 | PUT | `/words/:wordSlug/drills/:drill/hard` | → `204` (mark that card) |
 | DELETE | `/words/:wordSlug/drills/:drill/hard` | → `204` (unmark) |
 
