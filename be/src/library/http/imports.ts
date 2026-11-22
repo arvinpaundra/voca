@@ -1,7 +1,15 @@
 import { Effect } from "effect"
 import type { Multipart } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
-import { IMPORT_MAX_BYTES, ImportRunning, NotFound, PayloadTooLarge, Unauthorized, VocaApi } from "@voca/contract"
+import {
+  IMPORT_MAX_BYTES,
+  IMPORT_MAX_TOTAL_BYTES,
+  ImportRunning,
+  NotFound,
+  PayloadTooLarge,
+  Unauthorized,
+  VocaApi
+} from "@voca/contract"
 import {
   dismissImport,
   issueImportTicket,
@@ -31,6 +39,17 @@ const readUpload = (file: Multipart.PersistedFile): Effect.Effect<NewImportFile,
   })
 }
 
+/** The files' sizes on disk together, checked before any is read into memory. */
+const checkTotalSize = (files: ReadonlyArray<Multipart.PersistedFile>): Effect.Effect<void, PayloadTooLarge> => {
+  return Effect.gen(function* () {
+    const total = files.reduce((sum, file) => sum + Bun.file(file.path).size, 0)
+
+    if (total > IMPORT_MAX_TOTAL_BYTES) {
+      return yield* Effect.fail(new PayloadTooLarge({ message: "A batch can be at most 50 MB" }))
+    }
+  })
+}
+
 export const ImportsHandlers = HttpApiBuilder.group(
   VocaApi,
   "imports",
@@ -40,6 +59,8 @@ export const ImportsHandlers = HttpApiBuilder.group(
     return handlers.handleAll({
       importDecks: ({ payload }) =>
         Effect.gen(function* () {
+          yield* checkTotalSize(payload.files)
+
           const files = yield* Effect.forEach(payload.files, (file) => readUpload(file))
 
           return yield* startImport({ termLang: payload.termLang, meaningLang: payload.meaningLang, files })
