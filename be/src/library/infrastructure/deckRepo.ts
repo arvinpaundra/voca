@@ -2,6 +2,7 @@ import { DateTime, Effect, Layer, Option, Schema } from "effect"
 import { SqlClient, SqlSchema } from "effect/sql"
 import { Count, DeckDescription, DeckSlug, DeckTitle, LangTag, Visibility } from "@voca/contract"
 import type { Deck, DeckSnooze, PublicDeck, UpdateDeck } from "@voca/contract"
+import { decodeCursor, encodeCursor } from "../../shared/cursor.ts"
 import { DeckRepo } from "../application/deckRepo.ts"
 import type {
   DeckCounts,
@@ -52,42 +53,29 @@ const DeckSummaryRow = Schema.Struct({
 
 type DeckSummaryRowType = typeof DeckSummaryRow.Type
 
-/** The sort values of the last deck on a page: a time or a count (`primary`), then the title and the id. */
-interface LibraryKeyset {
-  readonly primary: number
-  readonly title: string
-  readonly id: bigint
-}
+/** The sort values of the last deck on a page: its order, a time or a count (`primary`), then the title and the slug. */
+const LibraryKeyset = Schema.Struct({
+  order: Schema.String,
+  primary: Schema.Number,
+  title: Schema.String,
+  slug: Schema.String
+})
 
-const LibraryKeysetRequest = Schema.NullOr(
-  Schema.Struct({ primary: Schema.Number, title: Schema.String, id: Schema.BigInt })
-)
+type LibraryKeyset = typeof LibraryKeyset.Type
+
+const LibraryKeysetRequest = Schema.NullOr(LibraryKeyset)
 
 const DeckOrderRequest = Schema.Literals(["newest", "recent", "title", "words", "due"])
 
-/** The cursor is `<order>:<sort value>:<title>:<id>`. A title may hold colons, so the id is read from the end. */
-const LibraryCursorParts = Schema.Tuple([Schema.NumberFromString, Schema.String, Schema.BigIntFromString])
-
-/** An undecodable cursor, or one made for another order, reads as the first page. */
+/** A cursor made for another order reads as the first page. */
 const decodeLibraryCursor = (cursor: string | null, order: DeckOrder): Option.Option<LibraryKeyset> => {
-  const parts = (cursor ?? "").split(":")
-  const id = parts.pop() ?? ""
-  const [head = "", primary = "", ...title] = parts
-
-  if (head !== order) {
-    return Option.none()
-  }
-
-  return Option.map(
-    Schema.decodeUnknownOption(LibraryCursorParts)([primary, title.join(":"), id]),
-    ([sortValue, sortTitle, deckId]) => ({ primary: sortValue, title: sortTitle, id: deckId })
-  )
+  return Option.filter(decodeCursor(LibraryKeyset, cursor), (keyset) => keyset.order === order)
 }
 
 const encodeLibraryCursor = (order: DeckOrder, row: DeckSummaryRowType): string => {
   const { primary, title } = sortKeyOf(order, row)
 
-  return `${order}:${primary}:${title}:${row.id}`
+  return encodeCursor({ order, primary, title, slug: row.slug })
 }
 
 /** The value a row sorts by, as the cursor keeps it: a time, a count, or the title for the text sorts. */
@@ -145,20 +133,12 @@ const PublicDeckRow = Schema.Struct({
   ownerAvatarUrl: Schema.NullOr(Schema.String)
 })
 
-/** A cursor is `<sort key>:<published_at millis>:<id>` of the last deck on the page: the keyset to continue after. */
-const CursorParts = Schema.Tuple([Schema.NumberFromString, Schema.NumberFromString, Schema.BigIntFromString])
-
-const decodeCursor = (cursor: string | null) => {
-  return Option.map(Schema.decodeUnknownOption(CursorParts)((cursor ?? "").split(":")), ([sortKey, publishedAt, id]) => ({
-    sortKey,
-    publishedAt,
-    id
-  }))
-}
-
-const encodeCursor = (sortKey: number, publishedAt: number, id: bigint): string => {
-  return `${sortKey}:${publishedAt}:${id}`
-}
+/** The sort values of the last public deck on a page: the sort key, the publish time and the slug. */
+const PublicKeyset = Schema.Struct({
+  sortKey: Schema.Number,
+  publishedAt: Schema.Number,
+  slug: Schema.String
+})
 
 /**
  * The snooze as of `now` (epoch millis): a snooze is on while it has no end or its end is still ahead. A snooze whose
@@ -271,7 +251,9 @@ export const DeckRepoLive = Layer.effect(
         return sql`TRUE`
       }
 
-      const { primary, title, id } = after
+      const { primary, title, slug } = after
+      // Ties break on the id, looked up from the slug: the id keeps the insertion order and never leaves the server.
+      const id = sql`(SELECT a.id FROM decks a WHERE a.slug = ${slug})`
       const afterTitle = sql`(page."sortTitle" > ${title} OR (page."sortTitle" = ${title} AND page.id::bigint > ${id}))`
 
       switch (order) {
@@ -462,14 +444,14 @@ export const DeckRepoLive = Layer.effect(
         q: Schema.NullOr(Schema.String),
         termLang: Schema.NullOr(Schema.String),
         forks: Schema.Boolean,
-        after: Schema.NullOr(Schema.Struct({ sortKey: Schema.Number, publishedAt: Schema.Number, id: Schema.BigInt })),
+        after: Schema.NullOr(PublicKeyset),
         limit: Schema.Number
       }),
       Result: PublicDeckRow,
       execute: ({ q, termLang, forks, after, limit }) => {
         const afterKey = after === null ? null : after.sortKey
         const afterAt = after === null ? null : new Date(after.publishedAt)
-        const afterId = after === null ? null : after.id
+        const afterSlug = after === null ? null : after.slug
 
         return sql`
           SELECT d.id::text AS id, d.slug, d.title, d.description, d.term_lang AS "termLang",
@@ -481,9 +463,10 @@ export const DeckRepoLive = Layer.effect(
           WHERE d.visibility = 'public' AND d.deleted_at IS NULL
             AND (${q}::text IS NULL OR strpos(lower(d.title), ${q}::text) > 0)
             AND (${termLang}::text IS NULL OR d.term_lang = ${termLang}::text)
-            AND (${afterId}::bigint IS NULL
+            AND (${afterSlug}::text IS NULL
                  OR (CASE WHEN ${forks}::boolean THEN d.fork_count ELSE 0 END, d.published_at, d.id)
-                    < (${afterKey}::int, ${afterAt}::timestamptz, ${afterId}::bigint))
+                    < (${afterKey}::int, ${afterAt}::timestamptz,
+                       (SELECT a.id FROM decks a WHERE a.slug = ${afterSlug}::text)))
           ORDER BY CASE WHEN ${forks}::boolean THEN d.fork_count ELSE 0 END DESC, d.published_at DESC, d.id DESC
           LIMIT ${limit}`
       }
@@ -618,7 +601,7 @@ export const DeckRepoLive = Layer.effect(
             q: query.q,
             termLang: query.termLang,
             forks,
-            after: Option.getOrNull(decodeCursor(query.cursor)),
+            after: Option.getOrNull(decodeCursor(PublicKeyset, query.cursor)),
             limit: query.limit + 1
           })
           const page = rows.slice(0, query.limit)
@@ -626,7 +609,11 @@ export const DeckRepoLive = Layer.effect(
           const hasMore = rows.length > query.limit
           const nextCursor =
             hasMore && last !== undefined
-              ? encodeCursor(forks ? last.forkCount : 0, DateTime.toEpochMillis(last.publishedAt), last.id)
+              ? encodeCursor({
+                  sortKey: forks ? last.forkCount : 0,
+                  publishedAt: DateTime.toEpochMillis(last.publishedAt),
+                  slug: last.slug
+                })
               : null
 
           return { items: page.map(toPublicDeck), nextCursor } satisfies PublicDeckPage
