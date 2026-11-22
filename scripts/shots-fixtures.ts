@@ -301,7 +301,7 @@ export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
     newAvailable: 10,
     estimatedMinutes: 8,
   })],
-  [/^\/api\/decks$/, () => decks],
+  [/^\/api\/decks$/, () => ({ items: decks, nextCursor: null, total: decks.length, termLangs: [...new Set(decks.map((d) => d.termLang))].sort() })],
   [/^\/api\/decks\/[0-9A-Z]{10}$/, (url) => {
     const slug = url.pathname.split("/").pop()
     return decks.find((d) => d.slug === slug) ?? decks[0]!
@@ -327,7 +327,19 @@ export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
         }],
   [/^\/api\/words\/[0-9A-Z]{12}\/drills\/[a-z_]+\/hard$/, () => NO_CONTENT],
   [/^\/api\/words\/[0-9A-Z]{12}\/stats$/, () => wordStats],
-  [/^\/api\/hard-words$/, () => ({ items: hardWords, nextCursor: null })],
+  [/^\/api\/hard-words$/, () => ({
+    items: hardWords,
+    nextCursor: null,
+    summary: {
+      total: hardWords.length,
+      dueToday: hardWords.length,
+      drills: [...new Set(hardWords.flatMap((w) => w.cards.map((c) => c.drill)))].map((drill) => ({
+        drill,
+        count: hardWords.filter((w) => w.cards.some((c) => c.drill === drill)).length,
+        termLang: hardWords.find((w) => w.cards.some((c) => c.drill === drill))!.deck.termLang
+      }))
+    }
+  })],
   [/^\/api\/community\/decks$/, () => ({ items: publicDecks, nextCursor: null })],
   [/^\/api\/community\/decks\/[0-9A-Z]{10}$/, () => ({ ...publicDecks[0]!, preview: previewWords })],
 ]
