@@ -31,6 +31,10 @@ const readUpload = (file: Multipart.PersistedFile): Effect.Effect<NewImportFile,
   })
 }
 
+/** The files' sizes on disk together, checked before any is read into memory. */
+const checkTotalSize = (_files: ReadonlyArray<Multipart.PersistedFile>): Effect.Effect<void, PayloadTooLarge> =>
+  Effect.die("not implemented: IB")
+
 export const ImportsHandlers = HttpApiBuilder.group(
   VocaApi,
   "imports",
@@ -40,6 +44,8 @@ export const ImportsHandlers = HttpApiBuilder.group(
     return handlers.handleAll({
       importDecks: ({ payload }) =>
         Effect.gen(function* () {
+          yield* checkTotalSize(payload.files)
+
           const files = yield* Effect.forEach(payload.files, (file) => readUpload(file))
 
           return yield* startImport({ termLang: payload.termLang, meaningLang: payload.meaningLang, files })
