@@ -8,6 +8,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { SearchInput } from "../../components/SearchInput";
 import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
+import { LoadMore } from "../../components/LoadMore";
+import { mergePages } from "../../lib/paging";
 import { communityQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import {
@@ -37,7 +39,7 @@ export function DiscoverPage() {
 
   // Each filter has its own cached pages; the first page of the default filter is usually already there.
   const community = useInfiniteQuery(communityQuery(communityParams(filter)), queryClient);
-  const decks: readonly PublicDeck[] = community.data?.pages.flatMap((page) => page.items) ?? [];
+  const decks: readonly PublicDeck[] = mergePages(community.data?.pages ?? []);
   const hasPages = community.data !== undefined;
 
   // The search goes out after a pause, or at once on Enter (see `search`).
@@ -53,9 +55,7 @@ export function DiscoverPage() {
   useEffect(() => {
     if (community.data === undefined) return;
 
-    const items = community.data.pages.flatMap((page) => page.items);
-
-    setKnownLangs((known) => mergeTermLangs(known, items));
+    setKnownLangs((known) => mergeTermLangs(known, mergePages(community.data.pages)));
   }, [community.data]);
 
   const search = (event: FormEvent<HTMLFormElement>) => {
@@ -153,13 +153,11 @@ export function DiscoverPage() {
 
       {decks.length > 0 && <PublicDeckRows decks={decks} forking={forking} onFork={(deck) => void fork(deck)} />}
 
-      {community.hasNextPage && (
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <Button variant="ghost" busy={community.isFetchingNextPage} onClick={loadMore}>
-            Load more
-          </Button>
-        </div>
-      )}
+      <LoadMore
+        hasNextPage={community.hasNextPage}
+        isFetchingNextPage={community.isFetchingNextPage}
+        onLoadMore={loadMore}
+      />
     </>
   );
 }

@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Result } from "effect";
 import { Plus, Upload } from "lucide-react";
 import type { DeckSlug, DeckSummary, SnoozeDays } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
+import { LoadMore } from "../../components/LoadMore";
 import { PageHeader } from "../../components/PageHeader";
 import { SearchInput } from "../../components/SearchInput";
 import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
-import { decksQuery, meQuery } from "../../lib/queries";
+import { mergePages } from "../../lib/paging";
+import { deckListQuery, meQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { DeckModal } from "./DeckModal";
 import { DeckRows } from "./DeckRows";
@@ -20,12 +22,7 @@ import { DeleteDeckModal } from "./DeleteDeckModal";
 import { DeleteDecksModal } from "./DeleteDecksModal";
 import { SelectionBar } from "./SelectionBar";
 import { SnoozeModal } from "./SnoozeModal";
-import {
-  filterDecks,
-  termLangsOf,
-  type DeckFilter,
-  type DeckSort,
-} from "./deckList";
+import type { DeckSort } from "./deckList";
 
 type FormTarget = { kind: "create" } | { kind: "edit"; deck: DeckSummary };
 
@@ -36,14 +33,25 @@ const sortOptions: readonly { value: DeckSort; label: string }[] = [
   { value: "due", label: "Most due" },
 ];
 
-const initialFilter: DeckFilter = { q: "", termLang: null, sort: "due" };
+// The server searches the titles, so the typed text waits this long before it is sent.
+const SEARCH_DELAY_MS = 250;
 
 export function DecksPage() {
-  // The whole list is read once and kept in the cache; search, the language filter and sorting happen in the browser.
-  const decksResult = useQuery(decksQuery(), queryClient);
+  // The search box shows what is typed; the list asks the server for what was typed a moment ago.
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  // The language "" is every language.
+  const [termLang, setTermLang] = useState("");
+  const [sort, setSort] = useState<DeckSort>("due");
+
+  // A new search, language or sort is a new query, so its list starts from the first page. The previous list stays
+  // on screen until the new first page arrives, so the search box keeps its place.
+  const decksResult = useInfiniteQuery(
+    { ...deckListQuery({ q: search, termLang, sort }), placeholderData: keepPreviousData },
+    queryClient,
+  );
   // A snooze's end is shown on the Learner's day, so the list needs their timezone.
   const meResult = useQuery(meQuery(), queryClient);
-  const [filter, setFilter] = useState<DeckFilter>(initialFilter);
   const [form, setForm] = useState<FormTarget | null>(null);
   const [deleting, setDeleting] = useState<DeckSummary | null>(null);
   const [importing, setImporting] = useState(false);
@@ -96,6 +104,12 @@ export function DecksPage() {
 
     return () => document.removeEventListener("keydown", onKey);
   }, [selecting, stopSelecting]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput.trim()), SEARCH_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // The snooze endpoints take at least one slug, so an empty selection has nothing to send.
   const selectedSlugs = (): readonly [DeckSlug, ...DeckSlug[]] | null => {
@@ -156,29 +170,20 @@ export function DecksPage() {
   };
 
   const loaded = decksResult.isSuccess;
-  const decks = decksResult.data ?? [];
-  const langs = termLangsOf(decks);
-  const visible = filterDecks(decks, filter);
-  const dueToday = decks.reduce((sum, deck) => sum + deck.dueCount, 0);
-  const words = decks.reduce((sum, deck) => sum + deck.wordCount, 0);
+  const pages = decksResult.data?.pages ?? [];
+  const decks = mergePages(pages);
+  // The count and the languages cover the whole library, so they come from any page.
+  const total = pages[0]?.total ?? 0;
+  const termLangs = pages[0]?.termLangs ?? [];
 
-  const changeLang = (value: string) => {
-    setFilter((previous) => ({
-      ...previous,
-      termLang: value === "" ? null : value,
-    }));
+  // Select all picks the decks loaded so far; the rest load later and are not picked by it.
+  const selectAll = () => setSelected(new Set(decks.map((deck) => deck.slug)));
+
+  const clearFilter = () => {
+    setSearchInput("");
+    setSearch("");
+    setTermLang("");
   };
-
-  const changeSort = (value: string) => {
-    setFilter((previous) => ({ ...previous, sort: value as DeckSort }));
-  };
-
-  const changeSearch = (q: string) => {
-    setFilter((previous) => ({ ...previous, q }));
-  };
-
-  const clearFilter = () =>
-    setFilter((previous) => ({ ...previous, q: "", termLang: null }));
 
   const retry = () => {
     refreshCache();
@@ -199,15 +204,7 @@ export function DecksPage() {
       <PageHeader
         title="Decks"
         {...(loaded && {
-          meta: (
-            <>
-              <span>{decks.length} decks</span>
-              <span className="dot"></span>
-              <span>{words} words</span>
-              <span className="dot"></span>
-              <span>{dueToday} due today</span>
-            </>
-          ),
+          meta: <span>{total} decks</span>,
         })}
         actions={
           <>
@@ -217,6 +214,12 @@ export function DecksPage() {
             >
               {selecting ? "Done" : "Select"}
             </Button>
+
+            {selecting && decks.length > 0 && (
+              <Button variant="secondary" onClick={selectAll}>
+                Select all
+              </Button>
+            )}
 
             <Button variant="secondary" onClick={() => setImporting(true)}>
               <Upload className="i" aria-hidden="true" />
@@ -231,30 +234,30 @@ export function DecksPage() {
         }
       />
 
-      {loaded && decks.length > 0 && (
+      {loaded && total > 0 && (
         <div className="toolbar">
           <SearchInput
             label="Search decks"
             placeholder="Search decks"
-            value={filter.q}
-            onChange={changeSearch}
+            value={searchInput}
+            onChange={setSearchInput}
           />
 
           <Select
             label="Term language"
-            value={filter.termLang ?? ""}
+            value={termLang}
             options={[
               { value: "", label: "All languages" },
-              ...langs.map((lang) => ({ value: lang, label: lang })),
+              ...termLangs.map((lang) => ({ value: lang, label: lang })),
             ]}
-            onChange={changeLang}
+            onChange={setTermLang}
           />
 
           <Select
             label="Sort"
-            value={filter.sort}
+            value={sort}
             options={sortOptions}
-            onChange={changeSort}
+            onChange={(value) => setSort(value as DeckSort)}
           />
         </div>
       )}
@@ -265,7 +268,7 @@ export function DecksPage() {
         <ErrorState message="Could not load your decks." onRetry={retry} />
       )}
 
-      {loaded && decks.length === 0 && (
+      {loaded && total === 0 && (
         <EmptyState
           title="No decks yet"
           body="Create your first deck to start building your vocabulary."
@@ -280,7 +283,7 @@ export function DecksPage() {
         />
       )}
 
-      {loaded && decks.length > 0 && visible.length === 0 && (
+      {loaded && total > 0 && decks.length === 0 && (
         <EmptyState
           title="No decks match your search."
           action={
@@ -305,9 +308,9 @@ export function DecksPage() {
 
       {deleteNotice !== null && <ErrorState message={deleteNotice} />}
 
-      {visible.length > 0 && (
+      {decks.length > 0 && (
         <DeckRows
-          decks={visible}
+          decks={decks}
           timezone={timezone}
           {...(selecting && {
             selected,
@@ -317,6 +320,12 @@ export function DecksPage() {
           onDelete={(deck) => setDeleting(deck)}
         />
       )}
+
+      <LoadMore
+        hasNextPage={decksResult.hasNextPage && !decksResult.isPlaceholderData}
+        isFetchingNextPage={decksResult.isFetchingNextPage}
+        onLoadMore={() => void decksResult.fetchNextPage()}
+      />
 
       <SnoozeModal
         open={snoozing}
