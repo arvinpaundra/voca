@@ -414,9 +414,11 @@ Extends FR-2, FR-5 and FR-8. A Learner with hundreds of decks or hard words wait
 - On a phone (a screen 640 px wide or less) the next 15 also load by themselves when the Learner scrolls near the end. On a wider screen nothing loads until the button is used, so the page footer stays reachable.
 - Loading a page never reorders or repeats an item already shown, even if a deck or word is added or deleted meanwhile.
 - A search or filter change (Discover title, language, sort; deck word search; Hard words drill) starts again from the first page.
+- Typing in a search box (My decks, Discover title, a deck's word search, Hard words) sends the search only after the Learner has stopped typing for **500 ms**. The box shows each keystroke at once, and the list on screen stays as it is until the search is sent. Pressing Enter, clearing the box, or using "Clear search" sends it immediately.
+- Hard words has a search box that finds hard words by term or meaning. It works together with the drill filter, and a new search starts again from the first page.
 - Counts that describe the whole collection (the library's "N decks", the dashboard and its backlog hint) cover every deck, not only the loaded ones.
 - In library select mode, "select all" selects only the decks loaded so far.
-- **Won't:** page numbers, jumping to the end, changing the sort orders.
+- **Won't:** page numbers, jumping to the end, changing the sort orders, a delay for the language, sort and drill filters (they apply immediately), searching Hard words by deck name.
 
 **Acceptance**
 - With 40 decks, the library first shows 15; using "Load more" shows 30, then 40. On a phone, scrolling to the end does the same without the button. No deck appears twice.
@@ -426,6 +428,10 @@ Extends FR-2, FR-5 and FR-8. A Learner with hundreds of decks or hard words wait
 - Changing the Discover language filter resets the list to its first 15 matches.
 - The dashboard's backlog hint still names a deck that isn't among the loaded 15.
 - In select mode with 40 decks and 15 loaded, "select all" selects 15.
+- On My decks, Discover, a deck's words and Hard words, typing "spa" with 100 ms between keystrokes sends one search for "spa" about 500 ms after the last key, not one per letter. A search changed again within 500 ms sends only the final text.
+- Pressing Enter, or clearing the box, sends the search without waiting 500 ms.
+- With 40 hard words, 3 of which contain "spa" in the term or meaning, searching "spa" shows exactly those 3.
+- On Hard words, searching "spa" while a drill filter is set lists only that drill's hard words that match.
 
 ## FR-32 Word page fits the screen (M)
 
