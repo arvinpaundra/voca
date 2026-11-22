@@ -108,7 +108,11 @@ export const streamImportEvents = (
       onSome: Effect.succeed
     })
 
-    void notifier.events(learnerId)
+    const ping: ImportStreamEvent = { status: "ping" }
 
-    return Stream.die("not implemented: HB")
+    // A ping on connect, then one every 20 s on the Effect clock; the batch events merge in between them.
+    const pings = Stream.tick("20 seconds").pipe(Stream.map(() => ping))
+    const events = Stream.merge(notifier.events(learnerId), pings)
+
+    return Stream.concat(Stream.make(ping), events)
   })
