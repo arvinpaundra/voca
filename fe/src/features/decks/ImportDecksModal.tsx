@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from "react";
-import { IMPORT_MAX_FILES } from "@voca/contract";
+import { IMPORT_MAX_FILES, IMPORT_MAX_TOTAL_BYTES } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { startImport } from "../../lib/imports";
@@ -19,8 +19,10 @@ export function ImportDecksModal({ open, onClose }: ImportDecksModalProps) {
 }
 
 /** True when the files together are over the batch's byte limit. */
-function overTotalLimit(_files: File[]): boolean {
-  throw new Error("not implemented: IF");
+function overTotalLimit(files: File[]): boolean {
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+
+  return totalBytes > IMPORT_MAX_TOTAL_BYTES;
 }
 
 type LanguageErrors = { termLang: string | null; meaningLang: string | null };
@@ -57,7 +59,7 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
     }
 
     // Checked here too, so an oversized selection never reaches the server.
-    if (tooManyFiles) return;
+    if (tooManyFiles || tooLarge) return;
 
     setBusy(true);
     setError(null);
@@ -86,7 +88,11 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button busy={busy} disabled={tooManyFiles} onClick={() => formRef.current?.requestSubmit()}>
+          <Button
+            busy={busy}
+            disabled={tooManyFiles || tooLarge}
+            onClick={() => formRef.current?.requestSubmit()}
+          >
             Import
           </Button>
         </>
@@ -131,6 +137,12 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
         {tooManyFiles && (
           <p role="alert" className="err">
             Choose at most {IMPORT_MAX_FILES} files. Nothing is imported.
+          </p>
+        )}
+
+        {!tooManyFiles && tooLarge && (
+          <p role="alert" className="err">
+            Choose files totalling at most 50 MB. Nothing is imported.
           </p>
         )}
 
