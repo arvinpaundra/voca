@@ -311,12 +311,13 @@ export const StudyRepoLive = Layer.effect(
       Request: Schema.Struct({
         learnerId: Schema.BigInt,
         drill: Schema.NullOr(Drill),
+        q: Schema.NullOr(Schema.String),
         after: Schema.NullOr(WordKeyset),
         now: Schema.Number,
         limit: Schema.Number
       }),
       Result: HardWordRow,
-      execute: ({ learnerId, drill, after, now, limit }) => {
+      execute: ({ learnerId, drill, q, after, now, limit }) => {
         const afterAt = after === null ? null : new Date(after.createdAt)
         const afterSlug = after === null ? null : after.slug
         const nowAt = new Date(now)
@@ -339,6 +340,10 @@ export const StudyRepoLive = Layer.effect(
               SELECT 1 FROM cards h
               WHERE h.word_id = w.id AND h.learner_id = ${learnerId} AND h.is_hard AND h.deleted_at IS NULL
                 AND (${drill}::text IS NULL OR h.drill = ${drill}::text))
+            AND (${q}::text IS NULL
+                 OR strpos(w.term_key, ${q}::text) > 0
+                 OR strpos(w.reading_key, ${q}::text) > 0
+                 OR strpos(w.meaning_key, ${q}::text) > 0)
             AND (${afterAt}::timestamptz IS NULL
                  OR (w.created_at, w.id)
                     > (${afterAt}::timestamptz, (SELECT a.id FROM words a WHERE a.slug = ${afterSlug}::text)))
@@ -533,6 +538,7 @@ export const StudyRepoLive = Layer.effect(
           const rows = yield* hardWordRows({
             learnerId,
             drill: query.drill,
+            q: query.q,
             after: Option.getOrNull(decodeCursor(WordKeyset, query.cursor)),
             now: DateTime.toEpochMillis(now),
             limit: query.limit + 1

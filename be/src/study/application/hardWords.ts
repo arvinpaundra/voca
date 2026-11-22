@@ -2,6 +2,7 @@ import { DateTime, Effect } from "effect"
 import { CurrentLearner } from "@voca/contract"
 import type { Drill, HardWordsSummary } from "@voca/contract"
 import { CardNotFound } from "../domain/errors.ts"
+import { searchKey } from "../domain/text.ts"
 import { StudyRepo, type HardWordPage } from "./studyRepo.ts"
 
 type Needs = CurrentLearner | StudyRepo
@@ -20,15 +21,12 @@ export const listHardWords = (query: {
     const repo = yield* StudyRepo
     const now = yield* DateTime.now
 
-    if (query.q !== undefined) {
-      return yield* Effect.die("not implemented: HB")
-    }
-
     // A snoozed deck's words are left out while its snooze is live, so the clock decides them.
     const page = yield* repo.hardWords(
       learnerId,
       {
         drill: query.drill ?? null,
+        q: query.q === undefined ? null : searchKey(query.q),
         cursor: query.cursor ?? null,
         limit: query.limit ?? DEFAULT_PAGE_SIZE
       },
