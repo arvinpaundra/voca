@@ -1,6 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query"
 import { Result } from "effect"
-import { IMPORT_MAX_FILES, type ImportBatch, type ImportBatchSlug, type ImportEvent } from "@voca/contract"
+import { IMPORT_MAX_FILES, type ImportBatch, type ImportBatchSlug, type ImportEvent, type ImportStreamEvent } from "@voca/contract"
 import { session } from "./appSession.ts"
 import { orReject } from "./queryClient.ts"
 
@@ -130,7 +130,12 @@ export const followImports = ({
     source = stream
 
     stream.onmessage = (message) => {
-      refetch(JSON.parse(message.data) as ImportEvent)
+      const event = JSON.parse(message.data) as ImportStreamEvent
+
+      // The server's keep-alive: it only stops proxies from closing an idle stream, so it carries no batch change.
+      if (event.status === "ping") return
+
+      refetch(event)
     }
 
     stream.onerror = () => {

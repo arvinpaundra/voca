@@ -195,6 +195,25 @@ describe("followImports", () => {
     stop()
   })
 
+  test("a ping, the server's keep-alive, refetches nothing", async () => {
+    fakeSession()
+    const keys = invalidations()
+    const streams = fakeStreams()
+
+    const stop = followImports({ queryClient, open: streams.open, retryMs: 1 })
+    await settle()
+    streams.opened[0]!.source.onmessage?.({ data: JSON.stringify({ status: "ping" }) })
+    await settle()
+
+    expect(keys).toEqual([])
+
+    streams.opened[0]!.source.onmessage?.({ data: JSON.stringify({ batch: BATCH, status: "running" }) })
+    await settle()
+
+    expect(keys).toEqual([["imports"]])
+    stop()
+  })
+
   test("a finished batch refetches the decks as well", async () => {
     fakeSession()
     const keys = invalidations()
