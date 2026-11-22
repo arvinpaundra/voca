@@ -61,7 +61,7 @@ The node `mio-vnc` is **arm64**. The release builds the image on GitHub's `ubunt
 
 There is no Helm or Kustomize for 7 files.
 
-**beanstalkd image:** `deploy/beanstalkd/Containerfile` is `alpine` plus `apk add beanstalkd`, as UID 10001. Its tag is fixed in `beanstalkd.yaml` (`voca-beanstalkd:1.13-1`); bump the suffix when the Containerfile changes. The release builds a tag only when GHCR lacks it, so an ordinary release never restarts the queue.
+**beanstalkd image:** `ghcr.io/maateen/docker-beanstalkd` (beanstalkd 1.13 on Alpine, amd64 and arm64), pinned by digest in `beanstalkd.yaml`. The pin keeps a third-party image from changing under us, and an ordinary release never restarts the queue. To upgrade, check the new image's version and user, then change the digest.
 
 **Migrations** never run at boot. Every release runs them before the rollout, as a one-off pod `voca-migrate` on the release's own image (`voca-api migrate`, env from the `voca-api` secret). The `effect/sql` Migrator applies only what is pending, so a release without a new migration changes nothing, and it takes a lock, so two runs at once are safe. A failed migration fails the release before the rollout, and the running version keeps serving.
 
@@ -80,7 +80,7 @@ Master is protected by the required `verify` check, so a master commit has alrea
 
 1. **image:** built on an arm64 runner, pushed to `ghcr.io/arvinpaundra/voca-api:<tag>`.
 2. **secret:** `secret.yaml` is filled in from the GitHub secrets on every run (values masked in logs).
-3. **beanstalkd:** the image is built if its tag is missing, then `beanstalkd.yaml` is applied and `rollout status --timeout=120s` waits for it. The API connects at boot and dies without the queue, so a queue that never becomes ready fails the release here.
+3. **beanstalkd:** `beanstalkd.yaml` is applied and `rollout status --timeout=120s` waits for it. The API connects at boot and dies without the queue, so a queue that never becomes ready fails the release here.
 4. **migrate:** the pending migrations, from the release's image (above). A failure stops the release here.
 5. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
 6. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
@@ -130,4 +130,4 @@ One-time steps only the owner does, in order. Steps 2–4 cannot be undone, and 
    kubectl config view --minify --flatten --context kube-oci | base64 | gh secret set KUBECONFIG
    ```
 8. **Cloudflare Pages:** `bunx wrangler@4.20.0 pages project create voca --production-branch master`, then Pages → voca → Custom domains → add `voca.arvinpaundra.dev`. The `voca-origin` record is created by external-dns from the ingress on the first release.
-9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. It migrates the fresh database itself. GHCR makes a new package private: if the migrate step times out on `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release. The same goes for `voca-beanstalkd` on the first release that ships it (the `beanstalkd` step times out instead).
+9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. It migrates the fresh database itself. GHCR makes a new package private: if the migrate step times out on `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release.

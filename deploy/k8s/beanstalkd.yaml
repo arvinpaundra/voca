@@ -36,8 +36,9 @@ spec:
         fsGroup: 10001
       containers:
         - name: beanstalkd
-          # A fixed tag: the release builds it only when missing, so a release doesn't restart the queue.
-          image: ghcr.io/arvinpaundra/voca-beanstalkd:1.13-1
+          # beanstalkd 1.13 on Alpine, multi-arch. Pinned by digest: a third-party image never changes under us, and a
+          # release doesn't restart the queue unless this line changes.
+          image: ghcr.io/maateen/docker-beanstalkd@sha256:bd19e7588e69937178caa08fb48073aef5a29d3bea41eb03b2d748bb2824d879
           # The binlog replays ready and reserved jobs after a restart; without it, queued files would stay queued.
           args: ["-l", "0.0.0.0", "-p", "11300", "-b", "/data", "-f", "1000"]
           ports:

@@ -1,7 +1,0 @@
-# The image tag in deploy/k8s/beanstalkd.yaml names this build; bump it when this file changes.
-FROM alpine:3.22
-LABEL org.opencontainers.image.source=https://github.com/arvinpaundra/voca
-RUN apk add --no-cache beanstalkd && adduser -D -u 10001 app
-USER 10001
-EXPOSE 11300
-ENTRYPOINT ["beanstalkd"]

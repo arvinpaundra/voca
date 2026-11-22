@@ -34,16 +34,6 @@ jobs:
           docker build -f be/Containerfile -t "$IMAGE:$TAG" .
           docker push "$IMAGE:$TAG"
 
-      # The tag lives in the manifest. An existing tag is never rebuilt, so the queue restarts only when it is bumped.
-      - name: beanstalkd image
-        run: |
-          BEANSTALKD_IMAGE=$(grep -o 'ghcr.io/[^ ]*' deploy/k8s/beanstalkd.yaml)
-
-          if ! docker manifest inspect "$BEANSTALKD_IMAGE" > /dev/null 2>&1; then
-            docker build -f deploy/beanstalkd/Containerfile -t "$BEANSTALKD_IMAGE" deploy/beanstalkd
-            docker push "$BEANSTALKD_IMAGE"
-          fi
-
       - name: kubeconfig
         env:
           KUBECONFIG_B64: ${{ secrets.KUBECONFIG }}
