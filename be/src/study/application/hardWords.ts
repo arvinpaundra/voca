@@ -11,6 +11,7 @@ const DEFAULT_PAGE_SIZE = 50
 /** The Learner's hard words across decks, optionally those hard in one drill. */
 export const listHardWords = (query: {
   readonly drill?: Drill
+  readonly q?: string
   readonly cursor?: string
   readonly limit?: number
 }): Effect.Effect<HardWordPage & { readonly summary: HardWordsSummary }, never, Needs> =>
@@ -18,6 +19,10 @@ export const listHardWords = (query: {
     const { id: learnerId } = yield* CurrentLearner
     const repo = yield* StudyRepo
     const now = yield* DateTime.now
+
+    if (query.q !== undefined) {
+      return yield* Effect.die("not implemented: HB")
+    }
 
     // A snoozed deck's words are left out while its snooze is live, so the clock decides them.
     const page = yield* repo.hardWords(
