@@ -330,6 +330,60 @@ describe("import events", () => {
       })
     ))
 
+  test("the stream sends a ping at once, then another every 20 seconds", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const token = yield* signedIn("ABCDEFGH")
+        const value = yield* ticket(token)
+
+        const seen = yield* events(value).pipe(
+          Effect.flatMap((stream) => stream.pipe(Stream.take(3), Stream.runCollect)),
+          Effect.forkChild
+        )
+        yield* Effect.promise(() => Bun.sleep(200))
+        yield* TestClock.adjust("20 seconds")
+        yield* Effect.promise(() => Bun.sleep(50))
+        yield* TestClock.adjust("20 seconds")
+
+        const collected = Array.from(yield* Fiber.join(seen))
+
+        expect(collected).toEqual([{ status: "ping" }, { status: "ping" }, { status: "ping" }])
+      })
+    ))
+
+  test("a ping does not hide the batch events, which still reach only their Learner", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const token = yield* signedIn("ABCDEFGH")
+        const other = yield* signedIn("ZYXWVTSR")
+        const mine = yield* ticket(token)
+        const theirs = yield* ticket(other)
+
+        const collect = (value: string) =>
+          events(value).pipe(
+            Effect.flatMap((stream) =>
+              stream.pipe(
+                Stream.filter((event) => event.status !== "ping"),
+                Stream.takeUntil((event) => event.status === "finished"),
+                Stream.runCollect
+              )
+            ),
+            Effect.forkChild
+          )
+
+        const ownEvents = yield* collect(mine)
+        const otherEvents = yield* collect(theirs)
+        yield* Effect.promise(() => Bun.sleep(200))
+        const started = yield* upload(token, [["A.csv", csv(1)]])
+        const collected = Array.from(yield* Fiber.join(ownEvents))
+        yield* Fiber.interrupt(otherEvents)
+
+        expect(collected.length).toBeGreaterThan(0)
+        expect(collected.every((event) => "batch" in event && event.batch === started.slug)).toBe(true)
+        expect(collected.at(-1)?.status).toBe("finished")
+      })
+    ))
+
   test("a ticket opens the stream once", () =>
     rt.runPromise(
       Effect.gen(function* () {
