@@ -97,8 +97,7 @@ export const HardWordsSummary = Schema.Struct({
 })
 export type HardWordsSummary = typeof HardWordsSummary.Type
 
-/** `summary` is optional only while the server rolls out; it is always sent once paged hard words ship. */
-export const HardWordPage = Schema.Struct({ ...Page(HardWord).fields, summary: Schema.optionalKey(HardWordsSummary) })
+export const HardWordPage = Schema.Struct({ ...Page(HardWord).fields, summary: HardWordsSummary })
 export type HardWordPage = typeof HardWordPage.Type
 
 const cardParams = { wordSlug: WordSlug, drill: Drill }
