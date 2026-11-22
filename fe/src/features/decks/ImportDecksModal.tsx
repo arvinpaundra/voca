@@ -4,11 +4,7 @@ import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { startImport } from "../../lib/imports";
 import { queryClient } from "../../lib/queryClient";
-import { LanguageField } from "./LanguageField";
-
-// The same shape DeckModal accepts for a language tag.
-const languageCodePattern = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
-const languageCodeMessage = "Use a language code like ja or en";
+import { LanguageField, languageCodeMessage, languageCodePattern } from "./LanguageField";
 
 type ImportDecksModalProps = {
   open: boolean;
