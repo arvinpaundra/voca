@@ -3,7 +3,7 @@ import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/http-api"
 import { Multipart } from "effect/http"
 import { DuplicateWord, DuplicateWords, Forbidden, ImportRejected, NotFound, PayloadTooLarge } from "./errors.ts"
 import {
-  Count, DeckDescription, DeckTitle, Drill, Example, Instant, LangTag, Meaning, NonNegative, Notes, Page, PageQuery,
+  Count, Cursor, DeckDescription, DeckTitle, Drill, Example, Instant, LangTag, Meaning, NonNegative, Notes, Page, PageQuery,
   Reading, SearchQuery, SessionSize, Term, Visibility
 } from "./primitives.ts"
 import { DeckSlug, WordSlug } from "./slug.ts"
@@ -33,6 +33,22 @@ export type Deck = typeof Deck.Type
 
 export const DeckSummary = Schema.Struct({ ...Deck.fields, wordCount: Count, dueCount: Count })
 export type DeckSummary = typeof DeckSummary.Type
+
+/** The library's orders: `recent` is last edited first; `title` A–Z; `words` and `due` biggest first, ties by title. */
+export const DeckSort = Schema.Literals(["recent", "title", "words", "due"])
+export type DeckSort = typeof DeckSort.Type
+
+/**
+ * `GET /decks`: one page of the Learner's decks. `total` and `termLangs` describe the whole library, whatever the
+ * search, filter or page: the count of decks and the sorted, distinct term languages.
+ */
+export const DeckPage = Schema.Struct({
+  items: Schema.Array(DeckSummary),
+  nextCursor: Schema.NullOr(Cursor),
+  total: Count,
+  termLangs: Schema.Array(LangTag)
+})
+export type DeckPage = typeof DeckPage.Type
 
 /** `GET /decks/:deckSlug`: the deck with its counts. The counts are optional only while the server rolls out. */
 export const DeckDetail = Schema.Struct({ ...Deck.fields, wordCount: Schema.optionalKey(Count), dueCount: Schema.optionalKey(Count) })
@@ -130,7 +146,16 @@ const deckParams = { deckSlug: DeckSlug }
 const wordParams = { wordSlug: WordSlug }
 
 export class LibraryGroup extends HttpApiGroup.make("library").add(
-  HttpApiEndpoint.get("listDecks", "/decks", { success: Schema.Array(DeckSummary) }),
+  /** Without `sort` the newest created deck comes first. `q` matches the title; `termLang` is an exact tag. */
+  HttpApiEndpoint.get("listDecks", "/decks", {
+    query: {
+      q: Schema.optionalKey(SearchQuery),
+      termLang: Schema.optionalKey(LangTag),
+      sort: Schema.optionalKey(DeckSort),
+      ...PageQuery
+    },
+    success: DeckPage
+  }),
   HttpApiEndpoint.post("createDeck", "/decks", { payload: CreateDeck, success: Deck }),
   HttpApiEndpoint.get("getDeck", "/decks/:deckSlug", { params: deckParams, success: DeckDetail, error: NotFound }),
   HttpApiEndpoint.patch("updateDeck", "/decks/:deckSlug", {

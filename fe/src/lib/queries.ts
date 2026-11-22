@@ -56,7 +56,7 @@ export const activityQuery = (month: ActivityMonth) =>
 export const decksQuery = () =>
   queryOptions({
     queryKey: ["library", "decks"],
-    queryFn: () => orReject(session.call((client) => client.library.listDecks()))
+    queryFn: () => orReject(session.call((client) => client.library.listDecks({ query: {} }))).then((page) => page.items)
   })
 
 export const deckQuery = (deckSlug: DeckSlug) =>

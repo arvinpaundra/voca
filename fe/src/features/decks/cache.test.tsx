@@ -102,7 +102,7 @@ describe("writes", () => {
     const user = userEvent.setup();
     const api = cacheSession("QL", {
       "library.snoozeDecks": () => [{ ...DECKS[0], snooze: { until: null } }],
-      "library.listDecks": () => DECKS,
+      "library.listDecks": () => ({ items: DECKS, nextCursor: null, total: DECKS.length, termLangs: [] }),
       "me.get": () => me,
     });
     restore = api.restore;

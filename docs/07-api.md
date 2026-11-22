@@ -29,7 +29,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 
 | Method | Path | Body → Response |
 |---|---|---|
-| GET | `/decks` | → `DeckSummary[]` (own decks, with `wordCount` and `dueCount`) |
+| GET | `/decks` | `?q&termLang&sort=recent\|title\|words\|due&cursor&limit` → `Page<DeckSummary> & {total, termLangs}` (own decks, with `wordCount` and `dueCount`). No `sort`: newest created first. `recent` = last edited first, `title` A–Z, `words` and `due` biggest first, ties by title. `q` matches the title, `termLang` is an exact tag. `total` and `termLangs` (sorted, distinct) describe the whole library, whatever the query (FR-31) |
 | POST | `/decks` | `{title, description?, termLang, meaningLang}` → `Deck` |
 | GET | `/decks/:deckSlug` | → `Deck & {wordCount, dueCount}` |
 | GET | `/decks/:deckSlug/drills` | → `[{drill, label, due, new}]`: only drills that apply to at least one word (FR-17) |
@@ -79,7 +79,7 @@ Every `Deck` carries `snooze: {until: Instant | null} | null`: `null` when the d
 | GET | `/sessions/active` | → `Session \| null` (resume after reload) |
 | POST | `/sessions/:sessionSlug/answers` | `{position, chosenWordSlug, latencyMs}` → `{correct, correctWordSlug, nextDue \| null, retry: Question \| null, completed, leech, reading \| null}` (`reading`: the answered word's, for the feedback) |
 | POST | `/sessions/:sessionSlug/abandon` | → `204` (end early; uncleared words were already rescheduled on attempt 1) |
-| GET | `/hard-words` | `?drill&cursor` → `Page<WordWithCard & {deck: {slug, title, termLang, meaningLang}}>` (the list spans decks) |
+| GET | `/hard-words` | `?drill&cursor&limit` → `Page<WordWithCard & {deck: {slug, title, termLang, meaningLang}}> & {summary: {total, dueToday, drills: [{drill, count, termLang}]}}` (the list spans decks). The summary covers every hard word, whatever `drill` and the page; `dueToday` counts words with a hard card due now; `drills` lists the drills that have hard cards, in drill order, with the first such word's `termLang` (FR-31) |
 | PUT | `/words/:wordSlug/drills/:drill/hard` | → `204` (mark that card) |
 | DELETE | `/words/:wordSlug/drills/:drill/hard` | → `204` (unmark) |
 

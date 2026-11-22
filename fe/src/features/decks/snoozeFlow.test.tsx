@@ -42,7 +42,7 @@ const fakeSession = (decks: readonly DeckSummary[]) => {
 
   const client = {
     library: {
-      listDecks: () => Effect.succeed(decks as never),
+      listDecks: () => Effect.succeed({ items: decks, nextCursor: null, total: decks.length, termLangs: [] } as never),
       snoozeDecks: answer("snoozeDecks", []),
       unsnoozeDecks: answer("unsnoozeDecks", []),
     },

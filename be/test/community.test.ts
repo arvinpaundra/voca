@@ -268,7 +268,7 @@ describe("POST /community/decks/:deckSlug/fork", () => {
 
         yield* sql`UPDATE decks SET deleted_at = now() WHERE id = ${source.deckId}`
 
-        const library = yield* call((c) => c.library.listDecks(), me.token)
+        const library = yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), me.token)
         const again = yield* call((c) => c.library.getDeck({ params: { deckSlug: copy.slug } }), me.token)
 
         expect(library.map((deck) => [String(deck.slug), deck.wordCount, deck.forkedFrom])).toEqual([

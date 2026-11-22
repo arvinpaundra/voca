@@ -42,7 +42,7 @@ const fakeSession = (failed: readonly string[] = []) => {
 
   const client = {
     library: {
-      listDecks: () => Effect.succeed(DECKS as never),
+      listDecks: () => Effect.succeed({ items: DECKS, nextCursor: null, total: DECKS.length, termLangs: [] } as never),
       deleteDecks: (request: { payload: unknown }) => {
         sent.deleteDecks.push(request.payload);
         return Effect.succeed({ failed } as never);

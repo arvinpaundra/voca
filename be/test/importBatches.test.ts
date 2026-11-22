@@ -66,7 +66,7 @@ const finished = (token: string, slug: ImportBatchSlug) =>
   })
 
 const decks = (token: string) =>
-  Effect.map(call((c) => c.library.listDecks(), token), (all) =>
+  Effect.map(call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), token), (all) =>
     all.map((d) => ({ title: d.title, termLang: d.termLang, meaningLang: d.meaningLang, words: d.wordCount }))
   )
 

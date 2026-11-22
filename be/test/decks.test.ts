@@ -92,7 +92,7 @@ describe("GET /decks", () => {
         yield* newDeck(ada, "Second")
         yield* newDeck(bob, "Bob's")
 
-        const decks = yield* call((c) => c.library.listDecks(), ada)
+        const decks = yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), ada)
 
         expect(decks.map((d) => d.title)).toEqual(["Second", "First"])
       })
@@ -113,7 +113,7 @@ describe("GET /decks", () => {
         yield* seedCard(later, "ABCDEFGH", "2026-11-20T00:00:00Z")
         yield* seedCard(gone, "ABCDEFGH", "2026-11-01T00:00:00Z")
 
-        const [summary] = yield* call((c) => c.library.listDecks(), token)
+        const [summary] = yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), token)
 
         expect(summary).toMatchObject({ wordCount: 3, dueCount: 1 })
       })
@@ -226,7 +226,7 @@ describe("DELETE /decks/:deckSlug", () => {
 
         const get = yield* call((c) => c.library.getDeck({ params: { deckSlug: deck.slug } }), token).pipe(Effect.flip)
         expect(get._tag).toBe("NotFound")
-        expect(yield* call((c) => c.library.listDecks(), token)).toEqual([])
+        expect(yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), token)).toEqual([])
         expect(yield* deletedAt("decks")).toEqual([true])
         expect(yield* deletedAt("words")).toEqual([true])
         expect(yield* deletedAt("cards")).toEqual([true])

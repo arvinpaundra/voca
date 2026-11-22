@@ -29,7 +29,7 @@ const snooze = (token: string, deckSlugs: ReadonlyArray<string>, days: SnoozeDay
 const unsnooze = (token: string, deckSlugs: ReadonlyArray<string>) =>
   call((c) => c.library.unsnoozeDecks({ payload: { deckSlugs: deckSlugs as never } }), token)
 
-const listDecks = (token: string) => call((c) => c.library.listDecks(), token)
+const listDecks = (token: string) => call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), token)
 
 const getDeck = (token: string, deckSlug: string) =>
   call((c) => c.library.getDeck({ params: { deckSlug: deckSlug as never } }), token)

@@ -4,7 +4,7 @@ import type {
   CreateDeck,
   Deck,
   DeckDetail,
-  DeckSummary,
+  DeckPage,
   DeleteDecks,
   DeleteDecksResult,
   UpdateDeck
@@ -29,12 +29,14 @@ export const findOwnedDeck = (learnerId: bigint, slug: string, now: number) =>
     })
   })
 
-export const listDecks: Effect.Effect<ReadonlyArray<DeckSummary>, never, Needs> = Effect.gen(function* () {
+/** Every deck in one page: the paging, search, filter and sort arrive with the paged library. */
+export const listDecks: Effect.Effect<DeckPage, never, Needs> = Effect.gen(function* () {
   const { id } = yield* CurrentLearner
   const decks = yield* DeckRepo
   const now = yield* Clock.currentTimeMillis
+  const all = yield* decks.listOwned(id, now)
 
-  return yield* decks.listOwned(id, now)
+  return { items: all, nextCursor: null, total: all.length, termLangs: [...new Set(all.map((deck) => deck.termLang))].sort() }
 })
 
 export const createDeck = (input: typeof CreateDeck.Type): Effect.Effect<Deck, never, Needs> =>

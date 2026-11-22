@@ -33,7 +33,7 @@ const MANDARIN = deck("DECK000004", "Mandarin HSK 1", { until: null } as DeckSum
 const fakeSession = (decks: readonly DeckSummary[]) => {
   const client = {
     library: {
-      listDecks: () => Effect.succeed(decks as never),
+      listDecks: () => Effect.succeed({ items: decks, nextCursor: null, total: decks.length, termLangs: [] } as never),
       snoozeDecks: () => Effect.succeed([] as never),
       unsnoozeDecks: () => Effect.succeed([] as never),
     },

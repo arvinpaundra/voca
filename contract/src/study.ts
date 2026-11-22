@@ -87,6 +87,20 @@ export const HardWord = Schema.Struct({
 })
 export type HardWord = typeof HardWord.Type
 
+/** What the Hard words page shows about the whole list: it ignores `drill` and the page. */
+export const HardWordsSummary = Schema.Struct({
+  total: Count,
+  /** Words with a hard card that is due now, in any drill. */
+  dueToday: Count,
+  /** One entry per drill that has hard cards, in the contract's drill order; `termLang` is the first such word's. */
+  drills: Schema.Array(Schema.Struct({ drill: Drill, count: Count, termLang: LangTag }))
+})
+export type HardWordsSummary = typeof HardWordsSummary.Type
+
+/** `summary` is optional only while the server rolls out; it is always sent once paged hard words ship. */
+export const HardWordPage = Schema.Struct({ ...Page(HardWord).fields, summary: Schema.optionalKey(HardWordsSummary) })
+export type HardWordPage = typeof HardWordPage.Type
+
 const cardParams = { wordSlug: WordSlug, drill: Drill }
 
 export class StudyGroup extends HttpApiGroup.make("study").add(
@@ -112,7 +126,7 @@ export class StudyGroup extends HttpApiGroup.make("study").add(
   HttpApiEndpoint.post("abandon", "/sessions/:sessionSlug/abandon", { params: sessionParams, error: NotFound }),
   HttpApiEndpoint.get("hardWords", "/hard-words", {
     query: { drill: Schema.optionalKey(Drill), ...PageQuery },
-    success: Page(HardWord)
+    success: HardWordPage
   }),
   /** NotFound when the word has no Card in that drill yet (never studied there). */
   HttpApiEndpoint.put("markHard", "/words/:wordSlug/drills/:drill/hard", { params: cardParams, error: NotFound }),
