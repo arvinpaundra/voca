@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { Result } from "effect";
 import { X } from "lucide-react";
 import { MAX_BATCH_WORDS, type Deck, type WordLabels } from "@voca/contract";
@@ -29,6 +29,13 @@ type Row = {
   readonly draft: WordDraft;
   readonly problem: string | null;
 };
+
+// What a folded word shows in place of its fields.
+function foldSummary(draft: WordDraft): ReactNode {
+  if (draft.term !== "" && draft.meaning !== "") return `${draft.term} · ${draft.meaning}`;
+
+  return "not implemented: EB";
+}
 
 const SAVE_FAILED = "Could not save the words. Try again.";
 
@@ -180,7 +187,7 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
             <div key={row.id} className="word-item">
               <div className="word-item-fold">
                 <button type="button" className="word-fold" aria-expanded="false" onClick={() => setOpenId(row.id)}>
-                  {`${row.draft.term} · ${row.draft.meaning}`}
+                  {foldSummary(row.draft)}
                 </button>
 
                 {count > 1 && (
