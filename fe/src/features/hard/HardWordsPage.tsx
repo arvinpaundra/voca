@@ -20,6 +20,7 @@ import { rememberHardStudy } from "../study/returnTo";
 import { HardStudySetup } from "./HardStudySetup";
 import { HardWordList } from "./HardWordList";
 import { hardDrills, type HardDrill } from "./hardDrills";
+import { useDebouncedSearch } from "../../lib/useDebouncedSearch";
 
 const DEFAULT_SIZE: SessionSize = 10;
 const ALL = "all";
@@ -58,6 +59,7 @@ const drillTabs = (summary: HardWordsSummary): HardDrill[] =>
   }));
 
 export function HardWordsPage() {
+  useDebouncedSearch();
   const [filter, setFilter] = useState<Filter>(filterFromUrl);
   const [studying, setStudying] = useState(false);
   const [busy, setBusy] = useState(false);
