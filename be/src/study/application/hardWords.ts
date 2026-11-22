@@ -1,6 +1,6 @@
 import { DateTime, Effect } from "effect"
 import { CurrentLearner } from "@voca/contract"
-import type { Drill } from "@voca/contract"
+import type { Drill, HardWordsSummary } from "@voca/contract"
 import { CardNotFound } from "../domain/errors.ts"
 import { StudyRepo, type HardWordPage } from "./studyRepo.ts"
 
@@ -13,14 +13,14 @@ export const listHardWords = (query: {
   readonly drill?: Drill
   readonly cursor?: string
   readonly limit?: number
-}): Effect.Effect<HardWordPage, never, Needs> =>
+}): Effect.Effect<HardWordPage & { readonly summary: HardWordsSummary }, never, Needs> =>
   Effect.gen(function* () {
     const { id: learnerId } = yield* CurrentLearner
     const repo = yield* StudyRepo
     const now = yield* DateTime.now
 
     // A snoozed deck's words are left out while its snooze is live, so the clock decides them.
-    return yield* repo.hardWords(
+    const page = yield* repo.hardWords(
       learnerId,
       {
         drill: query.drill ?? null,
@@ -29,7 +29,12 @@ export const listHardWords = (query: {
       },
       now
     )
+
+    return { ...page, summary: yield* summarize() }
   })
+
+/** Counts over every hard word of the Learner, whatever the page and the drill filter. */
+const summarize = (): Effect.Effect<HardWordsSummary, never, Needs> => Effect.die("not implemented: SB")
 
 /** Sets the hard flag of the Learner's card for the word and drill. NotFound when that card doesn't exist. */
 const setHard = (wordSlug: string, drill: Drill, isHard: boolean): Effect.Effect<void, CardNotFound, Needs> =>
