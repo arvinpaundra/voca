@@ -182,6 +182,38 @@ describe("POST /imports", () => {
       })
     ))
 
+  test("fifty files are accepted and each becomes a deck", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const token = yield* signedIn("ABCDEFGH")
+        const files = Array.from({ length: 50 }, (_, i): CsvFile => [`deck ${i}.csv`, csv(1, `w${i}-`)])
+
+        const started = yield* upload(token, files)
+        const done = yield* finished(token, started.slug)
+
+        expect(done.files).toHaveLength(50)
+        expect(done.files.every((f) => f.status === "done")).toBe(true)
+        expect(yield* decks(token)).toHaveLength(50)
+      })
+    ))
+
+  test("files totalling more than 50 MB are refused before anything is imported", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const token = yield* signedIn("ABCDEFGH")
+        // Each file is under the 5 MB limit; eleven of them are over 50 MB together.
+        const rows = Math.floor((4.9 * 1024 * 1024) / 24)
+        const big = csv(rows)
+        const files = Array.from({ length: 11 }, (_, i): CsvFile => [`deck ${i}.csv`, big])
+
+        const refused = yield* upload(token, files).pipe(Effect.flip)
+
+        expect(refused._tag).toBe("PayloadTooLarge")
+        expect(yield* list(token)).toEqual([])
+        expect(yield* decks(token)).toEqual([])
+      })
+    ))
+
   test("more than 50 files are refused before anything is imported", () =>
     rt.runPromise(
       Effect.gen(function* () {
