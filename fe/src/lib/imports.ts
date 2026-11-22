@@ -132,7 +132,8 @@ export const followImports = ({
     stream.onmessage = (message) => {
       const event = JSON.parse(message.data) as ImportStreamEvent
 
-      if (event.status === "ping") throw new Error("not implemented: HF")
+      // The server's keep-alive: it only stops proxies from closing an idle stream, so it carries no batch change.
+      if (event.status === "ping") return
 
       refetch(event)
     }
