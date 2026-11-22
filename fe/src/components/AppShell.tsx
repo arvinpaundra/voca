@@ -4,11 +4,13 @@ import { Link } from "@tanstack/react-router";
 import type { Learner } from "@voca/contract";
 import { Compass, Flame, Layers, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, Settings, X, type LucideIcon } from "lucide-react";
 import { session, tokenStore } from "../lib/appSession";
+import { followImports, importsQuery } from "../lib/imports";
 import { meQuery, notificationsQuery } from "../lib/queries";
 import { queryClient } from "../lib/queryClient";
 import { Avatar } from "./Avatar";
 import { cx } from "./cx";
 import { IconButton } from "./IconButton";
+import { ImportProgress } from "./ImportProgress";
 import { Logo } from "./Logo";
 import { navItems } from "./nav";
 
@@ -161,6 +163,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const meState = useQuery({ ...meQuery(), enabled: tokenStore.getRefresh() !== null }, queryClient);
   const learner: Learner | null = meState.data ?? null;
 
+  // Batches are read only while signed in; the stream keeps them fresh after that.
+  const signedIn = tokenStore.getRefresh() !== null;
+  const imports = useQuery({ ...importsQuery(), enabled: signedIn }, queryClient);
+
+  useEffect(() => {
+    if (!signedIn) return;
+
+    return followImports({ queryClient });
+  }, [signedIn]);
+
   // The Decks badge is a hint: when the call fails it just stays hidden.
   const notifications = useQuery(notificationsQuery(), queryClient);
   const due = notifications.data?.decks.reduce((sum, deck) => sum + deck.due, 0) ?? 0;
@@ -227,6 +239,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="content">{children}</div>
         </main>
       </div>
+
+      <ImportProgress batches={imports.data ?? []} />
     </div>
   );
 }
