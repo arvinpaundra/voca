@@ -8,12 +8,14 @@ import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
+import { LoadMore } from "../../components/LoadMore";
 import { Menu } from "../../components/Menu";
 import { PageHeader } from "../../components/PageHeader";
 import { SearchInput } from "../../components/SearchInput";
 import { Skeleton } from "../../components/Skeleton";
 import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
+import { mergePages } from "../../lib/paging";
 import { deckStatsQuery, meQuery, wordsQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { DeckModal } from "../decks/DeckModal";
@@ -72,8 +74,7 @@ export function DeckView({ deck }: DeckViewProps) {
   const stats = statsResult.data ?? null;
 
   const wordsResult = useInfiniteQuery(wordsQuery(deck.slug, searchQuery(query)), queryClient);
-  const words = wordsResult.data?.pages.flatMap((page) => page.items) ?? null;
-  const loadingMore = wordsResult.isFetchingNextPage;
+  const words = wordsResult.data === undefined ? null : mergePages(wordsResult.data.pages);
   const loadError = wordsResult.isError
     ? words === null
       ? "Could not load the words."
@@ -88,7 +89,7 @@ export function DeckView({ deck }: DeckViewProps) {
   }, [searchInput]);
 
   const loadMore = () => {
-    if (!wordsResult.hasNextPage || loadingMore) return;
+    if (!wordsResult.hasNextPage || wordsResult.isFetchingNextPage) return;
 
     void wordsResult.fetchNextPage();
   };
@@ -314,13 +315,11 @@ export function DeckView({ deck }: DeckViewProps) {
 
       {shown !== null && shown.length === 0 && !unfiltered && <EmptyState title="No words match this view." />}
 
-      {wordsResult.hasNextPage && (
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <Button variant="ghost" disabled={loadingMore} onClick={loadMore}>
-            {loadingMore ? "Loading…" : "Load more"}
-          </Button>
-        </div>
-      )}
+      <LoadMore
+        hasNextPage={wordsResult.hasNextPage}
+        isFetchingNextPage={wordsResult.isFetchingNextPage}
+        onLoadMore={loadMore}
+      />
 
       <WordModal
         open={wordEditor !== null}

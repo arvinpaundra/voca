@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { DateTime, Option, Result, Schema } from "effect";
-import { Drill, type HardWord, type SessionSize } from "@voca/contract";
+import { Drill, drillLabel, type HardWord, type HardWordsSummary, type SessionSize } from "@voca/contract";
 import { ArrowRight, Flame } from "lucide-react";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
+import { LoadMore } from "../../components/LoadMore";
 import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
 import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
+import { mergePages } from "../../lib/paging";
 import { hardWordsQuery, meQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { failureTag } from "../deck/wordModel";
@@ -17,7 +19,7 @@ import { startFailure } from "../study/startFailure";
 import { rememberHardStudy } from "../study/returnTo";
 import { HardStudySetup } from "./HardStudySetup";
 import { HardWordList } from "./HardWordList";
-import { hardDrills } from "./hardDrills";
+import { hardDrills, type HardDrill } from "./hardDrills";
 
 const DEFAULT_SIZE: SessionSize = 10;
 const ALL = "all";
@@ -47,39 +49,52 @@ const refreshOnSuccess = (result: Result.Result<unknown, unknown>): void => {
   if (Result.isSuccess(result)) void queryClient.invalidateQueries();
 };
 
-export function HardWordsPage() {
-  const hard = useInfiniteQuery(hardWordsQuery(), queryClient);
-  const learner = useQuery(meQuery(), queryClient);
+// The tabs of the summary: one per drill with hard words, in the contract's order.
+const drillTabs = (summary: HardWordsSummary): HardDrill[] =>
+  summary.drills.map((entry) => ({
+    drill: entry.drill,
+    label: drillLabel(entry.termLang, entry.drill),
+    count: entry.count,
+  }));
 
+export function HardWordsPage() {
   const [filter, setFilter] = useState<Filter>(filterFromUrl);
   const [studying, setStudying] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // A drill tab is a new query, so its list starts from the first page; the old list stays up until it arrives.
+  const hard = useInfiniteQuery(
+    {
+      ...hardWordsQuery(filter === ALL ? {} : { drill: filter }),
+      placeholderData: keepPreviousData,
+    },
+    queryClient,
+  );
+  const learner = useQuery(meQuery(), queryClient);
+
   const now = useMemo(() => DateTime.nowUnsafe(), []);
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = hard;
-
-  // The page lists every hard word, so it keeps asking for the next page until none is left.
-  useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const defaultSize = learner.data?.settings.defaultSessionSize ?? DEFAULT_SIZE;
 
   if (hard.isError) return <ErrorState message="Hard words could not be loaded." />;
 
-  // The skeleton stays up until the last page is in, so the list never shows a partial set.
-  if (!hard.isSuccess || hard.hasNextPage) return <Skeleton label="Loading hard words" rows={3} />;
+  if (!hard.isSuccess) return <Skeleton label="Loading hard words" rows={3} />;
 
-  const words = hard.data.pages.flatMap((page) => page.items);
-  const drills = hardDrills(words);
+  const words = mergePages(hard.data.pages);
+  // The header and the tabs cover every hard word, so they come from the summary of the first page. The summary is
+  // optional while the server rolls out; without it, the loaded words are counted.
+  const summary = hard.data.pages[0]?.summary ?? null;
+  const drills = summary === null ? hardDrills(words) : drillTabs(summary);
+  const total = summary?.total ?? words.length;
   const visible = words.filter((word) => inFilter(word, filter));
 
   const nowMillis = DateTime.toEpochMillis(now);
-  const dueToday = words.filter((word) =>
-    word.cards.some((card) => card.isHard && DateTime.toEpochMillis(DateTime.makeUnsafe(card.due)) <= nowMillis),
-  ).length;
+  const dueToday =
+    summary?.dueToday ??
+    words.filter((word) =>
+      word.cards.some((card) => card.isHard && DateTime.toEpochMillis(DateTime.makeUnsafe(card.due)) <= nowMillis),
+    ).length;
 
   const choose = (next: Filter) => {
     setFilter(next);
@@ -152,7 +167,7 @@ export function HardWordsPage() {
         title="Hard words"
         meta={
           <>
-            <span>{`${words.length} ${words.length === 1 ? "word" : "words"}`}</span>
+            <span>{`${total} ${total === 1 ? "word" : "words"}`}</span>
             <span className="dot" />
             <span>{`${dueToday} due today`}</span>
           </>
@@ -172,7 +187,7 @@ export function HardWordsPage() {
         }
       />
 
-      {words.length === 0 ? (
+      {total === 0 ? (
         <EmptyState
           icon={<Flame className="i i-lg" aria-hidden="true" />}
           title="No hard words"
@@ -194,6 +209,12 @@ export function HardWordsPage() {
           )}
 
           <HardWordList words={visible} now={now} onUnmark={(word) => void unmark(word)} />
+
+          <LoadMore
+            hasNextPage={hard.hasNextPage && !hard.isPlaceholderData}
+            isFetchingNextPage={hard.isFetchingNextPage}
+            onLoadMore={() => void hard.fetchNextPage()}
+          />
         </>
       )}
     </>

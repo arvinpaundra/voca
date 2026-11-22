@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { DeckSlug, DeckSummary, PublicDeck, PublicDeckDetail } from "@voca/contract";
-import { communityQuery, decksQuery, meQuery, publicDeckQuery } from "../../lib/queries";
+import { communityQuery, deckListQuery, meQuery, publicDeckQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { cacheSession } from "../../test/cacheSession";
 import { DeckPreviewPage } from "../discover/DeckPreviewPage";
@@ -32,6 +32,13 @@ const deck = (slug: string, title: string) =>
 
 const DECKS = [deck("DECK000001", "Japanese N5 verbs"), deck("DECK000004", "Mandarin HSK 1")];
 
+// The library's first page, under the key the page reads with no search, no language and the default sort.
+const libraryPage = {
+  pages: [{ items: DECKS, nextCursor: null, total: DECKS.length, termLangs: ["ja"] }],
+  pageParams: [undefined],
+};
+const LIBRARY_KEY = deckListQuery({ q: "", termLang: "", sort: "due" }).queryKey;
+
 const me = { name: "Arvin Paundra", settings: { timezone: "UTC", dayStartHour: 4, defaultSessionSize: 10 } };
 
 const publicDeck = {
@@ -55,7 +62,7 @@ afterEach(() => {
 
 describe("cached pages", () => {
   test("the decks list renders the cached decks without a request", async () => {
-    queryClient.setQueryData(decksQuery().queryKey, DECKS);
+    queryClient.setQueryData(LIBRARY_KEY, libraryPage as never);
     queryClient.setQueryData(meQuery().queryKey, me as never);
     const api = cacheSession("QL");
     restore = api.restore;
@@ -97,7 +104,7 @@ describe("cached pages", () => {
 
 describe("writes", () => {
   test("snoozing selected decks refreshes the cached list", async () => {
-    queryClient.setQueryData(decksQuery().queryKey, DECKS);
+    queryClient.setQueryData(LIBRARY_KEY, libraryPage as never);
     queryClient.setQueryData(meQuery().queryKey, me as never);
     const user = userEvent.setup();
     const api = cacheSession("QL", {

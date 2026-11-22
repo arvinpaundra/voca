@@ -1,13 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { DateTime } from "effect";
+import type { DeckSummary } from "@voca/contract";
 import { ErrorState } from "../../components/ErrorState";
 import { PageHeader } from "../../components/PageHeader";
 import { Skeleton } from "../../components/Skeleton";
-import { decksQuery, learnerStatsQuery, meQuery, notificationsQuery } from "../../lib/queries";
+import { mergePages } from "../../lib/paging";
+import { dueDecksQuery, learnerStatsQuery, meQuery, notificationsQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { ActivitySection } from "./ActivitySection";
 import { BacklogHint } from "./BacklogHint";
-import { loadableOf, localHour, longDate, studyDate } from "./dashboardModel";
+import { backlogThreshold } from "./backlog";
+import { loadableOf, localHour, longDate, studyDate, type Loadable } from "./dashboardModel";
 import { DecksSection } from "./DecksSection";
 import { ProgressSection } from "./ProgressSection";
 import { StreakSection } from "./StreakSection";
@@ -24,7 +28,25 @@ export function DashboardPage() {
   const learner = loadableOf(useQuery(meQuery(), queryClient));
   const stats = loadableOf(useQuery(learnerStatsQuery(), queryClient));
   const notifications = loadableOf(useQuery(notificationsQuery(), queryClient));
-  const decks = loadableOf(useQuery(decksQuery(), queryClient));
+  const deckPages = useInfiniteQuery(dueDecksQuery(), queryClient);
+  const loadedDecks = mergePages(deckPages.data?.pages ?? []);
+  const lastDeck: DeckSummary | undefined = loadedDecks.at(-1);
+
+  // The backlog hint covers every deck, so the reading goes on while the last deck read is still behind.
+  const stillBehind =
+    learner.kind === "loaded" &&
+    lastDeck !== undefined &&
+    lastDeck.dueCount > backlogThreshold(learner.value.settings.defaultSessionSize);
+
+  useEffect(() => {
+    if (stillBehind && deckPages.hasNextPage && !deckPages.isFetchingNextPage) void deckPages.fetchNextPage();
+  }, [stillBehind, deckPages.hasNextPage, deckPages.isFetchingNextPage, deckPages.fetchNextPage]);
+
+  const decks: Loadable<readonly DeckSummary[]> = deckPages.isError
+    ? { kind: "failed" }
+    : deckPages.isSuccess
+      ? { kind: "loaded", value: loadedDecks }
+      : { kind: "loading" };
 
   if (learner.kind === "loading") return <Skeleton label="Loading dashboard" rows={4} />;
   if (learner.kind === "failed") return <ErrorState message="Couldn't load your dashboard." />;

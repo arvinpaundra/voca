@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { DateTime } from "effect";
 import { AppShell } from "../../components/AppShell";
-import { activityQuery, decksQuery, learnerStatsQuery, meQuery, notificationsQuery } from "../../lib/queries";
+import { activityQuery, dueDecksQuery, learnerStatsQuery, meQuery, notificationsQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { cacheSession } from "../../test/cacheSession";
 import { SettingsPage } from "../settings/SettingsPage";
@@ -62,7 +62,7 @@ describe("cached pages", () => {
     seedLearner();
     queryClient.setQueryData(learnerStatsQuery().queryKey, stats as never);
     queryClient.setQueryData(notificationsQuery().queryKey, notifications as never);
-    queryClient.setQueryData(decksQuery().queryKey, []);
+    queryClient.setQueryData(dueDecksQuery().queryKey, { pages: [{ items: [], nextCursor: null, total: 0, termLangs: [] }], pageParams: [undefined] } as never);
     // The heatmap opens on the Learner's current study month.
     const month = studyDate(DateTime.nowUnsafe(), "UTC", 4).slice(0, 7);
     queryClient.setQueryData(activityQuery(month as never).queryKey, { month, days: [] } as never);
