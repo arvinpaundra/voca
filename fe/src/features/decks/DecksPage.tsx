@@ -34,14 +34,15 @@ const sortOptions: readonly { value: DeckSort; label: string }[] = [
   { value: "due", label: "Most due" },
 ];
 
-// The server searches the titles, so the typed text waits this long before it is sent.
-const SEARCH_DELAY_MS = 250;
-
 export function DecksPage() {
-  useDebouncedSearch();
-  // The search box shows what is typed; the list asks the server for what was typed a moment ago.
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  // The search box shows what is typed; the list asks the server for it once the typing pauses, or at once on Enter.
+  const {
+    input: searchInput,
+    setInput: setSearchInput,
+    search,
+    submit: submitSearch,
+    clear: clearSearch,
+  } = useDebouncedSearch();
   // The language "" is every language.
   const [termLang, setTermLang] = useState("");
   const [sort, setSort] = useState<DeckSort>("due");
@@ -106,12 +107,6 @@ export function DecksPage() {
 
     return () => document.removeEventListener("keydown", onKey);
   }, [selecting, stopSelecting]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchInput.trim()), SEARCH_DELAY_MS);
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
 
   // The snooze endpoints take at least one slug, so an empty selection has nothing to send.
   const selectedSlugs = (): readonly [DeckSlug, ...DeckSlug[]] | null => {
@@ -182,8 +177,7 @@ export function DecksPage() {
   const selectAll = () => setSelected(new Set(decks.map((deck) => deck.slug)));
 
   const clearFilter = () => {
-    setSearchInput("");
-    setSearch("");
+    clearSearch();
     setTermLang("");
   };
 
@@ -243,6 +237,7 @@ export function DecksPage() {
             placeholder="Search decks"
             value={searchInput}
             onChange={setSearchInput}
+            onSubmit={submitSearch}
           />
 
           <Select

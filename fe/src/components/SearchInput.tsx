@@ -7,12 +7,15 @@ export function SearchInput({
   placeholder,
   value,
   onChange,
+  onSubmit,
   className,
 }: {
   label: string;
   placeholder?: string;
   value: string;
   onChange: (value: string) => void;
+  /** Enter in the box: searches now instead of after the delay. */
+  onSubmit?: () => void;
   className?: string | undefined;
 }) {
   const id = useId();
@@ -30,6 +33,11 @@ export function SearchInput({
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") return;
+
+          onSubmit?.();
+        }}
       />
     </div>
   );
