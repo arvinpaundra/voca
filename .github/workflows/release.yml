@@ -53,6 +53,17 @@ jobs:
 
           envsubst < deploy/k8s/secret.yaml | kubectl apply -f - > /dev/null
 
+      # The API connects to the queue at boot and dies without it, so the queue is ready before any API pod starts.
+      - name: beanstalkd
+        run: |
+          kubectl apply -f deploy/k8s/beanstalkd.yaml
+
+          if ! kubectl -n voca rollout status deployment/beanstalkd --timeout=120s; then
+            kubectl -n voca describe pods -l app=beanstalkd | tail -n 30
+            echo "::error::beanstalkd never became ready; the previous API keeps serving"
+            exit 1
+          fi
+
       # The release's own binary applies only the pending migrations (none is a no-op). A failure exits non-zero,
       # so the rollout never starts and the running version keeps its schema.
       - name: migrate

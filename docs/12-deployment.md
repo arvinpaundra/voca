@@ -57,8 +57,11 @@ The node `mio-vnc` is **arm64**. The release builds the image on GitHub's `ubunt
 | `service.yaml` | ClusterIP 80 → 8000 |
 | `ingress.yaml` | Traefik, external-dns with Cloudflare proxying; host `${API_HOST}` (`voca-origin.arvinpaundra.dev`) and target `${API_TARGET_IP}`, filled in by the release from GitHub variables. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.dev/api` |
 | `ratelimit.yaml` | A Traefik `Middleware` (`rateLimit`: average 10 req/s, burst 20, keyed on `X-Real-IP`) attached to the ingress |
+| `beanstalkd.yaml` | The import queue (ADR 61): a 1 Gi `local-path` PVC for the binlog, a 1-replica `Recreate` Deployment (`-b /data -f 1000`, TCP probes on 11300, UID 10001, read-only root), a ClusterIP Service `beanstalkd:11300`, and a NetworkPolicy that admits only `app=voca-api`. The API finds it through `BEANSTALKD_HOST=beanstalkd` in `deployment.yaml` |
 
-There is no Helm or Kustomize for 6 files.
+There is no Helm or Kustomize for 7 files.
+
+**beanstalkd image:** `ghcr.io/maateen/docker-beanstalkd` (beanstalkd 1.13 on Alpine, amd64 and arm64), pinned by digest in `beanstalkd.yaml`. The pin keeps a third-party image from changing under us, and an ordinary release never restarts the queue. To upgrade, check the new image's version and user, then change the digest.
 
 **Migrations** never run at boot. Every release runs them before the rollout, as a one-off pod `voca-migrate` on the release's own image (`voca-api migrate`, env from the `voca-api` secret). The `effect/sql` Migrator applies only what is pending, so a release without a new migration changes nothing, and it takes a lock, so two runs at once are safe. A failed migration fails the release before the rollout, and the running version keeps serving.
 
@@ -77,9 +80,10 @@ Master is protected by the required `verify` check, so a master commit has alrea
 
 1. **image:** built on an arm64 runner, pushed to `ghcr.io/arvinpaundra/voca-api:<tag>`.
 2. **secret:** `secret.yaml` is filled in from the GitHub secrets on every run (values masked in logs).
-3. **migrate:** the pending migrations, from the release's image (above). A failure stops the release here.
-4. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
-5. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
+3. **beanstalkd:** `beanstalkd.yaml` is applied and `rollout status --timeout=120s` waits for it. The API connects at boot and dies without the queue, so a queue that never becomes ready fails the release here.
+4. **migrate:** the pending migrations, from the release's image (above). A failure stops the release here.
+5. **rollout:** the manifests are applied with the tag's image; `kubectl rollout status --timeout=180s`. A pod that never becomes ready is undone with `kubectl rollout undo` (it never served), and the run fails; the previous pod served throughout. A release that became healthy is never rolled back automatically.
+6. **web:** only after the API is healthy: `vite build` (with `VITE_GOOGLE_CLIENT_ID`) and `wrangler pages deploy` from `fe/` (`fe/wrangler.toml` holds the project name and `API_ORIGIN`), tagged with the commit hash.
 
 **Roll back:** re-run the older tag's release run (GitHub allows it for 30 days), or *Actions → release → Run workflow* with that tag. Migrations are not reversed, which is why they stay backward compatible.
 
