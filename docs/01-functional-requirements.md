@@ -368,7 +368,7 @@ Extends FR-2, FR-20 and FR-26. A deck's words can't be scrolled, the Add word mo
 
 Extends FR-4. A Learner moving a collection into Voca has one file per deck; creating each deck and importing into it one at a time is tedious.
 
-- From the library, "Import decks" takes up to **20** CSV files at once, each in the FR-4 format and within its limits.
+- From the library, "Import decks" takes up to **50** CSV files at once, totalling at most **50 MB**, each in the FR-4 format and within its limits.
 - The Learner picks `termLang` and `meaningLang` once, with the same language picker as creating a deck: the offered languages, plus "Other…" for typing any language tag. Every deck in the batch uses them. Nothing is detected from the files.
 - Each file becomes a new deck named after the file without its extension (`N5 verbs.csv` → `N5 verbs`). A name already used by another deck is allowed.
 - A header-only file creates an empty deck.
@@ -385,7 +385,7 @@ Extends FR-4. A Learner moving a collection into Voca has one file per deck; cre
 - A file with an invalid row creates no deck and lists up to 100 errors with row numbers; the other files' decks are created.
 - A header-only file creates a deck with 0 words.
 - A file named like an existing deck creates a second deck with that name.
-- More than 20 files are refused before anything is imported.
+- More than 50 files, or files totalling more than 50 MB, are refused before anything is imported.
 - After a reload, and after signing out and in, a running batch still shows its progress, and a finished one its result until dismissed.
 - Two batches started back to back both complete, each with its own progress.
 
@@ -404,6 +404,38 @@ Extends FR-3. The default font makes kanji, kana and hangul hard to read; Learne
 - After choosing Handwriting, an `id`→`en` word renders entirely in the app font.
 - After a reload the choice still applies; in a fresh browser System default is used.
 - Buttons, labels and navigation keep their current font.
+
+## FR-31 Paged lists (M)
+
+Extends FR-2, FR-5 and FR-8. A Learner with hundreds of decks or hard words waits for the whole list before seeing anything.
+
+- The library (My decks), Discover, a deck's words and Hard words each load **15 items at a time**, in their current order.
+- The next 15 load automatically when the Learner scrolls near the end. A "Load more" button is also shown, as a fallback.
+- Loading a page never reorders or repeats an item already shown, even if a deck or word is added or deleted meanwhile.
+- A search or filter change (Discover title, language, sort; deck word search; Hard words drill) starts again from the first page.
+- Counts that describe the whole collection (the library's "N decks", the dashboard and its backlog hint) cover every deck, not only the loaded ones.
+- In library select mode, "select all" selects only the decks loaded so far.
+- **Won't:** page numbers, jumping to the end, changing the sort orders.
+
+**Acceptance**
+- With 40 decks, the library first shows 15; scrolling to the end shows 30, then 40. No deck appears twice.
+- The same holds for Discover (40 public decks), a deck with 40 words, and 40 hard words.
+- Hard words shows its first 15 without waiting for the rest.
+- Changing the Discover language filter resets the list to its first 15 matches.
+- The dashboard's backlog hint still names a deck that isn't among the loaded 15.
+- In select mode with 40 decks and 15 loaded, "select all" selects 15.
+
+## FR-32 Word page fits the screen (M)
+
+Extends FR-2 and FR-6. A long term or example makes the word page wider than a phone, so the header and text are cut off and the page scrolls sideways.
+
+- On the word page and in the word modal, long content (term with its reading, meaning, example, notes) wraps inside the screen width. The page never scrolls horizontally.
+- The header and the rest of the page stay fully visible.
+- **Won't:** truncating or hiding any of the content.
+
+**Acceptance**
+- At 390 px width, a word whose term is 30 characters with a reading, and whose example is 300 characters, shows all of its text and the whole header. The page has no horizontal scroll.
+- The same word opened in the deck page's modal fits without horizontal scroll.
 
 ## Extra ideas (not in your list)
 
