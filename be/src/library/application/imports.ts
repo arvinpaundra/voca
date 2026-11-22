@@ -1,6 +1,6 @@
-import { Clock, Data, Effect, Option, type Stream } from "effect"
+import { Clock, Data, Effect, Option, Stream } from "effect"
 import { CurrentLearner, SLUG_LENGTH } from "@voca/contract"
-import type { ImportBatch, ImportBatchSlug, ImportEvent, StreamTicket } from "@voca/contract"
+import type { ImportBatch, ImportBatchSlug, ImportStreamEvent, StreamTicket } from "@voca/contract"
 import { batchSlugOf, pendingBatch } from "../domain/imports.ts"
 import { newSlug } from "../domain/slug.ts"
 import { Transaction } from "../../shared/transaction.ts"
@@ -92,10 +92,13 @@ export const issueImportTicket = Effect.gen(function* () {
   return { ticket } satisfies StreamTicket
 })
 
-/** The events of the Learner the ticket was issued to. The ticket is spent: a second use is refused. */
+/**
+ * The events of the Learner the ticket was issued to, plus a ping on connect and every 20 s so a proxy never sees
+ * the stream idle. The ticket is spent: a second use is refused.
+ */
 export const streamImportEvents = (
   ticket: string
-): Effect.Effect<Stream.Stream<ImportEvent>, ImportTicketInvalid, ImportTickets | ImportNotifier> =>
+): Effect.Effect<Stream.Stream<ImportStreamEvent>, ImportTicketInvalid, ImportTickets | ImportNotifier> =>
   Effect.gen(function* () {
     const tickets = yield* ImportTickets
     const notifier = yield* ImportNotifier
@@ -105,5 +108,11 @@ export const streamImportEvents = (
       onSome: Effect.succeed
     })
 
-    return notifier.events(learnerId)
+    const ping: ImportStreamEvent = { status: "ping" }
+
+    // A ping on connect, then one every 20 s on the Effect clock; the batch events merge in between them.
+    const pings = Stream.tick("20 seconds").pipe(Stream.map(() => ping))
+    const events = Stream.merge(notifier.events(learnerId), pings)
+
+    return Stream.concat(Stream.make(ping), events)
   })
