@@ -234,3 +234,18 @@ export const connect = (
 
     return { use, watch, ignore, put, reserve, delete: remove, bury }
   })
+
+/**
+ * Like `connect`, but survives a dropped connection. `setup` runs on every connection it opens (the `use` or
+ * `watch` the commands rely on). A command that finds the connection closed opens a new one, runs `setup` and runs
+ * once more; if the new one can't open either, the command fails with `ConnectionClosed` and the next command tries
+ * again. The first connection still fails fast.
+ *
+ * Under Bun, a connection the server closes while the client is idle is never reported: the next reply just never
+ * comes. So every command has a deadline (`reserve`: its own timeout plus 5 s; the rest: 5 s), and a reply that misses
+ * it counts as a closed connection. The same deadline catches a server that vanished without closing anything.
+ */
+export const connectRetrying = (
+  endpoint: { readonly host: string; readonly port: number },
+  setup: (client: BeanstalkClient) => Effect.Effect<void, BeanstalkError>
+): Effect.Effect<BeanstalkClient, BeanstalkError, Scope.Scope> => Effect.die("not implemented: BR")

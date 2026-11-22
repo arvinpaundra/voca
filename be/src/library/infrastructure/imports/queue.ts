@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect"
-import { connect } from "../../../shared/beanstalk/client.ts"
+import { connectRetrying } from "../../../shared/beanstalk/client.ts"
 import { ImportQueue } from "../../application/importsPorts.ts"
 import type { ImportsOptions } from "../imports.ts"
 
@@ -13,9 +13,7 @@ export const ImportQueueLive = (options: ImportsOptions) =>
   Layer.effect(
     ImportQueue,
     Effect.gen(function* () {
-      const client = yield* connect(options).pipe(Effect.orDie)
-
-      yield* client.use(options.tube).pipe(Effect.orDie)
+      const client = yield* connectRetrying(options, (fresh) => fresh.use(options.tube)).pipe(Effect.orDie)
 
       return ImportQueue.of({
         put: (fileId) => client.put(encoder.encode(fileId.toString())).pipe(Effect.asVoid, Effect.orDie)

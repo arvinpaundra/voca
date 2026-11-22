@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect"
-import { connect } from "../../../shared/beanstalk/client.ts"
-import type { Job } from "../../../shared/beanstalk/client.ts"
+import { connectRetrying } from "../../../shared/beanstalk/client.ts"
+import type { BeanstalkClient, Job } from "../../../shared/beanstalk/client.ts"
 import { importFile } from "../../application/importsWorker.ts"
 import type { ImportsOptions } from "../imports.ts"
 
@@ -24,10 +24,8 @@ const fileIdOf = (job: Job): Effect.Effect<bigint> => {
  */
 export const runWorker = (options: ImportsOptions) => {
   return Effect.gen(function* () {
-    const client = yield* connect(options).pipe(Effect.orDie)
-
-    yield* client.watch(options.tube).pipe(Effect.orDie)
-    yield* client.ignore("default").pipe(Effect.orDie)
+    const watchOnly = (fresh: BeanstalkClient) => Effect.andThen(fresh.watch(options.tube), fresh.ignore("default"))
+    const client = yield* connectRetrying(options, watchOnly).pipe(Effect.orDie)
 
     const settle = (job: Job) => {
       return fileIdOf(job).pipe(
