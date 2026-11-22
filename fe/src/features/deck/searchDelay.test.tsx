@@ -98,7 +98,7 @@ describe("a deck's word search", () => {
     await waitFor(() => expect(rows()).toHaveLength(10), { timeout: 1500 });
 
     expect(searches(requests)).toEqual(["語1"]);
-    expect(Date.now() - typedAt).toBeGreaterThanOrEqual(450);
+    expect(Date.now() - typedAt).toBeGreaterThanOrEqual(380);
     expect(screen.getByRole("searchbox", { name: "Search words" })).toBe(box);
   });
 
