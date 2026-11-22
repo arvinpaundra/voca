@@ -2,6 +2,7 @@ import { type ReactNode, useRef, useState } from "react";
 import { Result } from "effect";
 import { X } from "lucide-react";
 import { MAX_BATCH_WORDS, type Deck, type WordLabels } from "@voca/contract";
+import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { session } from "../../lib/appSession";
@@ -32,9 +33,16 @@ type Row = {
 
 // What a folded word shows in place of its fields.
 function foldSummary(draft: WordDraft): ReactNode {
-  if (draft.term !== "" && draft.meaning !== "") return `${draft.term} · ${draft.meaning}`;
+  const hasTerm = draft.term !== "";
+  const hasMeaning = draft.meaning !== "";
 
-  return "not implemented: EB";
+  if (hasTerm && hasMeaning) return `${draft.term} · ${draft.meaning}`;
+
+  if (hasTerm) return draft.term;
+
+  if (hasMeaning) return draft.meaning;
+
+  return <Badge>Empty</Badge>;
 }
 
 const SAVE_FAILED = "Could not save the words. Try again.";
