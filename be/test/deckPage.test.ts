@@ -325,4 +325,26 @@ describe("GET /decks sort", () => {
         expect(pages.flatMap(titles)).toEqual(["Verbs 0", "Verbs 2", "Verbs 3", "Verbs 1"])
       })
     ))
+
+  test("a cursor holds no internal id, and a garbage or other-sort cursor reads as the first page", () =>
+    rt.runPromise(
+      Effect.gen(function* () {
+        const ada = yield* signedIn("ADA00001")
+        const decks = yield* manyDecks(ada.id, 3)
+
+        const first = yield* list(ada.token, { limit: 2 })
+        const keyset = JSON.parse(Buffer.from(first.nextCursor!, "base64url").toString("utf8"))
+
+        expect(Object.keys(keyset)).not.toContain("id")
+        for (const deck of decks) {
+          expect(Object.values(keyset)).not.toContain(String(deck.deckId))
+        }
+
+        const garbage = yield* list(ada.token, { limit: 2, cursor: "not a cursor" })
+        const otherSort = yield* list(ada.token, { sort: "title", limit: 2, cursor: first.nextCursor! })
+
+        expect(titles(garbage)).toEqual(titles(first))
+        expect(titles(otherSort)).toEqual(["Deck 00", "Deck 01"])
+      })
+    ))
 })

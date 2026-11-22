@@ -11,6 +11,7 @@ import type {
   WordPage,
   WordQuery
 } from "../application/wordRepo.ts"
+import { decodeCursor, encodeCursor } from "../../shared/cursor.ts"
 
 /** A `words` row as selected below: `id::text`, columns aliased to camelCase. */
 const WordRow = Schema.Struct({
@@ -34,15 +35,11 @@ const OwnedWordRow = Schema.Struct({
   deckId: Schema.BigIntFromString
 })
 
-/** A cursor is `<created_at millis>:<id>` of the last word on the page: the keyset to continue after. */
-const CursorParts = Schema.Tuple([Schema.NumberFromString, Schema.BigIntFromString])
-
-const decodeCursor = (cursor: string | null) => {
-  return Option.map(Schema.decodeUnknownOption(CursorParts)((cursor ?? "").split(":")), ([createdAt, id]) => ({
-    createdAt,
-    id
-  }))
-}
+/** The sort values of the last word on a page: its creation time and its slug. */
+const WordKeyset = Schema.Struct({
+  createdAt: Schema.Number,
+  slug: Schema.String
+})
 
 const toWord = (row: typeof WordRow.Type): Word => {
   return {
@@ -129,13 +126,13 @@ export const WordRepoLive = Layer.effect(
         learnerId: Schema.BigInt,
         deckId: Schema.BigInt,
         q: Schema.NullOr(Schema.String),
-        after: Schema.NullOr(Schema.Struct({ createdAt: Schema.Number, id: Schema.BigInt })),
+        after: Schema.NullOr(WordKeyset),
         limit: Schema.Number
       }),
       Result: WordWithCardsRow,
       execute: ({ learnerId, deckId, q, after, limit }) => {
         const afterAt = after === null ? null : new Date(after.createdAt)
-        const afterId = after === null ? null : after.id
+        const afterSlug = after === null ? null : after.slug
 
         return sql`
           SELECT w.id::text AS id, w.slug, w.term, w.reading, w.meaning, w.example, w.notes,
@@ -153,7 +150,8 @@ export const WordRepoLive = Layer.effect(
                  OR strpos(w.reading_key, ${q}::text) > 0
                  OR strpos(w.meaning_key, ${q}::text) > 0)
             AND (${afterAt}::timestamptz IS NULL
-                 OR (w.created_at, w.id) > (${afterAt}::timestamptz, ${afterId}::bigint))
+                 OR (w.created_at, w.id)
+                    > (${afterAt}::timestamptz, (SELECT a.id FROM words a WHERE a.slug = ${afterSlug}::text)))
           ORDER BY w.created_at ASC, w.id ASC
           LIMIT ${limit}`
       }
@@ -284,13 +282,13 @@ export const WordRepoLive = Layer.effect(
             learnerId,
             deckId,
             q: query.q,
-            after: Option.getOrNull(decodeCursor(query.cursor)),
+            after: Option.getOrNull(decodeCursor(WordKeyset, query.cursor)),
             limit: query.limit + 1
           })
           const page = rows.slice(0, query.limit)
           const last = page.at(-1)
           const hasMore = rows.length > query.limit
-          const nextCursor = hasMore && last !== undefined ? `${DateTime.toEpochMillis(last.createdAt)}:${last.id}` : null
+          const nextCursor = hasMore && last !== undefined ? encodeCursor({ createdAt: DateTime.toEpochMillis(last.createdAt), slug: last.slug }) : null
 
           return { items: page.map(toWordWithCards), nextCursor } satisfies WordPage
         }).pipe(Effect.orDie),
