@@ -30,11 +30,11 @@ export const listHardWords = (query: {
       now
     )
 
-    return { ...page, summary: yield* summarize() }
-  })
+    // The summary counts every hard word, whatever the page and the drill filter.
+    const summary = yield* repo.hardWordsSummary(learnerId, now)
 
-/** Counts over every hard word of the Learner, whatever the page and the drill filter. */
-const summarize = (): Effect.Effect<HardWordsSummary, never, Needs> => Effect.die("not implemented: SB")
+    return { ...page, summary }
+  })
 
 /** Sets the hard flag of the Learner's card for the word and drill. NotFound when that card doesn't exist. */
 const setHard = (wordSlug: string, drill: Drill, isHard: boolean): Effect.Effect<void, CardNotFound, Needs> =>

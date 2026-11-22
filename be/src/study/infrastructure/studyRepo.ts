@@ -17,7 +17,7 @@ import {
   WordCard,
   WordSlug
 } from "@voca/contract"
-import type { HardWord } from "@voca/contract"
+import type { HardWord, HardWordsSummary } from "@voca/contract"
 import {
   StudyRepo,
   type AnswerRecord,
@@ -349,6 +349,56 @@ export const StudyRepoLive = Layer.effect(
       }
     })
 
+    // The same words as `hardWordRows`, counted whole: the words, and those with a hard card due at `now`.
+    const hardWordTotalsOf = SqlSchema.findOne({
+      Request: Schema.Struct({
+        learnerId: Schema.BigInt,
+        now: Schema.Number
+      }),
+      Result: Schema.Struct({ total: Count, dueToday: Count }),
+      execute: ({ learnerId, now }) => {
+        const nowAt = new Date(now)
+
+        return sql`
+          SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE due_now)::int AS "dueToday"
+          FROM (
+            SELECT bool_or(h.due <= ${nowAt}::timestamptz) AS due_now
+            FROM cards h
+              JOIN words w ON w.id = h.word_id
+              JOIN decks d ON d.id = w.deck_id
+            WHERE h.learner_id = ${learnerId} AND h.is_hard AND h.deleted_at IS NULL
+              AND w.deleted_at IS NULL AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL
+              AND NOT (d.snoozed_at IS NOT NULL
+                       AND (d.snoozed_until IS NULL OR d.snoozed_until > ${nowAt}::timestamptz))
+            GROUP BY w.id
+          ) hard_words`
+      }
+    })
+
+    // One row per drill with hard cards; the term language is that of the first word in list order.
+    const hardWordDrillsOf = SqlSchema.findAll({
+      Request: Schema.Struct({
+        learnerId: Schema.BigInt,
+        now: Schema.Number
+      }),
+      Result: Schema.Struct({ drill: Drill, count: Count, termLang: LangTag }),
+      execute: ({ learnerId, now }) => {
+        const nowAt = new Date(now)
+
+        return sql`
+          SELECT h.drill, COUNT(DISTINCT w.id)::int AS count,
+                 (array_agg(d.term_lang ORDER BY w.created_at ASC, w.id ASC))[1] AS "termLang"
+          FROM cards h
+            JOIN words w ON w.id = h.word_id
+            JOIN decks d ON d.id = w.deck_id
+          WHERE h.learner_id = ${learnerId} AND h.is_hard AND h.deleted_at IS NULL
+            AND w.deleted_at IS NULL AND d.owner_id = ${learnerId} AND d.deleted_at IS NULL
+            AND NOT (d.snoozed_at IS NOT NULL
+                     AND (d.snoozed_until IS NULL OR d.snoozed_until > ${nowAt}::timestamptz))
+          GROUP BY h.drill`
+      }
+    })
+
     // The UPDATE matches the Learner's own card only; a word or card that isn't theirs matches no row.
     const setHardOf = SqlSchema.findOneOption({
       Request: Schema.Struct({
@@ -496,6 +546,18 @@ export const StudyRepoLive = Layer.effect(
             hasMore && last !== undefined ? `${DateTime.toEpochMillis(last.createdAt)}:${last.id}` : null
 
           return { items: page.map(toHardWord), nextCursor } satisfies HardWordPage
+        }).pipe(Effect.orDie),
+
+      hardWordsSummary: (learnerId, now) =>
+        Effect.gen(function* () {
+          const epochMillis = DateTime.toEpochMillis(now)
+          const totals = yield* hardWordTotalsOf({ learnerId, now: epochMillis })
+          const rows = yield* hardWordDrillsOf({ learnerId, now: epochMillis })
+
+          // The contract orders the drills as the Drill literals do, not as SQL groups them.
+          const drills = [...rows].sort((a, b) => Drill.literals.indexOf(a.drill) - Drill.literals.indexOf(b.drill))
+
+          return { total: totals.total, dueToday: totals.dueToday, drills } satisfies HardWordsSummary
         }).pipe(Effect.orDie),
 
       setHard: (learnerId, wordSlug, drill, isHard) =>
