@@ -351,6 +351,7 @@ Extends FR-2, FR-20 and FR-26. A deck's words can't be scrolled, the Add word mo
 - Delete asks for confirmation naming how many decks will go, then deletes each selected deck as a single delete does (FR-2).
 - In the Add word modal, adjacent words are separated by one border line, never two stacked.
 - Clicking a word's header toggles it: a folded word opens, the open word folds. Every word can be folded at once.
+- A folded word with no term and no meaning shows an **Empty** badge instead of a summary. A word with only one of them shows that one alone, with no stray separator.
 - When the word list is taller than the modal, the list scrolls inside it and the "Add N words" button stays pinned at the bottom.
 - **Won't:** undo of a bulk delete, a restore UI.
 
@@ -361,13 +362,14 @@ Extends FR-2, FR-20 and FR-26. A deck's words can't be scrolled, the Add word mo
 - In the Add word modal, clicking the open word's header leaves 0 words open; clicking a folded word's header opens it.
 - With 50 words in the list, the 50th can be scrolled to and opened, and "Add N words" stays visible throughout.
 - Adjacent words never show a doubled border.
+- A folded word with no term and no meaning shows "Empty"; one with only a term shows just the term.
 
 ## FR-29 Import several decks at once (S)
 
 Extends FR-4. A Learner moving a collection into Voca has one file per deck; creating each deck and importing into it one at a time is tedious.
 
 - From the library, "Import decks" takes up to **20** CSV files at once, each in the FR-4 format and within its limits.
-- The Learner picks `termLang` and `meaningLang` once; every deck in the batch uses them. Nothing is detected from the files.
+- The Learner picks `termLang` and `meaningLang` once, with the same language picker as creating a deck: the offered languages, plus "Other…" for typing any language tag. Every deck in the batch uses them. Nothing is detected from the files.
 - Each file becomes a new deck named after the file without its extension (`N5 verbs.csv` → `N5 verbs`). A name already used by another deck is allowed.
 - A header-only file creates an empty deck.
 - Each file is all-or-nothing on its own (FR-4): an invalid file creates no deck, and the other files still do.
@@ -378,6 +380,7 @@ Extends FR-4. A Learner moving a collection into Voca has one file per deck; cre
 
 **Acceptance**
 - Importing 5 valid files creates 5 decks, each named after its file and with the chosen languages.
+- The Import decks language pickers offer the same languages as the create-deck modal, and "Other…" accepts a typed tag such as `yue`.
 - Progress updates without a reload while the Learner moves between pages, and reaches 5/5.
 - A file with an invalid row creates no deck and lists up to 100 errors with row numbers; the other files' decks are created.
 - A header-only file creates a deck with 0 words.
