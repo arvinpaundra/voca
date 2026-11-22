@@ -18,6 +18,11 @@ export function ImportDecksModal({ open, onClose }: ImportDecksModalProps) {
   return <ImportDecksDialog onClose={onClose} />;
 }
 
+/** True when the files together are over the batch's byte limit. */
+function overTotalLimit(_files: File[]): boolean {
+  throw new Error("not implemented: IF");
+}
+
 type LanguageErrors = { termLang: string | null; meaningLang: string | null };
 
 function ImportDecksDialog({ onClose }: { onClose: () => void }) {
@@ -31,6 +36,7 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
 
   const tooManyFiles = files.length > IMPORT_MAX_FILES;
+  const tooLarge = overTotalLimit(files);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
