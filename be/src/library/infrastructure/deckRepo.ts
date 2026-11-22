@@ -5,9 +5,12 @@ import type { Deck, DeckSnooze, PublicDeck, UpdateDeck } from "@voca/contract"
 import { DeckRepo } from "../application/deckRepo.ts"
 import type {
   DeckCounts,
+  DeckOrder,
   LiveDeck,
   NewDeck,
   OwnedDeck,
+  OwnedDeckPage,
+  OwnedDeckQuery,
   PublicDeckFound,
   PublicDeckPage,
   PublicDeckQuery,
@@ -39,11 +42,73 @@ const DeckRow = Schema.Struct({
   snoozedUntil: Schema.NullOr(Schema.DateTimeUtcFromDate)
 })
 
+/** A library row: the deck, its counts, and the lower-cased title the text sorts compare by. */
 const DeckSummaryRow = Schema.Struct({
   ...DeckRow.fields,
   wordCount: Count,
-  dueCount: Count
+  dueCount: Count,
+  sortTitle: Schema.String
 })
+
+type DeckSummaryRowType = typeof DeckSummaryRow.Type
+
+/** The sort values of the last deck on a page: a time or a count (`primary`), then the title and the id. */
+interface LibraryKeyset {
+  readonly primary: number
+  readonly title: string
+  readonly id: bigint
+}
+
+const LibraryKeysetRequest = Schema.NullOr(
+  Schema.Struct({ primary: Schema.Number, title: Schema.String, id: Schema.BigInt })
+)
+
+const DeckOrderRequest = Schema.Literals(["newest", "recent", "title", "words", "due"])
+
+/** The cursor is `<order>:<sort value>:<title>:<id>`. A title may hold colons, so the id is read from the end. */
+const LibraryCursorParts = Schema.Tuple([Schema.NumberFromString, Schema.String, Schema.BigIntFromString])
+
+/** An undecodable cursor, or one made for another order, reads as the first page. */
+const decodeLibraryCursor = (cursor: string | null, order: DeckOrder): Option.Option<LibraryKeyset> => {
+  const parts = (cursor ?? "").split(":")
+  const id = parts.pop() ?? ""
+  const [head = "", primary = "", ...title] = parts
+
+  if (head !== order) {
+    return Option.none()
+  }
+
+  return Option.map(
+    Schema.decodeUnknownOption(LibraryCursorParts)([primary, title.join(":"), id]),
+    ([sortValue, sortTitle, deckId]) => ({ primary: sortValue, title: sortTitle, id: deckId })
+  )
+}
+
+const encodeLibraryCursor = (order: DeckOrder, row: DeckSummaryRowType): string => {
+  const { primary, title } = sortKeyOf(order, row)
+
+  return `${order}:${primary}:${title}:${row.id}`
+}
+
+/** The value a row sorts by, as the cursor keeps it: a time, a count, or the title for the text sorts. */
+const sortKeyOf = (order: DeckOrder, row: DeckSummaryRowType): { primary: number; title: string } => {
+  switch (order) {
+    case "newest":
+      return { primary: DateTime.toEpochMillis(row.createdAt), title: "" }
+
+    case "recent":
+      return { primary: DateTime.toEpochMillis(row.updatedAt), title: "" }
+
+    case "title":
+      return { primary: 0, title: row.sortTitle }
+
+    case "words":
+      return { primary: row.wordCount, title: row.sortTitle }
+
+    case "due":
+      return { primary: row.dueCount, title: row.sortTitle }
+  }
+}
 
 const NewDeckRequest = Schema.Struct({
   learnerId: Schema.BigInt,
@@ -197,23 +262,107 @@ export const DeckRepoLive = Layer.effect(
         FROM decks WHERE owner_id = ${learnerId} AND slug = ${slug} AND deleted_at IS NULL`
     })
 
-    const listOwned = SqlSchema.findAll({
-      Request: Schema.Struct({ learnerId: Schema.BigInt, now: Schema.Number }),
+    /**
+     * The rows after the cursor's deck in the order, as a condition on `page`, the derived table of the live decks with
+     * their counts. Each order compares its sort value, then the title and the id, so no row repeats or is skipped.
+     */
+    const afterKeyset = (order: DeckOrder, after: LibraryKeyset | null) => {
+      if (after === null) {
+        return sql`TRUE`
+      }
+
+      const { primary, title, id } = after
+      const afterTitle = sql`(page."sortTitle" > ${title} OR (page."sortTitle" = ${title} AND page.id::bigint > ${id}))`
+
+      switch (order) {
+        case "newest":
+          return sql`(page."createdAt" < ${new Date(primary)}
+            OR (page."createdAt" = ${new Date(primary)} AND page.id::bigint < ${id}))`
+
+        case "recent":
+          return sql`(page."updatedAt" < ${new Date(primary)}
+            OR (page."updatedAt" = ${new Date(primary)} AND page.id::bigint < ${id}))`
+
+        case "title":
+          return afterTitle
+
+        case "words":
+          return sql`(page."wordCount" < ${primary} OR (page."wordCount" = ${primary} AND ${afterTitle}))`
+
+        case "due":
+          return sql`(page."dueCount" < ${primary} OR (page."dueCount" = ${primary} AND ${afterTitle}))`
+      }
+    }
+
+    const orderBy = (order: DeckOrder) => {
+      switch (order) {
+        case "newest":
+          return sql`page."createdAt" DESC, page.id::bigint DESC`
+
+        case "recent":
+          return sql`page."updatedAt" DESC, page.id::bigint DESC`
+
+        case "title":
+          return sql`page."sortTitle" ASC, page.id::bigint ASC`
+
+        case "words":
+          return sql`page."wordCount" DESC, page."sortTitle" ASC, page.id::bigint ASC`
+
+        case "due":
+          return sql`page."dueCount" DESC, page."sortTitle" ASC, page.id::bigint ASC`
+      }
+    }
+
+    // The counts sit in the derived table, so the keyset and the order can name them.
+    const listPageRows = SqlSchema.findAll({
+      Request: Schema.Struct({
+        learnerId: Schema.BigInt,
+        now: Schema.Number,
+        q: Schema.NullOr(Schema.String),
+        termLang: Schema.NullOr(Schema.String),
+        order: DeckOrderRequest,
+        after: LibraryKeysetRequest,
+        limit: Schema.Number
+      }),
       Result: DeckSummaryRow,
-      execute: ({ learnerId, now }) => sql`
-        SELECT d.id::text AS id, d.slug, d.title, d.description, d.term_lang AS "termLang",
-               d.meaning_lang AS "meaningLang", d.visibility, d.published_at AS "publishedAt",
-               d.fork_count AS "forkCount", d.created_at AS "createdAt", d.updated_at AS "updatedAt",
-               d.snoozed_at AS "snoozedAt", d.snoozed_until AS "snoozedUntil",
-               (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
-                  FROM decks p WHERE p.id = d.forked_from_id) AS "forkedFrom",
-               (SELECT count(*)::int FROM words w WHERE w.deck_id = d.id AND w.deleted_at IS NULL) AS "wordCount",
-               (SELECT count(*)::int FROM cards c JOIN words w ON w.id = c.word_id
-                 WHERE w.deck_id = d.id AND w.deleted_at IS NULL AND c.learner_id = d.owner_id
-                   AND c.deleted_at IS NULL AND c.due <= ${new Date(now)}) AS "dueCount"
-        FROM decks d
-        WHERE d.owner_id = ${learnerId} AND d.deleted_at IS NULL
-        ORDER BY d.created_at DESC, d.id DESC`
+      execute: ({ learnerId, now, q, termLang, order, after, limit }) => sql`
+        SELECT page.* FROM (
+          SELECT d.id::text AS id, d.slug, d.title, d.description, d.term_lang AS "termLang",
+                 d.meaning_lang AS "meaningLang", d.visibility, d.published_at AS "publishedAt",
+                 d.fork_count AS "forkCount", d.created_at AS "createdAt", d.updated_at AS "updatedAt",
+                 d.snoozed_at AS "snoozedAt", d.snoozed_until AS "snoozedUntil",
+                 (SELECT json_build_object('slug', p.slug, 'title', p.title, 'deleted', p.deleted_at IS NOT NULL)
+                    FROM decks p WHERE p.id = d.forked_from_id) AS "forkedFrom",
+                 lower(d.title) AS "sortTitle",
+                 (SELECT count(*)::int FROM words w WHERE w.deck_id = d.id AND w.deleted_at IS NULL) AS "wordCount",
+                 (SELECT count(*)::int FROM cards c JOIN words w ON w.id = c.word_id
+                   WHERE w.deck_id = d.id AND w.deleted_at IS NULL AND c.learner_id = d.owner_id
+                     AND c.deleted_at IS NULL AND c.due <= ${new Date(now)}) AS "dueCount"
+          FROM decks d
+          WHERE d.owner_id = ${learnerId} AND d.deleted_at IS NULL
+            AND (${q}::text IS NULL OR strpos(lower(d.title), ${q}::text) > 0)
+            AND (${termLang}::text IS NULL OR d.term_lang = ${termLang}::text)
+        ) AS page
+        WHERE ${afterKeyset(order, after)}
+        ORDER BY ${orderBy(order)}
+        LIMIT ${limit}`
+    })
+
+    // The whole library, whatever the query: the count of live decks and their distinct term languages.
+    const libraryTotal = SqlSchema.findOne({
+      Request: Schema.BigInt,
+      Result: Schema.Struct({ total: Count }),
+      execute: (learnerId) => sql`
+        SELECT count(*)::int AS total FROM decks WHERE owner_id = ${learnerId} AND deleted_at IS NULL`
+    })
+
+    const libraryTermLangs = SqlSchema.findAll({
+      Request: Schema.BigInt,
+      Result: Schema.Struct({ termLang: LangTag }),
+      execute: (learnerId) => sql`
+        SELECT DISTINCT term_lang AS "termLang" FROM decks
+        WHERE owner_id = ${learnerId} AND deleted_at IS NULL
+        ORDER BY term_lang`
     })
 
     // The same count expressions as `listOwned`, for one deck.
@@ -363,13 +512,33 @@ export const DeckRepoLive = Layer.effect(
     })
 
     return DeckRepo.of({
-      listOwned: (learnerId, now) =>
-        listOwned({ learnerId, now }).pipe(
-          Effect.map((rows) =>
-            rows.map((row) => ({ ...toDeck(row, now), wordCount: row.wordCount, dueCount: row.dueCount }))
-          ),
-          Effect.orDie
-        ),
+      listPage: (learnerId, query: OwnedDeckQuery, now) =>
+        Effect.gen(function* () {
+          // One extra row tells whether a next page exists.
+          const rows = yield* listPageRows({
+            learnerId,
+            now,
+            q: query.q,
+            termLang: query.termLang,
+            order: query.order,
+            after: Option.getOrNull(decodeLibraryCursor(query.cursor, query.order)),
+            limit: query.limit + 1
+          })
+          const page = rows.slice(0, query.limit)
+          const last = page.at(-1)
+          const hasMore = rows.length > query.limit
+          const nextCursor =
+            hasMore && last !== undefined ? encodeLibraryCursor(query.order, last) : null
+          const total = yield* libraryTotal(learnerId)
+          const termLangs = yield* libraryTermLangs(learnerId)
+
+          return {
+            items: page.map((row) => ({ ...toDeck(row, now), wordCount: row.wordCount, dueCount: row.dueCount })),
+            nextCursor,
+            total: total.total,
+            termLangs: termLangs.map((row) => row.termLang)
+          } satisfies OwnedDeckPage
+        }).pipe(Effect.orDie),
 
       findOwned: (learnerId, slug, now) =>
         findOwned({ learnerId, slug }).pipe(

@@ -1,6 +1,6 @@
 import type { DateTime, Effect, Option } from "effect"
 import { Context } from "effect"
-import type { Drill, DrillSet, HardWord, LangTag, Mode, SessionSlug } from "@voca/contract"
+import type { Drill, DrillSet, HardWord, HardWordsSummary, LangTag, Mode, SessionSlug } from "@voca/contract"
 import type { StudyWord } from "../domain/words.ts"
 
 /** A hard Card of the Learner, with the deck of its word: the pool its session question draws options from. */
@@ -158,6 +158,8 @@ export class StudyRepo extends Context.Service<StudyRepo, {
   hardCards(learnerId: bigint, drills: ReadonlyArray<Drill>, now: DateTime.Utc): Effect.Effect<ReadonlyArray<HardCard>>
   /** The Learner's hard words, keyset-paged; each carries its hard cards and its deck. Snoozed decks at `now` are out. */
   hardWords(learnerId: bigint, query: HardWordQuery, now: DateTime.Utc): Effect.Effect<HardWordPage>
+  /** Counts over the same words as `hardWords` at `now`, whatever the page and the drill filter. */
+  hardWordsSummary(learnerId: bigint, now: DateTime.Utc): Effect.Effect<HardWordsSummary>
   /** Sets or clears the hard flag of the Learner's card; false when there is no such card. */
   setHard(learnerId: bigint, wordSlug: string, drill: Drill, isHard: boolean): Effect.Effect<boolean>
   /** The deck a word lives in, deleted or not: a question keeps the pool it was asked from. */
