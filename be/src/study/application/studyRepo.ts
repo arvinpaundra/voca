@@ -15,6 +15,7 @@ export interface HardCard {
 /** `drill` filters the words to those with a hard card in it; `cursor` continues after the last word of a page. */
 export interface HardWordQuery {
   readonly drill: Drill | null
+  readonly q: string | null
   readonly cursor: string | null
   readonly limit: number
 }

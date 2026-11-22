@@ -2,6 +2,7 @@ import { DateTime, Effect } from "effect"
 import { CurrentLearner } from "@voca/contract"
 import type { Drill, HardWordsSummary } from "@voca/contract"
 import { CardNotFound } from "../domain/errors.ts"
+import { searchKey } from "../domain/text.ts"
 import { StudyRepo, type HardWordPage } from "./studyRepo.ts"
 
 type Needs = CurrentLearner | StudyRepo
@@ -11,6 +12,7 @@ const DEFAULT_PAGE_SIZE = 50
 /** The Learner's hard words across decks, optionally those hard in one drill. */
 export const listHardWords = (query: {
   readonly drill?: Drill
+  readonly q?: string
   readonly cursor?: string
   readonly limit?: number
 }): Effect.Effect<HardWordPage & { readonly summary: HardWordsSummary }, never, Needs> =>
@@ -24,6 +26,7 @@ export const listHardWords = (query: {
       learnerId,
       {
         drill: query.drill ?? null,
+        q: query.q === undefined ? null : searchKey(query.q),
         cursor: query.cursor ?? null,
         limit: query.limit ?? DEFAULT_PAGE_SIZE
       },
