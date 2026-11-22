@@ -40,7 +40,7 @@ describe("POST /decks/delete", () => {
         const result = yield* deleteDecks(token, [a.deckSlug, b.deckSlug, c.deckSlug])
 
         expect(result).toEqual({ failed: [] })
-        expect(yield* call((c) => c.library.listDecks(), token)).toEqual([])
+        expect(yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), token)).toEqual([])
         expect((yield* call((c) => c.community.list({ query: {} }), token)).items).toEqual([])
         expect(yield* liveRows("decks")).toBe(0)
         expect(yield* liveRows("words")).toBe(0)
@@ -56,7 +56,7 @@ describe("POST /decks/delete", () => {
 
         yield* deleteDecks(token, [a.deckSlug])
 
-        const left = yield* call((c) => c.library.listDecks(), token)
+        const left = yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), token)
         expect(left.map((deck) => deck.title)).toEqual(["Kept"])
       })
     ))
@@ -74,9 +74,9 @@ describe("POST /decks/delete", () => {
         const result = yield* deleteDecks(ada.token, [mine.deckSlug, gone.deckSlug, bobs.deckSlug, "ZZZZZZZZZZ"])
 
         expect([...result.failed].map(String).sort()).toEqual([gone.deckSlug, bobs.deckSlug, "ZZZZZZZZZZ"].sort())
-        expect(yield* call((c) => c.library.listDecks(), ada.token)).toEqual([])
+        expect(yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), ada.token)).toEqual([])
 
-        const bobsLeft = yield* call((c) => c.library.listDecks(), bob.token)
+        const bobsLeft = yield* call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), bob.token)
         expect(bobsLeft.map((deck) => deck.title)).toEqual(["Bob's"])
       })
     ))

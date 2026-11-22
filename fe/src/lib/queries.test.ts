@@ -70,7 +70,7 @@ describe("queries", () => {
     ["insight.learnerStats", learnerStatsQuery(), ["insight", "learnerStats"], undefined],
     ["insight.activity", activityQuery(undefined), ["insight", "activity", "current"], { query: {} }],
     ["insight.activity", activityQuery("2026-10" as never), ["insight", "activity", "2026-10"], { query: { month: "2026-10" } }],
-    ["library.listDecks", decksQuery(), ["library", "decks"], undefined],
+    ["library.listDecks", decksQuery(), ["library", "decks"], { query: {} }],
     ["library.getDeck", deckQuery(DECK), ["library", "deck", DECK], { params: { deckSlug: DECK } }],
     ["insight.deckStats", deckStatsQuery(DECK), ["insight", "deckStats", DECK], { params: { deckSlug: DECK } }],
     ["insight.wordStats", wordStatsQuery(WORD), ["insight", "wordStats", WORD], { params: { wordSlug: WORD } }],

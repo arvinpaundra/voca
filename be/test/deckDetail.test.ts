@@ -15,7 +15,7 @@ beforeEach(() => rt.runPromise(Effect.andThen(resetDb, at("2026-11-14T00:00:00Z"
 const getDeck = (token: string, deckSlug: string) =>
   call((c) => c.library.getDeck({ params: { deckSlug: deckSlug as never } }), token)
 
-const listDecks = (token: string) => call((c) => c.library.listDecks(), token)
+const listDecks = (token: string) => call((c) => c.library.listDecks({ query: {} }).pipe(Effect.map((page) => page.items)), token)
 
 describe("GET /decks/:deckSlug counts", () => {
   test("word and due counts match the decks list; deleted words don't count", async () => {
