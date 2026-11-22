@@ -6,11 +6,15 @@ import { IMPORT_MAX_BYTES } from "./library.ts"
 import { Count, DeckTitle, Instant, LangTag } from "./primitives.ts"
 import { DeckSlug, ImportBatchSlug } from "./slug.ts"
 
-export const IMPORT_MAX_FILES = 20
+export const IMPORT_MAX_FILES = 50
+
+/** All the files of one batch together; checked on disk sizes before any file is read into memory. */
+export const IMPORT_MAX_TOTAL_BYTES = 50 * 1024 * 1024
 
 /**
  * Every file becomes a new deck in these languages. More than `IMPORT_MAX_FILES` files fail the Schema (400), so
- * nothing is stored; `maxParts` leaves room for that check instead of cutting the upload short.
+ * nothing is stored; more than `IMPORT_MAX_TOTAL_BYTES` bytes in all is refused by the handler (413).
+ * `maxParts` leaves room for the count check instead of cutting the upload short.
  */
 export const ImportDecks = Schema.Struct({
   termLang: LangTag,

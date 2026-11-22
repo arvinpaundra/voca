@@ -45,7 +45,7 @@ multipart file ─▶ bytes ─▶ TextDecoder("utf-8", {fatal:true})   ── i
 
 ## Several decks at once (FR-29, ADR 59)
 
-A single-deck import stays synchronous, as above. A batch of up to 20 files would hold a request for tens of seconds, so it runs on **beanstalkd**:
+A single-deck import stays synchronous, as above. A batch of up to 50 files would hold a request for tens of seconds, so it runs on **beanstalkd**:
 
 ```
 POST /imports (multipart) ─▶ one transaction: import_batches row + one import_files row per file (bytes in `content`)
@@ -59,4 +59,4 @@ worker fiber (in the API) ─▶ reserve ─▶ mark the file running, publish {
 - **Each file is all-or-nothing on its own.** A failed file creates no deck; the others still do.
 - **At least once.** A job comes back when its TTR expires (the pod died mid-file). The worker skips a file that is already `done` or `failed`, so it imports once. A defect buries the job.
 - **Progress lives in Postgres**, so it survives a reload and a sign-out. The SSE events only say that a batch changed; the frontend refetches `GET /imports`.
-- **Memory:** one request carries up to 20 × 5 MB. The route's rate limit bounds how many run at once.
+- **Memory:** one request carries up to 50 MB in all (50 files, each ≤ 5 MB). The handler sums the files' sizes on disk and refuses the batch (413) before reading any file into memory; the bytes and their bytea parameters peak near 150 MB. The route's rate limit bounds how many run at once.
