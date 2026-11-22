@@ -25,6 +25,9 @@ spec:
         # Changes on every run, so a re-run with new secrets restarts the pod even on the same image.
         voca/release: "RELEASE"
     spec:
+      # Kubernetes would inject BEANSTALKD_PORT=tcp://<ip>:11300 for the beanstalkd Service, which breaks our own
+      # BEANSTALKD_PORT (an int) and crashes the API at boot. The API finds services by DNS, never by these vars.
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
