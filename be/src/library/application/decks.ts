@@ -12,6 +12,7 @@ import type {
 } from "@voca/contract"
 import { DeckNotFound, TermLangLocked } from "../domain/errors.ts"
 import { newSlug } from "../domain/slug.ts"
+import { normalizeKey } from "../domain/text.ts"
 import { Transaction } from "../../shared/transaction.ts"
 import { DeckRepo } from "./deckRepo.ts"
 import { WordRepo } from "./wordRepo.ts"
@@ -38,8 +39,34 @@ export interface DeckListQuery {
   readonly limit?: number
 }
 
-export const listDecks = (_query: DeckListQuery): Effect.Effect<DeckPage, never, Needs> =>
-  Effect.die("not implemented: LB")
+const LIBRARY_PAGE_SIZE = 50
+
+/** The search as the library matches it: normalized, and an empty one means no search. */
+const searchOf = (q: string | undefined): string | null => {
+  const key = normalizeKey(q ?? "")
+
+  return key === "" ? null : key
+}
+
+/** One page of the Learner's decks, with the whole library's total and term languages. Newest created first by default. */
+export const listDecks = (query: DeckListQuery): Effect.Effect<DeckPage, never, Needs> =>
+  Effect.gen(function* () {
+    const { id } = yield* CurrentLearner
+    const decks = yield* DeckRepo
+    const now = yield* Clock.currentTimeMillis
+
+    return yield* decks.listPage(
+      id,
+      {
+        q: searchOf(query.q),
+        termLang: query.termLang ?? null,
+        order: query.sort ?? "newest",
+        cursor: query.cursor ?? null,
+        limit: query.limit ?? LIBRARY_PAGE_SIZE
+      },
+      now
+    )
+  })
 
 export const createDeck = (input: typeof CreateDeck.Type): Effect.Effect<Deck, never, Needs> =>
   Effect.gen(function* () {

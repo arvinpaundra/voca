@@ -1,6 +1,6 @@
 import type { Effect, Option } from "effect"
 import { Context } from "effect"
-import type { Deck, DeckSummary, PublicDeck, UpdateDeck } from "@voca/contract"
+import type { Deck, DeckSort, DeckSummary, PublicDeck, UpdateDeck } from "@voca/contract"
 
 /** A deck the Learner owns, with its internal id for later calls. */
 export interface OwnedDeck {
@@ -65,11 +65,14 @@ export interface PublicDeckPage {
  * Deleted decks are invisible everywhere. Infrastructure failures are defects.
  */
 export class DeckRepo extends Context.Service<DeckRepo, {
-  /** The owner's live decks, newest first; counts are taken at `now` (epoch millis). */
-  /** Every Deck returned carries its snooze as of `now` (epoch millis): a snooze whose end has passed reads as none. */
-  listOwned(learnerId: bigint, now: number): Effect.Effect<ReadonlyArray<DeckSummary>>
+  /**
+   * One page of the owner's live decks in the query's order, with the library's total and term languages. Counts are
+   * taken at `now` (epoch millis). Every Deck returned carries its snooze as of `now`: a snooze whose end has passed
+   * reads as none.
+   */
+  listPage(learnerId: bigint, query: OwnedDeckQuery, now: number): Effect.Effect<OwnedDeckPage>
   findOwned(learnerId: bigint, slug: string, now: number): Effect.Effect<Option.Option<OwnedDeck>>
-  /** The live word count and the owner's due card count of one deck, the same numbers `listOwned` shows; `now` is epoch millis. */
+  /** The live word count and the owner's due card count of one deck, the same numbers the library page shows; `now` is epoch millis. */
   counts(deckId: bigint, learnerId: bigint, now: number): Effect.Effect<DeckCounts>
   insert(learnerId: bigint, deck: NewDeck): Effect.Effect<OwnedDeck>
   /** Changes only the fields `patch` sends, and sets `updatedAt` (epoch millis). */
@@ -94,3 +97,23 @@ export class DeckRepo extends Context.Service<DeckRepo, {
   /** A live deck by slug, public or private; None when it is deleted or missing. */
   findLive(deckSlug: string): Effect.Effect<Option.Option<LiveDeck>>
 }>()("voca/library/DeckRepo") {}
+
+/** The library's order: "newest" is the default; the others are the `DeckSort` values. */
+export type DeckOrder = DeckSort | "newest"
+
+/** `q` is already normalized and `termLang` is an exact tag. `limit` is the page size, without the extra row. */
+export interface OwnedDeckQuery {
+  readonly q: string | null
+  readonly termLang: string | null
+  readonly order: DeckOrder
+  readonly cursor: string | null
+  readonly limit: number
+}
+
+/** `total` and `termLangs` describe the whole library: they ignore the query and the page. */
+export interface OwnedDeckPage {
+  readonly items: ReadonlyArray<DeckSummary>
+  readonly nextCursor: string | null
+  readonly total: number
+  readonly termLangs: ReadonlyArray<string>
+}
