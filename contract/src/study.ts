@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
 import { DeckTooSmall, DrillNotAvailable, NothingToStudy, NotFound, QuestionAlreadyAnswered, SessionNotActive } from "./errors.ts"
-import { Count, DeckTitle, Drill, Instant, LangTag, Mode, Page, PageQuery, Reading, SessionSize } from "./primitives.ts"
+import { Count, DeckTitle, Drill, Instant, LangTag, Mode, Page, PageQuery, Reading, SearchQuery, SessionSize } from "./primitives.ts"
 import { DeckDrill, WordWithCards } from "./library.ts"
 import { DeckSlug, SessionSlug, WordSlug } from "./slug.ts"
 
@@ -124,7 +124,7 @@ export class StudyGroup extends HttpApiGroup.make("study").add(
   }),
   HttpApiEndpoint.post("abandon", "/sessions/:sessionSlug/abandon", { params: sessionParams, error: NotFound }),
   HttpApiEndpoint.get("hardWords", "/hard-words", {
-    query: { drill: Schema.optionalKey(Drill), ...PageQuery },
+    query: { drill: Schema.optionalKey(Drill), q: Schema.optionalKey(SearchQuery), ...PageQuery },
     success: HardWordPage
   }),
   /** NotFound when the word has no Card in that drill yet (never studied there). */
