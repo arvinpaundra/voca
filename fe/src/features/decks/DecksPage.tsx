@@ -23,6 +23,7 @@ import { DeleteDecksModal } from "./DeleteDecksModal";
 import { SelectionBar } from "./SelectionBar";
 import { SnoozeModal } from "./SnoozeModal";
 import type { DeckSort } from "./deckList";
+import { useDebouncedSearch } from "../../lib/useDebouncedSearch";
 
 type FormTarget = { kind: "create" } | { kind: "edit"; deck: DeckSummary };
 
@@ -37,6 +38,7 @@ const sortOptions: readonly { value: DeckSort; label: string }[] = [
 const SEARCH_DELAY_MS = 250;
 
 export function DecksPage() {
+  useDebouncedSearch();
   // The search box shows what is typed; the list asks the server for what was typed a moment ago.
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");

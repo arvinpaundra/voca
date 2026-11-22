@@ -20,6 +20,7 @@ import {
 } from "./discoverModel";
 import { PublicDeckRows } from "./PublicDeckRows";
 import { forkDeck, forkMessage } from "./fork";
+import { useDebouncedSearch } from "../../lib/useDebouncedSearch";
 
 const SEARCH_DELAY_MS = 300;
 
@@ -31,6 +32,7 @@ const sortOptions: readonly { value: CommunitySort; label: string }[] = [
 const initialFilter: DiscoverFilter = { q: "", termLang: null, sort: "new" };
 
 export function DiscoverPage() {
+  useDebouncedSearch();
   const [searchInput, setSearchInput] = useState("");
   const [filter, setFilter] = useState<DiscoverFilter>(initialFilter);
   const [knownLangs, setKnownLangs] = useState<readonly string[]>([]);

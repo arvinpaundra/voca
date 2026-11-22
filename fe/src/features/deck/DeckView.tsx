@@ -31,6 +31,7 @@ import { matchesWordFilter, type WordFilter } from "./wordFilter";
 import { WordDetailsModal } from "./WordDetailsModal";
 import { WordModal } from "./WordModal";
 import { WordList } from "./WordList";
+import { useDebouncedSearch } from "../../lib/useDebouncedSearch";
 
 type DeckViewProps = {
   deck: DeckDetail;
@@ -45,6 +46,7 @@ const searchQuery = (query: string) => (query === "" ? {} : { q: query });
 const refreshCache = () => void queryClient.invalidateQueries();
 
 export function DeckView({ deck }: DeckViewProps) {
+  useDebouncedSearch();
   const labels = wordLabels(deck.termLang);
 
   const [searchInput, setSearchInput] = useState("");
