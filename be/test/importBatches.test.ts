@@ -201,7 +201,7 @@ describe("POST /imports", () => {
     rt.runPromise(
       Effect.gen(function* () {
         const token = yield* signedIn("ABCDEFGH")
-        // Each file is 4.8 MiB, under the 5 MB limit; eleven of them are 52.8 MiB together.
+        // Each file is 4.8 MiB, under the 5 MB limit; eleven of them come to 52.8 MiB.
         const big = "term,meaning\n" + "x".repeat(Math.floor(4.8 * 1024 * 1024))
         const files = Array.from({ length: 11 }, (_, i): CsvFile => [`deck ${i}.csv`, big])
 
