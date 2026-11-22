@@ -113,9 +113,9 @@ describe("importProgress", () => {
 })
 
 describe("startImport", () => {
-  test("more than 20 files reject before any request", async () => {
+  test("more than 50 files reject before any request", async () => {
     const calls = fakeSession()
-    const files = Array.from({ length: 21 }, (_, i) => csv(`deck ${i}.csv`))
+    const files = Array.from({ length: 51 }, (_, i) => csv(`deck ${i}.csv`))
 
     const outcome = await startImport({ files, termLang: "ja", meaningLang: "en" }).then(
       () => "resolved",

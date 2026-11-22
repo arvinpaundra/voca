@@ -45,7 +45,7 @@ export interface StartImport {
   readonly meaningLang: string
 }
 
-/** Uploads the batch. More than 20 files reject before any request. */
+/** Uploads the batch. More than 50 files reject before any request. */
 export const startImport = ({ files, termLang, meaningLang }: StartImport): Promise<ImportBatch> => {
   if (files.length > IMPORT_MAX_FILES) {
     return Promise.reject(new Error(`An import takes at most ${IMPORT_MAX_FILES} files`))
