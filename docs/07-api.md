@@ -57,7 +57,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | GET | `/imports` | → `ImportBatch[]`: not dismissed, newest first |
 | DELETE | `/imports/:batchSlug` | → `204`; `409 ImportRunning` while a file is pending or running |
 | POST | `/imports/events/ticket` | → `{ticket}`: single use, valid 30 s |
-| GET | `/imports/events` | `?ticket` (no bearer) → `text/event-stream` of `{batch, status: running\|finished}`; `401` for an unknown, used or expired ticket |
+| GET | `/imports/events` | `?ticket` (no bearer) → `text/event-stream` of `{batch, status: running\|finished}` and, on connect and every 20 s, `{status: ping}` (ADR 64); `401` for an unknown, used or expired ticket |
 
 `ImportBatch` is `{slug, termLang, meaningLang, createdAt, files: ImportFile[]}` in upload order; `ImportFile` is `{name, status: pending|running|done|failed, deck: {slug, title} | null, imported, skippedDuplicates, errors (≤100), totalErrors}`.
 

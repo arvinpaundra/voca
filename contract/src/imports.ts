@@ -56,6 +56,16 @@ export const ImportEvent = Schema.Struct({
 })
 export type ImportEvent = typeof ImportEvent.Type
 
+/**
+ * Sent on connect and every 20 s while the stream is open, so a proxy never sees it idle (Cloudflare answers 524
+ * after 100 s without a byte). The client ignores it.
+ */
+export const ImportPing = Schema.Struct({ status: Schema.Literal("ping") })
+export type ImportPing = typeof ImportPing.Type
+
+export const ImportStreamEvent = Schema.Union([ImportEvent, ImportPing])
+export type ImportStreamEvent = typeof ImportStreamEvent.Type
+
 /** Single use, short-lived: lets the browser's `EventSource`, which can't send a bearer header, open the stream. */
 export const StreamTicket = Schema.Struct({ ticket: Schema.String })
 export type StreamTicket = typeof StreamTicket.Type
@@ -81,7 +91,7 @@ export class ImportsGroup extends HttpApiGroup.make("imports").add(
 export class ImportEventsGroup extends HttpApiGroup.make("importEvents").add(
   HttpApiEndpoint.get("importEvents", "/imports/events", {
     query: { ticket: Schema.String },
-    success: HttpApiSchema.StreamSse({ data: ImportEvent }),
+    success: HttpApiSchema.StreamSse({ data: ImportStreamEvent }),
     error: Unauthorized
   })
 ) {}

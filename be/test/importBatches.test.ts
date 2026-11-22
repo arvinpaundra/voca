@@ -322,7 +322,7 @@ describe("import events", () => {
         )
         yield* Effect.promise(() => Bun.sleep(200))
         const started = yield* upload(token, [["A.csv", csv(1)], ["B.csv", csv(1, "名")]])
-        const collected = Array.from(yield* Fiber.join(seen))
+        const collected = Array.from(yield* Fiber.join(seen)).filter((event) => event.status !== "ping")
 
         expect(collected.every((event) => event.batch === started.slug)).toBe(true)
         expect(collected.some((event) => event.status === "running")).toBe(true)
