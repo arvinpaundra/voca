@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
-import type { Cursor as CursorSchema, DeckSlug, WordSlug } from "@voca/contract"
+import type { Cursor as CursorSchema, DeckSlug, DeckSort, Drill, WordSlug } from "@voca/contract"
 import type { ApiClient } from "./api.ts"
 import { session } from "./appSession.ts"
 import { orReject } from "./queryClient.ts"
@@ -17,6 +17,16 @@ export type ActivityMonth = NonNullable<QueryOf<ApiClient["insight"]["activity"]
 type Cursor = typeof CursorSchema.Type
 
 const FIVE_MINUTES = 5 * 60_000
+
+const notImplemented = (): never => {
+  throw new Error("not implemented: PF")
+}
+
+// The library's filter as the server takes it: an empty search and "all languages" are left out.
+export type DeckListFilter = { readonly q?: string; readonly termLang?: string; readonly sort?: DeckSort }
+
+// The Hard words filter: one drill, or none for every drill.
+export type HardWordsFilter = { readonly drill?: Drill }
 
 const firstPage = undefined as Cursor | undefined
 
@@ -53,11 +63,41 @@ export const activityQuery = (month: ActivityMonth) =>
       orReject(session.call((client) => client.insight.activity({ query: month === undefined ? {} : { month } })))
   })
 
-export const decksQuery = () =>
-  queryOptions({
+// To be removed once the library and the dashboard read `deckListQuery` and `dueDecksQuery`.
+export const decksQuery = () => {
+  notImplemented()
+
+  return queryOptions({
     queryKey: ["library", "decks"],
     queryFn: () => orReject(session.call((client) => client.library.listDecks({ query: {} }))).then((page) => page.items)
   })
+}
+
+// The library: 15 decks a page for a filter.
+export const deckListQuery = (filter: DeckListFilter) => {
+  notImplemented()
+
+  return infiniteQueryOptions({
+    queryKey: ["library", "decks", filter],
+    queryFn: ({ pageParam }) =>
+      orReject(session.call((client) => client.library.listDecks({ query: withCursor(filter, pageParam) }))),
+    initialPageParam: firstPage,
+    getNextPageParam: nextPage
+  })
+}
+
+// The dashboard's decks: the most due first, 200 a page.
+export const dueDecksQuery = () => {
+  notImplemented()
+
+  return infiniteQueryOptions({
+    queryKey: ["library", "dueDecks"],
+    queryFn: ({ pageParam }) =>
+      orReject(session.call((client) => client.library.listDecks({ query: withCursor({}, pageParam) }))),
+    initialPageParam: firstPage,
+    getNextPageParam: nextPage
+  })
+}
 
 export const deckQuery = (deckSlug: DeckSlug) =>
   queryOptions({
@@ -71,8 +111,10 @@ export const deckStatsQuery = (deckSlug: DeckSlug) =>
     queryFn: () => orReject(session.call((client) => client.insight.deckStats({ params: { deckSlug } })))
   })
 
-export const wordsQuery = (deckSlug: DeckSlug, filter: WordsFilter) =>
-  infiniteQueryOptions({
+export const wordsQuery = (deckSlug: DeckSlug, filter: WordsFilter) => {
+  notImplemented()
+
+  return infiniteQueryOptions({
     queryKey: ["library", "words", deckSlug, filter],
     queryFn: ({ pageParam }) =>
       orReject(
@@ -83,6 +125,7 @@ export const wordsQuery = (deckSlug: DeckSlug, filter: WordsFilter) =>
     initialPageParam: firstPage,
     getNextPageParam: nextPage
   })
+}
 
 export const wordStatsQuery = (wordSlug: WordSlug) =>
   queryOptions({
@@ -96,14 +139,17 @@ export const deckDrillsQuery = (deckSlug: DeckSlug) =>
     queryFn: () => orReject(session.call((client) => client.study.deckDrills({ params: { deckSlug } })))
   })
 
-export const hardWordsQuery = () =>
-  infiniteQueryOptions({
-    queryKey: ["study", "hardWords"],
+export const hardWordsQuery = (filter: HardWordsFilter = {}) => {
+  notImplemented()
+
+  return infiniteQueryOptions({
+    queryKey: ["study", "hardWords", filter],
     queryFn: ({ pageParam }) =>
-      orReject(session.call((client) => client.study.hardWords({ query: withCursor({}, pageParam) }))),
+      orReject(session.call((client) => client.study.hardWords({ query: withCursor(filter, pageParam) }))),
     initialPageParam: firstPage,
     getNextPageParam: nextPage
   })
+}
 
 // A live session changes with every answer: always fetched, never served from the cache.
 export const activeSessionQuery = () =>
@@ -114,14 +160,17 @@ export const activeSessionQuery = () =>
     gcTime: 0
   })
 
-export const communityQuery = (filter: CommunityFilter) =>
-  infiniteQueryOptions({
+export const communityQuery = (filter: CommunityFilter) => {
+  notImplemented()
+
+  return infiniteQueryOptions({
     queryKey: ["community", "decks", filter],
     queryFn: ({ pageParam }) =>
       orReject(session.call((client) => client.community.list({ query: withCursor(filter, pageParam) }))),
     initialPageParam: firstPage,
     getNextPageParam: nextPage
   })
+}
 
 export const publicDeckQuery = (deckSlug: DeckSlug) =>
   queryOptions({

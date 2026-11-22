@@ -9,8 +9,9 @@ import {
   communityQuery,
   deckDrillsQuery,
   deckQuery,
-  decksQuery,
+  deckListQuery,
   deckStatsQuery,
+  dueDecksQuery,
   hardWordsQuery,
   learnerStatsQuery,
   meQuery,
@@ -70,7 +71,6 @@ describe("queries", () => {
     ["insight.learnerStats", learnerStatsQuery(), ["insight", "learnerStats"], undefined],
     ["insight.activity", activityQuery(undefined), ["insight", "activity", "current"], { query: {} }],
     ["insight.activity", activityQuery("2026-10" as never), ["insight", "activity", "2026-10"], { query: { month: "2026-10" } }],
-    ["library.listDecks", decksQuery(), ["library", "decks"], { query: {} }],
     ["library.getDeck", deckQuery(DECK), ["library", "deck", DECK], { params: { deckSlug: DECK } }],
     ["insight.deckStats", deckStatsQuery(DECK), ["insight", "deckStats", DECK], { params: { deckSlug: DECK } }],
     ["insight.wordStats", wordStatsQuery(WORD), ["insight", "wordStats", WORD], { params: { wordSlug: WORD } }],
@@ -97,19 +97,71 @@ describe("queries", () => {
     expect(activeSessionQuery().gcTime).toBe(0)
   })
 
+  // [endpoint, options, key, first request, next request]: every list asks for its page size, then follows the cursor.
   test.each([
-    ["library.listWords", wordsQuery(DECK, { q: "eat" } as never), { params: { deckSlug: DECK }, query: { q: "eat", cursor: "C1" } }],
-    ["study.hardWords", hardWordsQuery(), { query: { cursor: "C1" } }],
-    ["community.list", communityQuery({ sort: "new" } as never), { query: { sort: "new", cursor: "C1" } }]
-  ] as const)("%s pages on with the last page's cursor", async (endpoint, options, nextRequest) => {
+    [
+      "library.listDecks",
+      () => deckListQuery({}),
+      ["library", "decks", {}],
+      { query: { limit: 15 } },
+      { query: { limit: 15, cursor: "C1" } }
+    ],
+    [
+      "library.listDecks",
+      () => deckListQuery({ q: "verb", termLang: "ja", sort: "title" }),
+      ["library", "decks", { q: "verb", termLang: "ja", sort: "title" }],
+      { query: { q: "verb", termLang: "ja", sort: "title", limit: 15 } },
+      { query: { q: "verb", termLang: "ja", sort: "title", limit: 15, cursor: "C1" } }
+    ],
+    [
+      "library.listDecks",
+      () => dueDecksQuery(),
+      ["library", "dueDecks"],
+      { query: { sort: "due", limit: 200 } },
+      { query: { sort: "due", limit: 200, cursor: "C1" } }
+    ],
+    [
+      "library.listWords",
+      () => wordsQuery(DECK, { q: "eat" } as never),
+      ["library", "words", DECK, { q: "eat" }],
+      { params: { deckSlug: DECK }, query: { q: "eat", limit: 15 } },
+      { params: { deckSlug: DECK }, query: { q: "eat", limit: 15, cursor: "C1" } }
+    ],
+    [
+      "study.hardWords",
+      () => hardWordsQuery(),
+      ["study", "hardWords", {}],
+      { query: { limit: 15 } },
+      { query: { limit: 15, cursor: "C1" } }
+    ],
+    [
+      "study.hardWords",
+      () => hardWordsQuery({ drill: "reading_term" }),
+      ["study", "hardWords", { drill: "reading_term" }],
+      { query: { drill: "reading_term", limit: 15 } },
+      { query: { drill: "reading_term", limit: 15, cursor: "C1" } }
+    ],
+    [
+      "community.list",
+      () => communityQuery({ sort: "new" } as never),
+      ["community", "decks", { sort: "new" }],
+      { query: { sort: "new", limit: 15 } },
+      { query: { sort: "new", limit: 15, cursor: "C1" } }
+    ]
+  ] as const)("%s pages 15 at a time under its key", async (endpoint, make, key, firstRequest, nextRequest) => {
     const { calls, spy } = fakeSession()
     restore = () => spy.mockRestore()
+    const options = make()
 
     await queryClient.fetchInfiniteQuery(options as never)
     const next = await (options.queryFn as (context: { pageParam: unknown }) => Promise<unknown>)({ pageParam: "C1" })
 
+    expect(options.queryKey).toEqual(key as never)
     expect(next).toEqual({ items: [], nextCursor: null })
-    expect(calls[1]).toEqual({ endpoint, request: nextRequest })
+    expect(calls).toEqual([
+      { endpoint, request: firstRequest },
+      { endpoint, request: nextRequest }
+    ])
     expect(options.getNextPageParam({ items: [], nextCursor: "C2" } as never, [], undefined, [])).toBe("C2" as never)
     expect(options.getNextPageParam({ items: [], nextCursor: null } as never, [], undefined, [])).toBeUndefined()
   })
