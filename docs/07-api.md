@@ -53,7 +53,7 @@ On `/auth/google`, `timezone` is used only when the account is created.
 
 | Method | Path | Body → Response |
 |---|---|---|
-| POST | `/imports` | `multipart/form-data`: `termLang`, `meaningLang`, `files` (1–20, each ≤ 5 MB) → `ImportBatch`; more than 20 → `400`, nothing stored |
+| POST | `/imports` | `multipart/form-data`: `termLang`, `meaningLang`, `files` (1–50, each ≤ 5 MB, ≤ 50 MB in all) → `ImportBatch`; more than 50 files → `400`, over 50 MB in all → `413`, nothing stored |
 | GET | `/imports` | → `ImportBatch[]`: not dismissed, newest first |
 | DELETE | `/imports/:batchSlug` | → `204`; `409 ImportRunning` while a file is pending or running |
 | POST | `/imports/events/ticket` | → `{ticket}`: single use, valid 30 s |

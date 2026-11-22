@@ -182,11 +182,11 @@ describe("POST /imports", () => {
       })
     ))
 
-  test("more than 20 files are refused before anything is imported", () =>
+  test("more than 50 files are refused before anything is imported", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const token = yield* signedIn("ABCDEFGH")
-        const files = Array.from({ length: 21 }, (_, i): CsvFile => [`deck ${i}.csv`, csv(1)])
+        const files = Array.from({ length: 51 }, (_, i): CsvFile => [`deck ${i}.csv`, csv(1)])
 
         // The 400 comes back as a defect from the test client, so read the exit rather than flip the error.
         const refused = yield* upload(token, files).pipe(Effect.exit)
