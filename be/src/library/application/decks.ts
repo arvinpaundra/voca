@@ -5,6 +5,7 @@ import type {
   Deck,
   DeckDetail,
   DeckPage,
+  DeckSort,
   DeleteDecks,
   DeleteDecksResult,
   UpdateDeck
@@ -29,15 +30,16 @@ export const findOwnedDeck = (learnerId: bigint, slug: string, now: number) =>
     })
   })
 
-/** Every deck in one page: the paging, search, filter and sort arrive with the paged library. */
-export const listDecks: Effect.Effect<DeckPage, never, Needs> = Effect.gen(function* () {
-  const { id } = yield* CurrentLearner
-  const decks = yield* DeckRepo
-  const now = yield* Clock.currentTimeMillis
-  const all = yield* decks.listOwned(id, now)
+export interface DeckListQuery {
+  readonly q?: string
+  readonly termLang?: string
+  readonly sort?: DeckSort
+  readonly cursor?: string
+  readonly limit?: number
+}
 
-  return { items: all, nextCursor: null, total: all.length, termLangs: [...new Set(all.map((deck) => deck.termLang))].sort() }
-})
+export const listDecks = (_query: DeckListQuery): Effect.Effect<DeckPage, never, Needs> =>
+  Effect.die("not implemented: LB")
 
 export const createDeck = (input: typeof CreateDeck.Type): Effect.Effect<Deck, never, Needs> =>
   Effect.gen(function* () {

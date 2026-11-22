@@ -35,7 +35,7 @@ export const LibraryHandlers = HttpApiBuilder.group(
     const ports = yield* Effect.context<DeckRepo | WordRepo | Transaction>()
 
     return handlers.handleAll({
-      listDecks: () => listDecks.pipe(Effect.provideContext(ports)),
+      listDecks: ({ query }) => listDecks(query).pipe(Effect.provideContext(ports)),
 
       createDeck: ({ payload }) => createDeck(payload).pipe(Effect.provideContext(ports)),
 
