@@ -201,9 +201,8 @@ describe("POST /imports", () => {
     rt.runPromise(
       Effect.gen(function* () {
         const token = yield* signedIn("ABCDEFGH")
-        // Each file is under the 5 MB limit; eleven of them are over 50 MB together.
-        const rows = Math.floor((4.9 * 1024 * 1024) / 24)
-        const big = csv(rows)
+        // Each file is 4.8 MiB, under the 5 MB limit; eleven of them are 52.8 MiB together.
+        const big = "term,meaning\n" + "x".repeat(Math.floor(4.8 * 1024 * 1024))
         const files = Array.from({ length: 11 }, (_, i): CsvFile => [`deck ${i}.csv`, big])
 
         const refused = yield* upload(token, files).pipe(Effect.flip)
