@@ -17,6 +17,8 @@ import { CommunityHandlers } from "../src/library/http/community.ts"
 import { LibraryHandlers } from "../src/library/http/library.ts"
 import { DeckRepoLive } from "../src/library/infrastructure/deckRepo.ts"
 import { WordRepoLive } from "../src/library/infrastructure/wordRepo.ts"
+import { ImportEventsHandlers, ImportsHandlers } from "../src/library/http/imports.ts"
+import { ImportsLive, type ImportsOptions } from "../src/library/infrastructure/imports.ts"
 import { InsightHandlers } from "../src/insight/http/index.ts"
 import { InsightLive } from "../src/insight/infrastructure/index.ts"
 import { StudyHandlers } from "../src/study/http/index.ts"
@@ -40,7 +42,15 @@ export const googleStub = (byCode: Record<string, GoogleProfile>) =>
     })
   )
 
-export const makeIdentityRuntime = (google = googleStub({})) => {
+/** The test beanstalkd (preload.ts), on a tube of its own so one file's worker never takes another's jobs. */
+export const testBeanstalk = (name: string): ImportsOptions => ({
+  host: process.env.TEST_BEANSTALKD_HOST ?? "127.0.0.1",
+  port: Number(process.env.TEST_BEANSTALKD_PORT),
+  tube: `test-${name}-${process.pid}-${Date.now()}`
+})
+
+/** `imports`: the beanstalkd tube for the imports worker; by default a fresh one. */
+export const makeIdentityRuntime = (google = googleStub({}), options: { readonly imports?: ImportsOptions } = {}) => {
   const infra = Layer.mergeAll(
     LearnerRepoLive,
     RefreshTokensLive,
@@ -53,7 +63,12 @@ export const makeIdentityRuntime = (google = googleStub({})) => {
     google
   ).pipe(Layer.provideMerge(TestLayer))
 
-  const api = Layer.mergeAll(MeHandlers, AuthHandlers, LibraryHandlers, CommunityHandlers, StudyHandlers, InsightHandlers).pipe(
+  // Every group of the contract needs its handlers, so the imports worker always runs, on a tube of this file's own.
+  const imports = Layer.mergeAll(ImportsHandlers, ImportEventsHandlers).pipe(
+    Layer.provide(ImportsLive(options.imports ?? testBeanstalk("api")))
+  )
+
+  const api = Layer.mergeAll(MeHandlers, AuthHandlers, LibraryHandlers, CommunityHandlers, StudyHandlers, InsightHandlers, imports).pipe(
     Layer.provideMerge(AuthorizationLive),
     Layer.provideMerge(infra)
   )
@@ -77,7 +92,7 @@ export const call = <A, E, R>(
     ),
     Effect.scoped
   )
-const makeClient = () => HttpApiTest.groups(VocaApi, ["auth", "me", "library", "community", "study", "insight"])
+const makeClient = () => HttpApiTest.groups(VocaApi, ["auth", "me", "library", "community", "study", "insight", "imports", "importEvents"])
 
 /** Moves the test clock to an ISO instant, e.g. `at("2026-11-14T00:00:00Z")`. */
 export const at = (iso: string) => TestClock.setTime(Date.parse(iso))
