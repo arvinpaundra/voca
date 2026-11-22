@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { Result } from "effect";
 import { X } from "lucide-react";
 import { MAX_BATCH_WORDS, type Deck, type WordLabels } from "@voca/contract";
+import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { session } from "../../lib/appSession";
@@ -29,6 +30,20 @@ type Row = {
   readonly draft: WordDraft;
   readonly problem: string | null;
 };
+
+// What a folded word shows in place of its fields.
+function foldSummary(draft: WordDraft): ReactNode {
+  const hasTerm = draft.term !== "";
+  const hasMeaning = draft.meaning !== "";
+
+  if (hasTerm && hasMeaning) return `${draft.term} · ${draft.meaning}`;
+
+  if (hasTerm) return draft.term;
+
+  if (hasMeaning) return draft.meaning;
+
+  return <Badge>Empty</Badge>;
+}
 
 const SAVE_FAILED = "Could not save the words. Try again.";
 
@@ -180,7 +195,7 @@ export function AddWordsModal({ deck, labels, onClose, onSaved }: AddWordsModalP
             <div key={row.id} className="word-item">
               <div className="word-item-fold">
                 <button type="button" className="word-fold" aria-expanded="false" onClick={() => setOpenId(row.id)}>
-                  {`${row.draft.term} · ${row.draft.meaning}`}
+                  {foldSummary(row.draft)}
                 </button>
 
                 {count > 1 && (
