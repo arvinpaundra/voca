@@ -3,7 +3,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { drillLabel } from "@voca/contract";
 import { cacheSession } from "../../test/cacheSession";
-import { fakeObserver, hardWordOf, pageOf } from "../../test/pagedApi";
+import { fakeObserver, fakeViewport, hardWordOf, pageOf } from "../../test/pagedApi";
 import { HardWordsPage } from "./HardWordsPage";
 
 // Hard words show their first 15 at once and load the rest 15 at a time. The header and the drill tabs come from
@@ -28,12 +28,15 @@ const SUMMARY = {
 
 let restore: (() => void) | null = null;
 let observer: ReturnType<typeof fakeObserver> | null = null;
+let viewport: ReturnType<typeof fakeViewport> | null = null;
 
 afterEach(() => {
   restore?.();
   observer?.restore();
+  viewport?.restore();
   restore = null;
   observer = null;
+  viewport = null;
   window.history.replaceState(null, "", "/");
 });
 
@@ -114,8 +117,9 @@ describe("the Hard words page pages", () => {
     expect(screen.getByText("40 words")).toBeDefined();
   });
 
-  test("loads the next page by itself when the end scrolls into view", async () => {
+  test("on a phone, loads the next page by itself when the end scrolls into view", async () => {
     observer = fakeObserver();
+    viewport = fakeViewport(true);
     serve();
     render(<HardWordsPage />);
 

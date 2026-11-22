@@ -1,5 +1,5 @@
 // Helpers for the paged-list tests: a server that pages an array by cursor, a fake IntersectionObserver the test
-// can fire, and the wire shapes of the lists (decks, public decks, words, hard words).
+// can fire, a phone or wider viewport, and the wire shapes of the lists (decks, public decks, words, hard words).
 import type { DeckSummary, HardWord, PublicDeck, WordWithCards } from "@voca/contract"
 
 export const pad = (n: number) => String(n).padStart(2, "0")
@@ -110,3 +110,22 @@ export const hardWordOf = (i: number, drill: string, due: string) =>
     cards: [{ drill, due, stabilityDays: 4, isHard: true }],
     deck: { slug: "DECK000001", title: "Japanese N5 verbs", termLang: "ja", meaningLang: "en" }
   }) as unknown as HardWord
+
+/** Makes the viewport a phone's, or wider, for `matchMedia`; `restore()` puts the real one back. */
+export const fakeViewport = (phone: boolean) => {
+  const original = window.matchMedia
+
+  window.matchMedia = ((query: string) =>
+    ({
+      matches: phone && query === "(max-width: 640px)",
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false
+    }) as unknown as MediaQueryList) as typeof window.matchMedia
+
+  return { restore: () => (window.matchMedia = original) }
+}
