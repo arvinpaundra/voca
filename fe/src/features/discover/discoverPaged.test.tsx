@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { cacheSession } from "../../test/cacheSession";
-import { fakeObserver, pageOf, publicDeck } from "../../test/pagedApi";
+import { fakeObserver, fakeViewport, pageOf, publicDeck } from "../../test/pagedApi";
 import { DiscoverPage } from "./DiscoverPage";
 
 // Discover loads its decks 15 at a time; a language change starts again from the first page.
@@ -14,12 +14,15 @@ const ALL = Array.from({ length: 40 }, (_, i) => publicDeck(i, i % 2 === 0 ? "ja
 
 let restore: (() => void) | null = null;
 let observer: ReturnType<typeof fakeObserver> | null = null;
+let viewport: ReturnType<typeof fakeViewport> | null = null;
 
 afterEach(() => {
   restore?.();
   observer?.restore();
+  viewport?.restore();
   restore = null;
   observer = null;
+  viewport = null;
 });
 
 const serve = () => {
@@ -65,8 +68,9 @@ describe("Discover pages", () => {
     expect(new Set(titles()).size).toBe(40);
   });
 
-  test("loads the next page by itself when the end scrolls into view", async () => {
+  test("on a phone, loads the next page by itself when the end scrolls into view", async () => {
     observer = fakeObserver();
+    viewport = fakeViewport(true);
     serve();
     render(<DiscoverPage />);
 

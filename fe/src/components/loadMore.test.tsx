@@ -2,15 +2,18 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LoadMore } from "./LoadMore";
-import { fakeObserver } from "../test/pagedApi";
+import { fakeObserver, fakeViewport } from "../test/pagedApi";
 
-// The end of a paged list: it asks for the next page by itself when it scrolls into view, and its button asks too.
+// The end of a paged list: its button asks for the next page; on a phone, scrolling it into view asks too.
 
 let observer: ReturnType<typeof fakeObserver> | null = null;
+let viewport: ReturnType<typeof fakeViewport> | null = null;
 
 afterEach(() => {
   observer?.restore();
+  viewport?.restore();
   observer = null;
+  viewport = null;
 });
 
 describe("LoadMore", () => {
@@ -33,8 +36,9 @@ describe("LoadMore", () => {
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
-  test("scrolling to the end asks for the next page", () => {
+  test("on a phone, scrolling to the end asks for the next page", () => {
     observer = fakeObserver();
+    viewport = fakeViewport(true);
     const onLoadMore = mock(() => {});
     render(<LoadMore hasNextPage isFetchingNextPage={false} onLoadMore={onLoadMore} />);
 
@@ -43,8 +47,9 @@ describe("LoadMore", () => {
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
-  test("scrolling to the end while a page loads asks for nothing", () => {
+  test("on a phone, scrolling to the end while a page loads asks for nothing", () => {
     observer = fakeObserver();
+    viewport = fakeViewport(true);
     const onLoadMore = mock(() => {});
     render(<LoadMore hasNextPage isFetchingNextPage onLoadMore={onLoadMore} />);
 
@@ -65,8 +70,9 @@ describe("LoadMore", () => {
     expect((screen.getByRole("button", { name: "Load more" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  test("stops watching once it is gone", () => {
+  test("on a phone, stops watching once it is gone", () => {
     observer = fakeObserver();
+    viewport = fakeViewport(true);
     const onLoadMore = mock(() => {});
     const { unmount } = render(<LoadMore hasNextPage isFetchingNextPage={false} onLoadMore={onLoadMore} />);
 
@@ -74,5 +80,21 @@ describe("LoadMore", () => {
     observer.intersect();
 
     expect(onLoadMore).not.toHaveBeenCalled();
+  });
+
+  test("wider than a phone, scrolling to the end asks for nothing and the button still does", async () => {
+    observer = fakeObserver();
+    viewport = fakeViewport(false);
+    const onLoadMore = mock(() => {});
+    const user = userEvent.setup();
+    render(<LoadMore hasNextPage isFetchingNextPage={false} onLoadMore={onLoadMore} />);
+
+    observer.intersect();
+
+    expect(onLoadMore).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Load more" }));
+
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 });

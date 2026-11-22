@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { DeckSort } from "@voca/contract";
 import { cacheSession } from "../../test/cacheSession";
-import { deckSummary, fakeObserver, pad, pageOf } from "../../test/pagedApi";
+import { deckSummary, fakeObserver, fakeViewport, pad, pageOf } from "../../test/pagedApi";
 import { DecksPage } from "./DecksPage";
 
 // The library loads its decks 15 at a time, in the order the server gives; search, language and sort are the
@@ -18,12 +18,15 @@ const me = { name: "Arvin Paundra", settings: { timezone: "UTC", dayStartHour: 4
 
 let restore: (() => void) | null = null;
 let observer: ReturnType<typeof fakeObserver> | null = null;
+let viewport: ReturnType<typeof fakeViewport> | null = null;
 
 afterEach(() => {
   restore?.();
   observer?.restore();
+  viewport?.restore();
   restore = null;
   observer = null;
+  viewport = null;
 });
 
 /** The server: filters by title and language, keeps the order, pages by cursor; `total` and `termLangs` are the library's. */
@@ -77,8 +80,9 @@ describe("the library pages", () => {
     expect(screen.getByText("40 decks")).toBeDefined();
   });
 
-  test("loads the next page by itself when the end scrolls into view", async () => {
+  test("on a phone, loads the next page by itself when the end scrolls into view", async () => {
     observer = fakeObserver();
+    viewport = fakeViewport(true);
     serve();
     render(<DecksPage />);
 

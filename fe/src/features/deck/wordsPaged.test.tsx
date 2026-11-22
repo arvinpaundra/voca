@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { DeckDetail } from "@voca/contract";
 import { cacheSession } from "../../test/cacheSession";
-import { fakeObserver, listedWord, pad, pageOf } from "../../test/pagedApi";
+import { fakeObserver, fakeViewport, listedWord, pad, pageOf } from "../../test/pagedApi";
 import { DeckView } from "./DeckView";
 
 // A deck's words load 15 at a time; a search starts again from the first page.
@@ -41,12 +41,15 @@ const ALL = Array.from({ length: 40 }, (_, i) => listedWord(i));
 
 let restore: (() => void) | null = null;
 let observer: ReturnType<typeof fakeObserver> | null = null;
+let viewport: ReturnType<typeof fakeViewport> | null = null;
 
 afterEach(() => {
   restore?.();
   observer?.restore();
+  viewport?.restore();
   restore = null;
   observer = null;
+  viewport = null;
 });
 
 const serve = () => {
@@ -92,8 +95,9 @@ describe("a deck's words page", () => {
     expect(screen.getAllByRole("button", { name: /^Open 語/ })).toHaveLength(40);
   });
 
-  test("loads the next page by itself when the end scrolls into view", async () => {
+  test("on a phone, loads the next page by itself when the end scrolls into view", async () => {
     observer = fakeObserver();
+    viewport = fakeViewport(true);
     serve();
     render(<DeckView deck={deck} />);
 
