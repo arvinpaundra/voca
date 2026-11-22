@@ -8,6 +8,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadMore } from "../../components/LoadMore";
 import { PageHeader } from "../../components/PageHeader";
+import { SearchInput } from "../../components/SearchInput";
 import { Skeleton } from "../../components/Skeleton";
 import { Tabs } from "../../components/Tabs";
 import { session } from "../../lib/appSession";
@@ -20,6 +21,7 @@ import { rememberHardStudy } from "../study/returnTo";
 import { HardStudySetup } from "./HardStudySetup";
 import { HardWordList } from "./HardWordList";
 import { hardDrills, type HardDrill } from "./hardDrills";
+import { useDebouncedSearch } from "../../lib/useDebouncedSearch";
 
 const DEFAULT_SIZE: SessionSize = 10;
 const ALL = "all";
@@ -59,14 +61,20 @@ const drillTabs = (summary: HardWordsSummary): HardDrill[] =>
 
 export function HardWordsPage() {
   const [filter, setFilter] = useState<Filter>(filterFromUrl);
+  // The box shows what is typed; the list is searched once the typing pauses, or at once on Enter.
+  const { input: searchInput, setInput: setSearchInput, search, submit: submitSearch } = useDebouncedSearch();
   const [studying, setStudying] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // A drill tab is a new query, so its list starts from the first page; the old list stays up until it arrives.
+  // A drill tab or a new search is a new query, so its list starts from the first page; the old list stays up until
+  // the new one arrives.
   const hard = useInfiniteQuery(
     {
-      ...hardWordsQuery(filter === ALL ? {} : { drill: filter }),
+      ...hardWordsQuery({
+        ...(filter === ALL ? {} : { drill: filter }),
+        ...(search === "" ? {} : { q: search }),
+      }),
       placeholderData: keepPreviousData,
     },
     queryClient,
@@ -195,12 +203,24 @@ export function HardWordsPage() {
         />
       ) : (
         <>
-          <Tabs
-            label="Drill"
-            value={filter}
-            onChange={choose}
-            tabs={[{ value: ALL, label: "All" }, ...drills.map((entry) => ({ value: entry.drill, label: entry.label }))]}
-          />
+          <div className="grid gap-3">
+            <div className="toolbar">
+              <SearchInput
+                label="Search hard words"
+                placeholder="Search hard words"
+                value={searchInput}
+                onChange={setSearchInput}
+                onSubmit={submitSearch}
+              />
+            </div>
+
+            <Tabs
+              label="Drill"
+              value={filter}
+              onChange={choose}
+              tabs={[{ value: ALL, label: "All" }, ...drills.map((entry) => ({ value: entry.drill, label: entry.label }))]}
+            />
+          </div>
 
           {error !== null && (
             <p role="alert" style={{ color: "var(--bad)", fontSize: 13 }}>

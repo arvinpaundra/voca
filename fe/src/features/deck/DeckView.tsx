@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { DateTime, Result } from "effect";
 import type { DeckDetail, SnoozeDays, WordWithCards } from "@voca/contract";
 import { wordLabels } from "@voca/contract";
@@ -31,6 +31,7 @@ import { matchesWordFilter, type WordFilter } from "./wordFilter";
 import { WordDetailsModal } from "./WordDetailsModal";
 import { WordModal } from "./WordModal";
 import { WordList } from "./WordList";
+import { useDebouncedSearch } from "../../lib/useDebouncedSearch";
 
 type DeckViewProps = {
   deck: DeckDetail;
@@ -47,8 +48,8 @@ const refreshCache = () => void queryClient.invalidateQueries();
 export function DeckView({ deck }: DeckViewProps) {
   const labels = wordLabels(deck.termLang);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [query, setQuery] = useState("");
+  // The box shows what is typed; the words are searched once the typing pauses, or at once on Enter.
+  const { input: searchInput, setInput: setSearchInput, search, submit: submitSearch } = useDebouncedSearch();
   const [filter, setFilter] = useState<WordFilter>("all");
 
   // The modal reads the word from the list, so an edit saved there shows in the modal too.
@@ -73,7 +74,11 @@ export function DeckView({ deck }: DeckViewProps) {
   const statsResult = useQuery(deckStatsQuery(deck.slug), queryClient);
   const stats = statsResult.data ?? null;
 
-  const wordsResult = useInfiniteQuery(wordsQuery(deck.slug, searchQuery(query)), queryClient);
+  // A new search keeps the previous words on screen until its first page arrives.
+  const wordsResult = useInfiniteQuery(
+    { ...wordsQuery(deck.slug, searchQuery(search)), placeholderData: keepPreviousData },
+    queryClient,
+  );
   const words = wordsResult.data === undefined ? null : mergePages(wordsResult.data.pages);
   const loadError = wordsResult.isError
     ? words === null
@@ -81,15 +86,8 @@ export function DeckView({ deck }: DeckViewProps) {
       : "Could not load more words."
     : null;
 
-  // The words are searched on the server, so typing waits a moment before asking.
-  useEffect(() => {
-    const timer = setTimeout(() => setQuery(searchInput.trim()), 250);
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
   const loadMore = () => {
-    if (!wordsResult.hasNextPage || wordsResult.isFetchingNextPage) return;
+    if (!wordsResult.hasNextPage || wordsResult.isFetchingNextPage || wordsResult.isPlaceholderData) return;
 
     void wordsResult.fetchNextPage();
   };
@@ -182,7 +180,7 @@ export function DeckView({ deck }: DeckViewProps) {
 
   const now = DateTime.nowUnsafe();
   const shown = words?.filter((word) => matchesWordFilter(word, filter, now)) ?? null;
-  const unfiltered = query === "" && filter === "all";
+  const unfiltered = search === "" && filter === "all";
 
   const { tabs: filterTabs, searchPlaceholder } = deckCounts(deck, stats);
   const snoozeText = snoozeLabel(deck.snooze, timezone);
@@ -275,6 +273,7 @@ export function DeckView({ deck }: DeckViewProps) {
             placeholder={searchPlaceholder}
             value={searchInput}
             onChange={setSearchInput}
+            onSubmit={submitSearch}
           />
 
           <Button variant="secondary" onClick={() => setWordEditor({ kind: "add" })}>
@@ -316,7 +315,7 @@ export function DeckView({ deck }: DeckViewProps) {
       {shown !== null && shown.length === 0 && !unfiltered && <EmptyState title="No words match this view." />}
 
       <LoadMore
-        hasNextPage={wordsResult.hasNextPage}
+        hasNextPage={wordsResult.hasNextPage && !wordsResult.isPlaceholderData}
         isFetchingNextPage={wordsResult.isFetchingNextPage}
         onLoadMore={loadMore}
       />

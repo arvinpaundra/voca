@@ -22,8 +22,8 @@ const FIVE_MINUTES = 5 * 60_000
 // The library's filter as the server takes it: an empty search and "all languages" are left out.
 export type DeckListFilter = { readonly q?: string; readonly termLang?: string; readonly sort?: DeckSort }
 
-// The Hard words filter: one drill, or none for every drill.
-export type HardWordsFilter = { readonly drill?: Drill }
+// The Hard words filter: one drill, or none for every drill; and a search by term or meaning.
+export type HardWordsFilter = { readonly drill?: Drill; readonly q?: string }
 
 const firstPage = undefined as Cursor | undefined
 
@@ -138,11 +138,21 @@ export const deckDrillsQuery = (deckSlug: DeckSlug) =>
     queryFn: () => orReject(session.call((client) => client.study.deckDrills({ params: { deckSlug } })))
   })
 
+// The search is trimmed; an empty one is left out, so the list without a search is the same request as before.
+const hardWordsParams = (filter: HardWordsFilter) => {
+  const q = filter.q?.trim() ?? ""
+
+  return {
+    ...(filter.drill === undefined ? {} : { drill: filter.drill }),
+    ...(q === "" ? {} : { q })
+  }
+}
+
 export const hardWordsQuery = (filter: HardWordsFilter = {}) =>
   infiniteQueryOptions({
     queryKey: ["study", "hardWords", filter],
     queryFn: ({ pageParam }) =>
-      orReject(session.call((client) => client.study.hardWords({ query: pageQuery(filter, pageParam) }))),
+      orReject(session.call((client) => client.study.hardWords({ query: pageQuery(hardWordsParams(filter), pageParam) }))),
     initialPageParam: firstPage,
     getNextPageParam: nextPage
   })
