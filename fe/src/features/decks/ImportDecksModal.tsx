@@ -1,10 +1,10 @@
 import { useRef, useState, type FormEvent } from "react";
 import { IMPORT_MAX_FILES } from "@voca/contract";
 import { Button } from "../../components/Button";
-import { Input } from "../../components/Input";
 import { Modal } from "../../components/Modal";
 import { startImport } from "../../lib/imports";
 import { queryClient } from "../../lib/queryClient";
+import { LanguageField } from "./LanguageField";
 
 // The same shape DeckModal accepts for a language tag.
 const languageCodePattern = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
@@ -106,26 +106,22 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
           {files.length === 1 ? "1 file chosen" : `${files.length} files chosen`}
         </p>
 
-        <Input
+        <LanguageField
           label="Term language"
-          placeholder="ja"
-          required
           value={termLang}
-          error={languageErrors.termLang ?? undefined}
-          onChange={(event) => {
-            setTermLang(event.target.value);
+          error={languageErrors.termLang}
+          onChange={(value) => {
+            setTermLang(value);
             setLanguageErrors((previous) => ({ ...previous, termLang: null }));
           }}
         />
 
-        <Input
+        <LanguageField
           label="Meaning language"
-          placeholder="en"
-          required
           value={meaningLang}
-          error={languageErrors.meaningLang ?? undefined}
-          onChange={(event) => {
-            setMeaningLang(event.target.value);
+          error={languageErrors.meaningLang}
+          onChange={(value) => {
+            setMeaningLang(value);
             setLanguageErrors((previous) => ({ ...previous, meaningLang: null }));
           }}
         />
