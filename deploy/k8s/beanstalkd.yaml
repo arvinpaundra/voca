@@ -1,0 +1,101 @@
+# The import queue. Jobs hold only a file id; the files and their status live in Postgres.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: beanstalkd-binlog
+  namespace: voca
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beanstalkd
+  namespace: voca
+spec:
+  replicas: 1
+  # The binlog volume mounts on one pod at a time, so the old pod stops before the new one starts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: beanstalkd
+  template:
+    metadata:
+      labels:
+        app: beanstalkd
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: beanstalkd
+          # A fixed tag: the release builds it only when missing, so a release doesn't restart the queue.
+          image: ghcr.io/arvinpaundra/voca-beanstalkd:1.13-1
+          # The binlog replays ready and reserved jobs after a restart; without it, queued files would stay queued.
+          args: ["-l", "0.0.0.0", "-p", "11300", "-b", "/data", "-f", "1000"]
+          ports:
+            - containerPort: 11300
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          readinessProbe:
+            tcpSocket:
+              port: 11300
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 11300
+            periodSeconds: 20
+            failureThreshold: 3
+          volumeMounts:
+            - name: binlog
+              mountPath: /data
+      volumes:
+        - name: binlog
+          persistentVolumeClaim:
+            claimName: beanstalkd-binlog
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: beanstalkd
+  namespace: voca
+spec:
+  selector:
+    app: beanstalkd
+  ports:
+    - port: 11300
+      targetPort: 11300
+---
+# beanstalkd has no authentication: only the API's pods may connect.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: beanstalkd
+  namespace: voca
+spec:
+  podSelector:
+    matchLabels:
+      app: beanstalkd
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: voca-api
+      ports:
+        - port: 11300

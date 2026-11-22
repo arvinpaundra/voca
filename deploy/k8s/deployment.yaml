@@ -39,6 +39,8 @@ spec:
           env:
             - name: LOG_LEVEL
               value: Info
+            - name: BEANSTALKD_HOST
+              value: beanstalkd
           resources:
             requests:
               cpu: 100m
