@@ -1,8 +1,4 @@
-// A fake /api for `shots.ts --mock`: the sample data of docs/design/ui-refinement.html, shaped by the contract,
-// so a screenshot of the app and the design screen show the same content.
-// Slugs use Crockford base32 (no I, L, O, U) and the per-model lengths, or the client rejects them.
-
-export const NOW = "2026-11-18T12:00:00.000Z" // a Wednesday evening in Asia/Jakarta
+export const NOW = "2026-11-18T12:00:00.000Z"
 export const TIMEZONE = "Asia/Jakarta"
 
 const T = "2026-11-01T00:00:00.000Z"
@@ -84,7 +80,6 @@ const deckStats = {
   reviewsPerDay: days(30, "2026-10-20").map((date, i) => ({ date, count: reviews30[i]! })),
 }
 
-// Heat levels of the design's November calendar, as review counts.
 const heatLevels = [3, 2, 0, 4, 3, 1, 2, 4, 3, 0, 2, 3, 4, 1, 2, 3, 4, 3]
 const perLevel = [0, 5, 12, 22, 35]
 
@@ -166,7 +161,6 @@ const studySession = (state: string) => ({
   questions: state === "complete" ? [] : [question],
 })
 
-// The word page's sample (design screen "word"): 食べる, studied in two of its drills.
 const drillStats = (drill: string, label: string, maturity: string, overrides: Record<string, unknown>) => ({
   drill,
   label,
@@ -214,7 +208,6 @@ const hardDeck = (n: number) => {
 
 const hardCard = (drill: string, due: string) => ({ drill, due, stabilityDays: 4, isHard: true })
 
-// The Hard words sample (design screen "hard").
 const hardWords = [
   { ...word(1, "食べる", "たべる", "to eat", "", [hardCard("term_meaning", "2026-11-18T00:00:00.000Z")]), example: null, deck: hardDeck(1) },
   { ...word(6, "学习", "xuéxí", "to study", "", [hardCard("reading_term", "2026-11-25T00:00:00.000Z")]), example: null, deck: hardDeck(4) },
@@ -231,7 +224,6 @@ const importFile = (name: string, status: string, deck: string | null, imported:
   totalErrors: 0,
 })
 
-/** FR-29 batches: `imports` has one running and one finished, `imports-done` only finished ones. */
 const importBatches = (state: string) => {
   const failed = {
     ...importFile("N5 adjectives.csv", "failed", null, 0, 0),
@@ -267,12 +259,10 @@ const importBatches = (state: string) => {
   return []
 }
 
-/** Answer with an empty 204 (mark and unmark hard). */
 export const NO_CONTENT = Symbol("no content")
 
 type Handler = (url: URL, state: string, method: string) => unknown
 
-/** Matched in order against the request path; the first hit answers. `state` is the spec's extra word. */
 export const routes: ReadonlyArray<readonly [RegExp, Handler]> = [
   [/^\/api\/auth\/refresh$/, () => ({ accessToken: "mock.access.token", refreshToken: "A".repeat(43), expiresIn: 3600 })],
   [/^\/api\/me$/, () => learner],
