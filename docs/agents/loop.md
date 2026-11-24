@@ -1,13 +1,13 @@
 # Agent loop
 
-How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). Both roles take the FR code: `/product FR-<id>` defines or refines the requirement (`.claude/skills/product/SKILL.md`; a new goal in words gets the next code), and `/feature FR-<id>` runs the rest (`.claude/skills/feature/SKILL.md`). The code, lower-cased (`fr-4`), names the dispatch folder and the branches.
+How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). Both roles take the FR code: `/feature FR-<id>` defines or refines the requirement (`.claude/skills/feature/SKILL.md`; a new goal in words gets the next code), and `/architect FR-<id>` runs the rest (`.claude/skills/architect/SKILL.md`). The code, lower-cased (`fr-4`), names the dispatch folder and the branches.
 
 ## Roles
 
 | Role | Model | Owns |
 |---|---|---|
-| Product | the session's model, in a **fresh session per goal** | what to build and why: `docs/01-functional-requirements.md` (goal, behaviour, acceptance criteria, priority). Never the how |
-| Decision thread (architect) | the session's model, in a **fresh session per feature** | how to build it: decisions, the rest of `docs/`, `contract/`, task issues, locked tests and stubs, `scripts/`, `lint/`, `.claude/`. Never rewrites an FR |
+| Product | the session's model, in a **fresh session per goal** | what to build, why, and what the user sees: `docs/01-functional-requirements.md` (goal, behaviour, acceptance criteria, priority) and its UI design `docs/design/fr-<id>.html` (screens, states, copy). Never the how |
+| Decision thread (architect) | the session's model, in a **fresh session per feature** | how to build it: decisions, the rest of `docs/`, `contract/`, task issues, locked tests and stubs, `scripts/`, `lint/`, `.claude/`. Never rewrites an FR or its design |
 | Dispatcher | **no agent**: `scripts/dispatch.ts` | worktrees, sessions, replies, repair rounds |
 | Implementer | Haiku, a **fresh headless session per task** (`.claude/agents/implementer.md`) | the files in its task's `allow` list |
 | Repairer | a **fresh headless session per finding** (`.claude/agents/repairer.md`); rounds 1–2 Haiku, 3 Sonnet, 4 Opus, then the owner | the same files, on the same branch |
@@ -19,7 +19,7 @@ Implementers and repairers are not subagents: each is a `claude -p` session with
 ## Loop
 
 ```
-0. product    → `/product FR-<id>`: the FR with its acceptance criteria, approved by the owner and merged; the handoff to the architect
+0. product    → `/feature FR-<id>`: the FR with its acceptance criteria and, for a UI change, its design, approved by the owner and merged; the handoff to the architect
 1. decision   → ADR / contract change committed to master
 2. split      → every acceptance criterion maps to a locked test; cohesive tasks: one per bounded context per side (e.g. library backend, library frontend), with disjoint `allow` lists;
                 no task's tests may need another task's code
@@ -91,7 +91,7 @@ Repair rounds count per PR in `/tmp/dispatch/<fr>/rounds.json`: rounds 1–2 run
 1. CI `verify` is green on the PR and ran the path guard (the PR is linked to its task issue).
 2. The locked tests are unchanged, and behaviour the worker added has its own test.
 3. No `not implemented: <TASK>` stub is left in the task's files.
-4. **UI tasks:** the issue names the screenshots. On the PR's branch the decision thread runs `bun scripts/shots.ts --mock <specs>` (signed-in pages against the design's sample data) and `bun scripts/shots.ts --design`, compares each page with its design screen, and sends every mismatch back to the worker before the owner sees the PR. Then it gives the owner both sets of paths.
+4. **UI tasks:** the issue names the screenshots. On the PR's branch the decision thread runs `bun scripts/shots.ts --mock <specs>` (signed-in pages against the design's sample data) and `bun scripts/shots.ts --design`, compares each page with the FR's design, and sends every mismatch back to the worker before the owner sees the PR. Then it gives the owner both sets of paths.
 
 ## Merging and branches
 

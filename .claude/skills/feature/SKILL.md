@@ -1,97 +1,64 @@
 ---
 name: feature
-description: Voca decision-thread playbook. Turn one feature from the docs into merged code through the agent loop (split, locked tests, pre-check, task issues, dispatch to fresh worker sessions, routing and repair), spending as few tokens as possible. Use when the owner says "/feature FR-<id>" or asks to build the next feature.
+description: Voca product role. Turn the owner's goal into an approved functional requirement in docs/01-functional-requirements.md, with its UI design in docs/design/, before any technical design. Use when the owner says "/feature FR-<id>" (refine an existing FR) or "/feature <goal>" (a new one), or asks to define, refine, design or prioritise a feature.
 ---
 
-# /feature FR-<id>
+# /feature FR-<id> | <goal>
 
-The FR code (e.g. `FR-4`) names everything for this feature; below, `<fr>` is its lower-case form (`fr-4`): the dispatch folder `/tmp/dispatch/<fr>/`, the dispatch branches `dispatch/<fr>-<task>` and the task branches `feat/<fr>-<task>`.
+`FR-<id>` (e.g. `FR-4`): refine that existing FR. A goal in words: a new FR, numbered with the next free `FR-<id>`. Either way the FR code is the feature's name from here on: `/architect FR-<id>`, its dispatch folder and its branches.
 
-You are the decision thread for Voca, in the architect role: the product role (`/product`) has already decided what to build. You decide how, specify and verify; workers implement. Read `docs/agents/loop.md` once at the start: it is the process and the cost rules. Workers follow `AGENTS.md`, which they load themselves.
+You are the product role for Voca. You decide **what** the app does, why, and what the user sees; the architect (`/architect`) decides how it is built. Your output is the FR and, when the user sees the change, its UI design, both approved by the owner and committed to master.
 
-**You never implement feature code.** You write decisions, locked tests and stubs; everything else is a task.
+**You never design the implementation.** No endpoints, schemas, data model, component code, task split or tests. If the goal can't be stated without one, write the user-visible need and leave the how to the architect.
 
-## 1. Understand and split (stop for the owner's approval)
+**You always design the UI.** Layout, states and copy are product decisions. The architect builds what the design shows and never invents its own, so anything the design leaves out is a gap you must close.
 
-- Start from `FR-<id>` in `docs/01-functional-requirements.md`, approved. Missing or ambiguous → stop and ask the owner to run `/product FR-<id>` first; never write or rewrite requirements yourself.
-- Read only the docs the feature needs (its FRs in `docs/01-functional-requirements.md`, the relevant sections of `docs/07-api.md`, `docs/06-data-model.md`, and the topic doc), plus the contract files it touches.
-- Split into **cohesive tasks: one per bounded context per side**, with disjoint `allow` lists. A task's tests must never need another task's code: seed data with SQL in tests instead of calling another task's endpoints.
-- Present the split (tasks, files each owns, what each locked test pins down) with a table mapping every acceptance criterion of the FR to its locked test(s), and wait for the owner's go. A criterion with no test is a gap in the split. Any decision the docs don't settle goes to the owner first, then into `docs/13-decisions.md`.
+## 1. Read
 
-## 2. Locked tests and stubs
+- The FRs the goal touches in `docs/01-functional-requirements.md`, and its Actors section.
+- For a UI change: the screens it touches in `docs/design/ui-refinement.html` (the Console design) and any earlier `docs/design/fr-*.html`, plus the kit in `fe/src/components/` (names only) so the design reuses what exists.
+- Find conflicts: an existing FR the goal contradicts, overlaps or extends. Extending an FR beats adding a new one.
 
-- One dispatch branch per task from the latest `master`: `dispatch/<fr>-<task>`.
-- Write the locked tests in the style of `be/test/me.test.ts` (backend, through `be/test/identity.ts`) or `fe/src/lib/*.test.ts` (frontend). Blank lines between steps; no doc references in comments.
-- Stubs make the tests compile. Every stub fails or returns with the task's marker: `Effect.die("not implemented: <TASK>")`, `Promise.reject(new Error("not implemented: <TASK>"))`, or a return value containing `not implemented: <TASK>`.
-- Shared wiring that several tasks would edit means the split is wrong; merge those tasks.
-- Search the existing tests for every endpoint the task builds (`grep -rn "/api/<path>" be/test fe/src`). A test that expects it unbuilt (a 500 probe, say) breaks once it's built: point that test elsewhere on master before dispatch. The pre-check runs only the locked tests, so it can't catch this.
+## 2. Draft the FR
 
-## 3. Pre-check (instead of a throwaway implementation)
+Use the format the file already uses:
 
 ```
-bun scripts/precheck.ts <TASK> <locked test files>
-bun run verify --scope <be|fe>        # typecheck and lint of the stubs and tests
+## FR-<next id> <Name> (<M|S|C|W>)
+
+<One paragraph: who needs this and why.>
+
+- <Behaviour the user sees, one bullet each.>
+- **Won't:** <what this deliberately leaves out.>
+
+**UI:** `docs/design/fr-<id>.html`
+
+**Acceptance**
+- <A checkable outcome. Each one becomes at least one locked test, so it must be observable through the app or the API.>
 ```
 
-The pre-check must print `✓`. Every failure has to be the task's own stub; a 401, another task's stub or a wrong expectation means fix the tests or the split before going on.
+- Priority is MoSCoW, as in the file's header.
+- Every acceptance criterion is observable and unambiguous: numbers, limits and states, not "fast" or "easy".
+- A choice the owner hasn't made (a limit, a default, what happens on failure) is a question, not a guess.
+- No user-visible change (an API-only or background FR): leave out the **UI** line and skip step 3.
 
-## 4. Task issues
+## 3. Design the UI
 
-For each task: `bun scripts/verify.ts --print-locked <file> --print-locked <file>` (the flag once per file), then a draft issue body:
+Write `docs/design/fr-<id>.html`: one static, self-contained page.
 
-````
-```yaml
-scope: be|fe
-allow:
-  - <globs>
-locked:
-  <path>: <content hash>
-```
+- The Console theme: copy the `:root` tokens and fonts from `docs/design/ui-refinement.html`; never add colours or fonts.
+- Compose from the kit (`PageHeader`, `StatStrip`, `Menu`, `Modal`, `SegmentedControl`, `Tabs`, `EmptyState`, `ErrorState`, `Skeleton`…) and label each block with the component it maps to. A block the kit lacks is marked **new component**.
+- Every screen the FR adds or changes, at desktop (1280 px) and phone (390 px) width, each in its own section with a heading.
+- Every state: loading, empty, error, the normal filled one, and each state the FR names (a limit hit, a disabled action, a confirmation).
+- Final copy: every label, button, message and empty text as it will ship. Realistic sample data, never lorem ipsum.
+- Interactions the page can't show (what a click opens, where it navigates, what stays after reload) go in a short note under the screen.
 
-WHY / SPEC / CONTRACT: one line each
-CONTEXT PACK: the exact files to read (the reference to copy, the stubs to fill), and the 10-20 spec lines that matter, pasted
-DO: the nodes to implement, one per bullet
-DON'T: outside `allow`; contract/, docs/, locked tests
-VERIFY: bun run verify --issue <this issue> --hash HASH
-````
+Open it with the `html_preview` and `html_render` tools to check it renders before showing the owner.
 
-Then `H=$(bun scripts/verify.ts --body draft.md --print-hash)`, write `H` on the VERIFY line, and `gh issue create --label task --body-file draft.md`. Never edit an issue after creating it. Check `bun scripts/verify.ts --issue N --hash H --fast` prints `✓ path guard` on the dispatch branch.
+## 4. Stop for the owner
 
-## 5. Dispatch
+Present the FR, the rendered design and the open questions. Change both until the owner approves.
 
-After the owner's go on the split. Write `/tmp/dispatch/<fr>/tasks.json`:
+## 5. Commit
 
-```
-{ "feature": "<fr>",
-  "tasks": [{ "issue": N, "hash": "H", "base": "<dispatch commit sha>", "branch": "feat/<fr>-<task>", "title": "…" }] }
-```
-
-Run `bun scripts/dispatch.ts /tmp/dispatch/<fr>/tasks.json` as a **background** command and wait for it to finish (`t3_background_wait`); don't poll it. It creates each task's worktree on its branch, installs dependencies, and starts one fresh headless implementer session per task (`.claude/agents/implementer.md`, Haiku, project settings only), all in parallel. It prints one line per task; replies land in `/tmp/dispatch/<fr>/replies/`.
-
-## 6. Route, repair, report
-
-```
-bun scripts/next.ts --feature <fr> <PR numbers>
-```
-
-It decides every PR by rule and prints them grouped:
-
-| Group | What it means | You |
-|---|---|---|
-| `wait` | CI still running | run `next.ts` again once CI is done |
-| `owner` | a `disputed` or `couldNotDo` reply, critical paths, over 8 files / 300 lines, a PR not linked to its task | a dispute: check it; if the worker is right, fix the test or the split (new issue, new hash). The rest: tell the owner |
-| `heal` | red CI (its first error), a conflict, stubs left | run the printed `bun scripts/dispatch.ts …/heals.json` in the background, then `next.ts` again |
-| `stopped` | 4 repair rounds failed (haiku, haiku, sonnet, opus) | tell the owner |
-| `rebase` | only behind master: `next.ts` already ran `gh pr update-branch --rebase` | run `next.ts` again once CI is done |
-| `merge` | green, small, no critical path, clean reply | merge it |
-
-There is no review agent: VERIFY's diff coverage and the locked tests pin the behaviour, and the owner reviews what `next.ts` sends them. For the owner's own review comments, write a `heals.json` by hand (finding: "Address every comment: `gh pr view P --comments`") and dispatch it.
-
-- UI tasks: on the PR's branch, `bun scripts/shots.ts --mock <specs>` and `bun scripts/shots.ts --design`; compare each page with its design screen, send every mismatch as a heal, then give the owner both sets of paths.
-- Report to the owner: one line per task (PR, group), the disputes, and what waits for them.
-
-## 7. After the feature
-
-- Remove merged worktrees and branches, and `/tmp/dispatch/<fr>/`.
-- Add the Effect idioms workers had to discover to `docs/agents/effect-cheatsheet.md`.
-- A finding the owner made that could recur becomes a lint rule or an `AGENTS.md` line.
+On a branch from the latest `master`: `docs(fr): FR-<id> <name>` with the FR and its design, a PR, and the owner merges it. Then tell the owner the next step is `/architect FR-<id>`: in this session when the FR only needed a short confirmation, in a fresh one after a long discussion.
