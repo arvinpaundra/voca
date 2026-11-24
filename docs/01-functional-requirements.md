@@ -444,7 +444,7 @@ Extends FR-2, FR-6, FR-19 and FR-31. A long term, example, note or drill label m
 
 **Acceptance**
 - At the phone breakpoint (640 px, FR-31) and at every narrower width down to 320 px, and also just above it at 641 px, a word whose term is 30 characters with a reading, and whose example and notes are 300 characters each, shows all of its text and the whole header. The page has no horizontal scroll. This holds on the word page, in the deck page's modal, and in a drill that has no card yet.
-- At the same widths, the dashboard of a Learner with a deck whose drill label reads "Hiragana → Word 1 · Meaning → Word 2 · Word → Meaning 1" shows all four Today counts (due, new, hard, overdue) and each full label. The page has no horizontal scroll.
+- At the same widths, the dashboard of a Learner with a deck whose drill label reads "Pinyin → Hanzi 1 · Meaning → Hanzi 2 · Hanzi → Meaning 1" shows all four Today counts (due, new, hard, overdue) and each full label. The page has no horizontal scroll.
 
 ## Extra ideas (not in your list)
 
