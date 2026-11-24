@@ -1,6 +1,6 @@
 # Agent loop
 
-How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). Both roles take the FR code: `/product FR-<id>` defines or refines the requirement (`.claude/skills/product/SKILL.md`; a new goal in words gets the next code), and `/feature FR-<id>` runs the rest (`.claude/skills/feature/SKILL.md`). The code, lower-cased (`fr-4`), names the dispatch folder and the branches.
+How the decision thread turns a feature into merged code with cheap implementer models, spending as few tokens as possible. Workers follow [`AGENTS.md`](../../AGENTS.md). Both roles take the FR code: `/feature FR-<id>` defines or refines the requirement (`.claude/skills/feature/SKILL.md`; a new goal in words gets the next code), and `/architect FR-<id>` runs the rest (`.claude/skills/architect/SKILL.md`). The code, lower-cased (`fr-4`), names the dispatch folder and the branches.
 
 ## Roles
 
@@ -19,7 +19,7 @@ Implementers and repairers are not subagents: each is a `claude -p` session with
 ## Loop
 
 ```
-0. product    → `/product FR-<id>`: the FR with its acceptance criteria, approved by the owner and merged; the handoff to the architect
+0. product    → `/feature FR-<id>`: the FR with its acceptance criteria, approved by the owner and merged; the handoff to the architect
 1. decision   → ADR / contract change committed to master
 2. split      → every acceptance criterion maps to a locked test; cohesive tasks: one per bounded context per side (e.g. library backend, library frontend), with disjoint `allow` lists;
                 no task's tests may need another task's code
