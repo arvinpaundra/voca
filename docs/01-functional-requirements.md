@@ -57,7 +57,7 @@ A deck is the grouping unit: a named, ordered collection of words in one term la
 ## FR-4 CSV batch import (M)
 
 - Upload a UTF-8 CSV file of up to **5 MB** into an existing deck.
-- Columns: `term,meaning[,reading][,example][,notes]`, with a required header row. `reading` takes hiragana for ja and pinyin for zh. `hiragana`, `pinyin`, and `jyutping` are accepted as aliases for `reading`. See [09](09-csv-import.md).
+- Columns: `term,meaning[,reading][,example][,notes]`, with a required header row. `reading` takes hiragana for ja and pinyin for zh. `hiragana`, `pinyin`, and `jyutping` are accepted as aliases for `reading`. Columns with other names are matched by the Learner before importing (FR-33). See [09](09-csv-import.md).
 - The import is **all-or-nothing**. If any row is invalid, nothing is imported and the first 100 errors are returned with their row numbers.
 - Rows that duplicate an existing word in the deck (same normalized term + reading) are skipped and counted, not treated as errors.
 - **Should:** export a deck to CSV in the same format, so data round-trips.
@@ -304,6 +304,8 @@ Extends FR-10. Every page load calls refresh today, even while the access token 
 
 ## FR-25 CSV import template (S)
 
+**Replaced by FR-33**: the import modal no longer offers a template; any header works once its columns are matched.
+
 Extends FR-4. Learners shouldn't have to guess the CSV format.
 
 - The Import CSV modal offers "Download template": `voca-template.csv`, the canonical header row `term,meaning,reading,example,notes` and nothing else.
@@ -444,6 +446,46 @@ Extends FR-2 and FR-6. A long term or example makes the word page wider than a p
 **Acceptance**
 - At 390 px width, a word whose term is 30 characters with a reading, and whose example is 300 characters, shows all of its text and the whole header. The page has no horizontal scroll.
 - The same word opened in the deck page's modal fits without horizontal scroll.
+
+## FR-33 Match CSV columns (S)
+
+Extends FR-4 and FR-29, and replaces FR-25. Learners already keep vocabulary in spreadsheets with their own column names (`kosakata, arti, cara baca`). Renaming headers to Voca's before every import is tedious, and guessing names automatically would be unreliable. Instead, after picking files, the Learner tells Voca which of their columns is which field.
+
+- Once a file is picked in Import CSV, the modal reads its first row as the header and adds a "Match columns" field: every column in file order, its name (or "Column N (no name)" when blank), and a dropdown: **Not imported**, **Term**, **Meaning**, **Reading**, **Example**, **Notes**.
+- Only Term and Meaning are required. A column left on Not imported is ignored: its values are neither stored nor validated.
+- No file sends two columns to one field. In Import CSV, choosing a field that another column has moves it there, and the other column goes back to Not imported.
+- A column named `term`, `meaning`, `reading`, `example` or `notes`, or `hiragana`, `pinyin` or `jyutping` for Reading (ignoring case and surrounding spaces), starts matched to its field; if two columns want the same field, the first one gets it. Every other column starts on Not imported.
+- Import stays disabled until Term and Meaning each have a column. Under the table, while true: "Choose a column for Term." · "Choose a column for Meaning."
+- A file that can't be read (not UTF-8, or empty) shows "Can't read this file's header. Save it as CSV UTF-8 with a header row, then choose it again." before importing, and Import stays disabled.
+- Row errors after importing name the field followed by the Learner's column: "Row 14, Meaning (arti): is required". Everything else about the import is unchanged (FR-4: synchronous, all-or-nothing, duplicates skipped, limits).
+- In Import decks, "Match columns" sits between the files and the languages. It lists each distinct column name across all picked files once (ignoring case and surrounding spaces), with how many files have it ("50 files"), most common first; blank header cells share one "(no name)" row. A name is matched once for the whole batch, wherever it sits in each file. So identical headers, the same names in a different order, and completely different names all work in one batch, at one row per distinct name.
+- In Import decks, different names may share a field (`kosakata` in some files and `word` in others, both on Term), as long as no single file has both.
+- In Import decks, the rules are checked per file, and Import stays disabled until every file passes. Each problem gets one line naming its files, the first 3 then "and N more", in this order: "Meaning is chosen for 2 columns in 1 file: Bab 7.csv. Pick one." · "3 files have no column for Term: …" · "3 files have no column for Meaning: Bab 4.csv, Bab 5.csv, Bab 6.csv." A file that can't be read is listed with the error above and a Remove button.
+- Import decks still runs in the background: on Import the modal closes and the batch shows in the Imports panel with its progress and per-file results, unchanged (FR-29).
+- The "Download template" link is removed. The file picker's hint reads "CSV with a header row · UTF-8 · up to 5 MB" ("· 5 MB each" in Import decks).
+- Matches aren't remembered: choosing other files, or reopening the modal, starts again from the headers.
+- **Won't:** two columns of one file on one field, one column name meaning different fields in different files of one batch, remembering matches between imports, typing column names instead of reading the files, files without a header row, choosing which row is the header, merging or splitting columns, a template download.
+
+**UI:** `docs/design/fr-33.html`
+
+**Acceptance**
+- Picking a file with header `kosakata,arti,cara baca` lists 3 columns in that order, each on Not imported, shows "Choose a column for Term." and "Choose a column for Meaning.", and Import is disabled.
+- After choosing kosakata → Term and arti → Meaning, with cara baca left on Not imported, Import is enabled; importing adds words with term and meaning from those columns and no reading.
+- A file with header `Term, MEANING ,pinyin` starts matched to Term, Meaning, Reading, and Import is enabled without changes.
+- Any column can be matched to Reading, whatever its name: `cara baca` or `furigana` matched to Reading imports its values as the reading. A file with no Reading column imports with empty readings.
+- A column on Not imported is not stored, and a value in it longer than any field limit causes no error.
+- With kosakata on Meaning, choosing Meaning for arti moves it: kosakata goes back to Not imported.
+- A blank header cell is listed as "Column N (no name)" and can be matched like any other column.
+- A non-UTF-8 file shows the can't-read message, lists no columns, and Import is disabled.
+- A row error after importing names the field and the column, e.g. "Row 14, Meaning (arti): is required", and nothing is imported.
+- In Import decks, 50 files with headers `kosakata,arti,cara baca` or `cara baca,kosakata,arti` list 3 rows, each "50 files"; matching them once imports all 50 decks with the words in the right fields.
+- In Import decks, 30 files with `kosakata,arti` and 20 with `word,translation,notes` list 5 rows; with kosakata and word on Term and arti and translation on Meaning, Import is enabled and all 50 decks import correctly.
+- In Import decks, if one file has both `arti` and `terjemahan` and both are on Meaning, "Meaning is chosen for 2 columns in 1 file: <name>. Pick one." shows and Import is disabled.
+- In Import decks, when 3 files have no column on Meaning, a line names them and Import is disabled.
+- In Import decks, an unreadable file is listed with Remove; Import stays disabled until it is removed.
+- In Import decks, after Import the modal closes and the batch's progress shows in the Imports panel, as in FR-29.
+- Neither import modal shows "Download template".
+- Choosing other files, or closing and reopening the modal, discards earlier matches.
 
 ## Extra ideas (not in your list)
 
