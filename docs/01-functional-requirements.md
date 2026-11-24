@@ -20,7 +20,7 @@ Works like Anki: each word has its own memory state, and the scheduler decides w
   - Wrong → `Again`
   - Correct but slow → `Hard`
   - Correct → `Good`
-- New words are introduced up to a daily limit (setting, default 20/day).
+- New cards are tracked against a daily target (setting "New cards per day", default 20/day). A card is one word in one drill. The target never limits a session (FR-36).
 
 **Acceptance**
 - After an answer, the word's `due`, `stability`, and `difficulty` are updated in the same transaction that writes the review log.
@@ -90,7 +90,7 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 - A bell in the header opens a panel listing:
   - each deck with words due now (due count, overdue count)
   - hard words that are due
-  - new words still available today: the daily allowance **capped by the words that actually have no Card yet**, so the
+  - new cards still available today, whatever the daily target (FR-36), **capped by the words that actually have no Card yet**, so the
     count is never a promise the decks can't keep
   - about how long the queue will take, from the Learner's own pace ([10](10-analytics.md))
 - The panel is computed on request and nothing is stored. It refreshes when the window gains focus and every 5 minutes while the tab is visible.
@@ -161,7 +161,7 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
   - **reading_term:** Hiragana → Word (Pinyin → Hanzi)
 - The reading drills apply only to words that have a reading.
 - Only drills that apply to at least one word in the deck are listed, each with today's due and new counts. The default is the set last used for that deck.
-- **Each (word, drill) is scheduled independently.** The daily new-word limit is shared across drills.
+- **Each (word, drill) is scheduled independently.** The daily new-card target counts each (word, drill) once, on its first review (FR-36).
 - **Mixed sessions:** each question shows its own direction label. A word appears in only one direction per session, so one question never reveals another's answer. Full design: [14](14-drills.md).
 - **No reading hints:** a question's prompt and its options never show a word's reading as ruby. The reading appears only where it is the prompt (`reading_term`) or the answer (`term_reading`). Once a question is answered, the feedback shows the word's reading.
 
@@ -444,6 +444,31 @@ Extends FR-2 and FR-6. A long term or example makes the word page wider than a p
 **Acceptance**
 - At 390 px width, a word whose term is 30 characters with a reading, and whose example is 300 characters, shows all of its text and the whole header. The page has no horizontal scroll.
 - The same word opened in the deck page's modal fits without horizontal scroll.
+
+## FR-36 Daily new cards: a target, not a limit (S)
+
+Extends FR-1, FR-7 and FR-17. The setting "New words per day" counts cards, one per word per drill, so a Learner who sets 30 and studies 4 drills meets far fewer than 30 new words and can't tell why. And once the number is used up, no session brings in anything new, even when the Learner wants to keep going. The setting should name what it counts and only track it.
+
+- The setting is renamed **New cards per day**. A card is one word in one drill. Help: "A daily target. Reaching it doesn't stop new cards." An info icon after the label opens a tooltip: "A card is one word in one drill." It opens on hover or keyboard focus, and on tap on a phone; it closes on mouse out, blur, Escape or a tap elsewhere. Range (0 to 200) and saved values are unchanged.
+- A card counts toward the day's target on its first review. This is what is counted today; only the name changes.
+- The target never limits a session. A session takes the due cards first, then fills the rest with new cards up to the session size, as long as the deck has new cards, below, at or past the target.
+- **Study setup** shows one line under the drill choices: "New cards today: 12 of 30". At or past the target it reads "New cards today: 30 of 30 · target reached" ("34 of 30" past it). It is information only.
+- Each drill's "N new" in setup counts the deck's new cards in that drill (words with no card in it), whatever the target.
+- **Dashboard and notification panel:** same look. Their "new" figure counts the new cards still available, whatever the target, so it matches setup. The headline says "new cards" instead of "new words": "You have 32 cards to review and 10 new cards waiting."
+- New cards studied from a snoozed deck count toward the target (FR-20). Hard words sessions hold no new cards and are unchanged.
+- **Won't:** any limit on new cards other than the session size, counting words instead of cards, a target per deck or per drill, slowing new cards down when reviews pile up.
+
+**UI:** `docs/design/fr-36.html`
+
+**Acceptance**
+- The Settings row reads "New cards per day" with the help text above, word for word, its info icon shows the card tooltip above, word for word, and a saved 30 still shows 30.
+- After first reviews of 12 cards today, setup shows "New cards today: 12 of 30".
+- With the target at 30, 30 new cards already today, nothing due and a deck with new cards left, a size-20 session holds 20 new cards; afterwards setup shows "New cards today: 50 of 30 · target reached".
+- With 5 cards due and 30 new cards already today, a size-20 session holds the 5 due cards and 15 new cards.
+- A session is short only when the deck runs out of due and new cards, never because of the target; its notice is unchanged.
+- Each drill's "N new" in setup equals the deck's words with no card in that drill, also past the target.
+- With 30 new cards already today and 40 new cards left in the Learner's decks, the dashboard's "new" figure shows 40 and its headline says "40 new cards waiting".
+- New cards studied from a snoozed deck count toward "New cards today".
 
 ## Extra ideas (not in your list)
 
