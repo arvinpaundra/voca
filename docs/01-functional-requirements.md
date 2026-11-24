@@ -57,7 +57,7 @@ A deck is the grouping unit: a named, ordered collection of words in one term la
 ## FR-4 CSV batch import (M)
 
 - Upload a UTF-8 CSV file of up to **5 MB** into an existing deck.
-- Columns: `term,meaning[,reading][,example][,notes]`, with a required header row. `reading` takes hiragana for ja and pinyin for zh. `hiragana`, `pinyin`, and `jyutping` are accepted as aliases for `reading`. Columns with other names are matched by the Learner before importing (FR-33). See [09](09-csv-import.md).
+- Columns: `term,meaning[,reading][,example][,notes]`, with a required header row. `reading` takes hiragana for ja and pinyin for zh. `hiragana`, `pinyin`, and `jyutping` are accepted as aliases for `reading`. Columns with other names are matched by the Learner before importing (FR-35). See [09](09-csv-import.md).
 - The import is **all-or-nothing**. If any row is invalid, nothing is imported and the first 100 errors are returned with their row numbers.
 - Rows that duplicate an existing word in the deck (same normalized term + reading) are skipped and counted, not treated as errors.
 - **Should:** export a deck to CSV in the same format, so data round-trips.
@@ -304,7 +304,7 @@ Extends FR-10. Every page load calls refresh today, even while the access token 
 
 ## FR-25 CSV import template (S)
 
-**Replaced by FR-33**: the import modal no longer offers a template; any header works once its columns are matched.
+**Replaced by FR-35**: the import modal no longer offers a template; any header works once its columns are matched.
 
 Extends FR-4. Learners shouldn't have to guess the CSV format.
 
@@ -447,7 +447,7 @@ Extends FR-2 and FR-6. A long term or example makes the word page wider than a p
 - At 390 px width, a word whose term is 30 characters with a reading, and whose example is 300 characters, shows all of its text and the whole header. The page has no horizontal scroll.
 - The same word opened in the deck page's modal fits without horizontal scroll.
 
-## FR-33 Match CSV columns (S)
+## FR-35 Match CSV columns (S)
 
 Extends FR-4 and FR-29, and replaces FR-25. Learners already keep vocabulary in spreadsheets with their own column names (`kosakata, arti, cara baca`). Renaming headers to Voca's before every import is tedious, and guessing names automatically would be unreliable. Instead, after picking files, the Learner tells Voca which of their columns is which field.
 
@@ -466,7 +466,7 @@ Extends FR-4 and FR-29, and replaces FR-25. Learners already keep vocabulary in 
 - Matches aren't remembered: choosing other files, or reopening the modal, starts again from the headers.
 - **Won't:** two columns of one file on one field, one column name meaning different fields in different files of one batch, remembering matches between imports, typing column names instead of reading the files, files without a header row, choosing which row is the header, merging or splitting columns, a template download.
 
-**UI:** `docs/design/fr-33.html`
+**UI:** `docs/design/fr-35.html`
 
 **Acceptance**
 - Picking a file with header `kosakata,arti,cara baca` lists 3 columns in that order, each on Not imported, shows "Choose a column for Term." and "Choose a column for Meaning.", and Import is disabled.

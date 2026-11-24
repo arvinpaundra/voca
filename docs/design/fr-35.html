@@ -134,7 +134,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .file-drop { border: 1.5px dashed var(--line-2, var(--line)); border-radius: var(--r-sm); padding: 18px; display: grid; gap: 6px; justify-items: center; text-align: center; font-size: var(--small); color: var(--muted); }
 
-/* ------------------------------------------------------------------ FR-33: column matching (new component: ColumnMatch) */
+/* ------------------------------------------------------------------ FR-35: column matching (new component: ColumnMatch) */
 .cm { display: grid; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
 .cm-head, .cm-row { display: grid; grid-template-columns: minmax(0, 1fr) 156px; gap: 12px; align-items: center; padding: 8px 12px; }
 .cm-head { background: var(--sunken); border-bottom: 1px solid var(--line); font-size: var(--tiny); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
@@ -190,7 +190,7 @@ p.cm-note { display: block; }
 
 <div class="doc-top">
   <div class="doc-top-in">
-    <div class="doc-brand">Vo<span>ca</span><small>FR-33 · Match CSV columns</small></div>
+    <div class="doc-brand">Vo<span>ca</span><small>FR-35 · Match CSV columns</small></div>
   </div>
 </div>
 
@@ -198,7 +198,7 @@ p.cm-note { display: block; }
 
 <section class="doc-sec">
   <header>
-    <span class="eyebrow">FR-33 · extends FR-4 and FR-29 · replaces FR-25</span>
+    <span class="eyebrow">FR-35 · extends FR-4 and FR-29 · replaces FR-25</span>
     <h2>Match CSV columns</h2>
     <p>Learners import the CSV files they already have, whatever their column names (<code>kosakata, arti, cara baca</code>). After a file is picked, the import modal you already know gets one more field, “Match columns”: each column name of the file with a dropdown for its Voca field. Only <b>Term</b> and <b>Meaning</b> are required. A column left on “Not imported” is simply ignored. No file sends two columns to one field: in Import CSV, picking a field that another column has moves it there; in Import decks, different names may share a field as long as no single file has both. Columns Voca knows by name start matched. The “Download template” link is gone, and matches are never remembered.</p>
   </header>
