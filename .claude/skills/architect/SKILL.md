@@ -14,7 +14,8 @@ You are the decision thread for Voca, in the architect role: the product role (`
 ## 1. Understand and split (stop for the owner's approval)
 
 - Start from `FR-<id>` in `docs/01-functional-requirements.md`, approved. Missing or ambiguous → stop and ask the owner to run `/feature FR-<id>` first; never write or rewrite requirements yourself.
-- Read only the docs the feature needs (its FRs in `docs/01-functional-requirements.md`, the relevant sections of `docs/07-api.md`, `docs/06-data-model.md`, and the topic doc), plus the contract files it touches.
+- A user-visible FR has a **UI** line naming its design, `docs/design/fr-<id>.html`. That design is the spec for layout, states and copy: build exactly what it shows. A missing design, a missing screen or state, or copy it leaves open → stop and ask the owner to run `/feature FR-<id>`; never invent UI or edit `docs/design/` yourself.
+- Read only the docs the feature needs (its FRs in `docs/01-functional-requirements.md`, the relevant sections of `docs/07-api.md`, `docs/06-data-model.md`, and the topic doc), plus the contract files it touches and, for a UI FR, its design.
 - Split into **cohesive tasks: one per bounded context per side**, with disjoint `allow` lists. A task's tests must never need another task's code: seed data with SQL in tests instead of calling another task's endpoints.
 - Present the split (tasks, files each owns, what each locked test pins down) with a table mapping every acceptance criterion of the FR to its locked test(s), and wait for the owner's go. A criterion with no test is a gap in the split. Any decision the docs don't settle goes to the owner first, then into `docs/13-decisions.md`.
 
@@ -49,7 +50,7 @@ locked:
 ```
 
 WHY / SPEC / CONTRACT: one line each
-CONTEXT PACK: the exact files to read (the reference to copy, the stubs to fill), and the 10-20 spec lines that matter, pasted
+CONTEXT PACK: the exact files to read (the reference to copy, the stubs to fill, and for an `fe` task the FR's design `docs/design/fr-<id>.html` with the screens it covers), and the 10-20 spec lines that matter, pasted
 DO: the nodes to implement, one per bullet
 DON'T: outside `allow`; contract/, docs/, locked tests
 VERIFY: bun run verify --issue <this issue> --hash HASH
@@ -87,7 +88,7 @@ It decides every PR by rule and prints them grouped:
 
 There is no review agent: VERIFY's diff coverage and the locked tests pin the behaviour, and the owner reviews what `next.ts` sends them. For the owner's own review comments, write a `heals.json` by hand (finding: "Address every comment: `gh pr view P --comments`") and dispatch it.
 
-- UI tasks: on the PR's branch, `bun scripts/shots.ts --mock <specs>` and `bun scripts/shots.ts --design`; compare each page with its design screen, send every mismatch as a heal, then give the owner both sets of paths.
+- UI tasks: on the PR's branch, `bun scripts/shots.ts --mock <specs>` and `bun scripts/shots.ts --design`; compare each page with the FR's design (`docs/design/fr-<id>.html`, or the Console screen for an existing page), send every mismatch as a heal, then give the owner both sets of paths.
 - Report to the owner: one line per task (PR, group), the disputes, and what waits for them.
 
 ## 7. After the feature
