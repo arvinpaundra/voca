@@ -32,7 +32,7 @@ It works with any language, including ones with their own scripts. Japanese word
 | Database | PostgreSQL |
 | Frontend | React 19, TanStack Router and Query, Vite |
 | Auth | Google OAuth (code + PKCE), JWT access tokens, rotating refresh tokens. No cookies |
-| Hosting | `voca.arvinpaundra.dev`: Cloudflare Pages for the frontend, `/api` proxied to the Kubernetes cluster `kube-oci` (backend and PostgreSQL 18.3) |
+| Hosting | `voca.arvinpaundra.xyz`: Cloudflare Pages for the frontend, `/api` proxied to the Kubernetes cluster `kube-oci` (backend and PostgreSQL 18.3) |
 
 ## Repository layout
 
