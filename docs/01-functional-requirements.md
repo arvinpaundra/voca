@@ -254,10 +254,10 @@ Sometimes a Learner wants to flip through a deck without the pressure of a grade
 
 ## FR-22 Release (M)
 
-The owner needs to ship Voca to `voca.arvinpaundra.dev`, and every later version, in one repeatable step. A broken build must never take down the working version. The first release also replaces the old Voca (the Go API at `vocaapi.arvinpaundra.dev`) and leaves nothing of it behind.
+The owner needs to ship Voca to `voca.arvinpaundra.xyz`, and every later version, in one repeatable step. A broken build must never take down the working version. The first release also replaces the old Voca (the Go API at `vocaapi.arvinpaundra.dev`) and leaves nothing of it behind.
 
 - The owner releases by pushing a version tag `vX.Y.Z` on a master commit. Nothing else deploys; merging to master does not.
-- One release ships the API and the web app together, from the same commit. Both are served from `voca.arvinpaundra.dev`, with the API under `/api`.
+- One release ships the API and the web app together, from the same commit. Both are served from `voca.arvinpaundra.xyz`, with the API under `/api`.
 - A release runs only if that commit's CI `verify` passed. Otherwise nothing is deployed and the release is marked failed.
 - A release replaces the running version with no failed requests. If the new API never becomes healthy, the previous version keeps serving and the release is marked failed.
 - Production secrets live only in GitHub repository secrets. They are applied on every release and never committed.
@@ -267,7 +267,7 @@ The owner needs to ship Voca to `voca.arvinpaundra.dev`, and every later version
 - **Won't:** a staging environment, preview deploys per PR, automatic rollback, changelog generation, or migrating data from the old app.
 
 **Acceptance**
-- Pushing `v1.0.0` on a green master commit ends with `GET https://voca.arvinpaundra.dev/api/healthz` → 204, and the page at `https://voca.arvinpaundra.dev` is built from that commit.
+- Pushing `v1.0.0` on a green master commit ends with `GET https://voca.arvinpaundra.xyz/api/healthz` → 204, and the page at `https://voca.arvinpaundra.xyz` is built from that commit.
 - Pushing a tag on a commit whose `verify` failed deploys nothing, and the running version is unchanged.
 - During a successful release, `GET /api/healthz` keeps answering 204.
 - A release whose API never becomes healthy leaves the previous version answering 204, and the workflow run fails.

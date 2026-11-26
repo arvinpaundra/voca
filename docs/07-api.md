@@ -6,7 +6,7 @@ The API is defined once in `contract/` (`VocaApi` in `contract/src/api.ts`) as a
 - `HttpApiSwagger` serves OpenAPI at `/docs` outside production.
 
 Conventions:
-- **Base path:** every route below lives under `/api` on the same origin as the SPA, for example `GET https://voca.arvinpaundra.dev/api/decks`. The prefix is set once in the contract (`HttpApi.prefix("/api")`), so the backend, the Pages Function proxy, and the Vite dev proxy all pass paths through unchanged.
+- **Base path:** every route below lives under `/api` on the same origin as the SPA, for example `GET https://voca.arvinpaundra.xyz/api/decks`. The prefix is set once in the contract (`HttpApi.prefix("/api")`), so the backend, the Pages Function proxy, and the Vite dev proxy all pass paths through unchanged.
 - **Slugs:** every `:deckSlug`, `:wordSlug`, and `:sessionSlug` path parameter and every `*Slug` field is a slug: random uppercase Crockford base32 with no prefix. Lengths: learner 8, deck 10, word 12, session 14. Internal `bigint` IDs never appear. Lowercase input is accepted and uppercased. A slug of the wrong length or with a character outside the alphabet → `400`.
 - JSON bodies.
 - `Authorization: Bearer <access>` on every route except `/api/auth/*` and `/api/healthz`.

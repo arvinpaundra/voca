@@ -3,10 +3,10 @@
 ## Topology
 
 ```
-Browser ──▶ https://voca.arvinpaundra.dev  (Cloudflare, one origin)
+Browser ──▶ https://voca.arvinpaundra.xyz  (Cloudflare, one origin)
               ├─ /*      ─▶ Cloudflare Pages: fe static SPA
               └─ /api/*  ─▶ Pages Function fe/functions/api/[[path]].ts
-                              └─ fetch ─▶ https://voca-origin.arvinpaundra.dev (Cloudflare-proxied)
+                              └─ fetch ─▶ https://voca-origin.arvinpaundra.xyz (Cloudflare-proxied)
                                             ─▶ kube-oci Traefik ─▶ ns voca: voca-api (Bun, routes under /api)
                                                                        │
                                                                        ▼
@@ -16,13 +16,13 @@ Browser ──▶ https://voca.arvinpaundra.dev  (Cloudflare, one origin)
 **Status:** released by `.github/workflows/release.yml` (below). Before the first release, the owner works through the [first-release checklist](#first-release-checklist).
 
 ## Frontend: Cloudflare Pages
-- Custom domain: `voca.arvinpaundra.dev`.
+- Custom domain: `voca.arvinpaundra.xyz`.
 - Build: `bun install && bun run --filter @voca/fe build` produces `fe/dist`.
 - `fe/public/_redirects`: `/*  /index.html  200` (SPA fallback). Pages Functions take precedence, so `/api/*` never hits the fallback.
 - `fe/public/_headers`: the CSP from [08](08-auth.md), plus `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and long-lived caching for `/assets/*`.
 - Deployed by the release with `wrangler pages deploy`; `fe/wrangler.toml` holds the project name and `API_ORIGIN`.
 - Build-time environment: `VITE_GOOGLE_CLIENT_ID`. There is no API URL: the client calls relative `/api` paths.
-- Google Cloud Console: authorized redirect URIs `https://voca.arvinpaundra.dev/auth/callback` and `http://localhost:5173/auth/callback`.
+- Google Cloud Console: authorized redirect URIs `https://voca.arvinpaundra.xyz/auth/callback` and `http://localhost:5173/auth/callback`.
 
 ### The `/api` proxy (Pages Function)
 
@@ -55,7 +55,7 @@ The node `mio-vnc` is **arm64**. The release builds the image on GitHub's `ubunt
 | `secret.yaml` | `voca-api` with `${DATABASE_URL}`, `${JWT_SECRET}`, `${GOOGLE_CLIENT_ID}`, `${GOOGLE_CLIENT_SECRET}` placeholders, filled in by the release with `envsubst` from GitHub secrets |
 | `deployment.yaml` | 1 replica, rolling (below); resources `requests: 100m/128Mi`, `limits: 512Mi`; readiness and liveness probes on `GET /api/healthz`; `runAsNonRoot`, `readOnlyRootFilesystem` (with an `emptyDir` on `/tmp`); a 10 s `preStop` sleep. `IMAGE` and `RELEASE` are filled in by the release |
 | `service.yaml` | ClusterIP 80 → 8000 |
-| `ingress.yaml` | Traefik, external-dns with Cloudflare proxying; host `${API_HOST}` (`voca-origin.arvinpaundra.dev`) and target `${API_TARGET_IP}`, filled in by the release from GitHub variables. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.dev/api` |
+| `ingress.yaml` | Traefik, external-dns with Cloudflare proxying; host `${API_HOST}` (`voca-origin.arvinpaundra.xyz`) and target `${API_TARGET_IP}`, filled in by the release from GitHub variables. It is reached only by the Pages Function; browsers use `voca.arvinpaundra.xyz/api` |
 | `ratelimit.yaml` | A Traefik `Middleware` (`rateLimit`: average 10 req/s, burst 20, keyed on `X-Real-IP`) attached to the ingress |
 | `beanstalkd.yaml` | The import queue (ADR 61): a 1 Gi `local-path` PVC for the binlog, a 1-replica `Recreate` Deployment (`-b /data -f 1000`, TCP probes on 11300, UID 10001, read-only root), a ClusterIP Service `beanstalkd:11300`, and a NetworkPolicy that admits only `app=voca-api`. The API finds it through `BEANSTALKD_HOST=beanstalkd` in `deployment.yaml` |
 
@@ -102,7 +102,7 @@ Master is protected by the required `verify` check, so a master commit has alrea
 
 | Variable | Value |
 |---|---|
-| `API_HOST` | `voca-origin.arvinpaundra.dev` |
+| `API_HOST` | `voca-origin.arvinpaundra.xyz` |
 | `API_TARGET_IP` | `140.245.111.204` |
 
 ## First-release checklist
@@ -124,10 +124,10 @@ One-time steps only the owner does, in order. Steps 2–4 cannot be undone, and 
    CREATE DATABASE voca OWNER voca;
    REVOKE ALL ON DATABASE voca FROM PUBLIC;
    ```
-6. **Google OAuth:** Google Cloud Console → Credentials → the OAuth client → authorized redirect URIs `https://voca.arvinpaundra.dev/auth/callback` and `http://localhost:5173/auth/callback`; remove the old app's URIs.
+6. **Google OAuth:** Google Cloud Console → Credentials → the OAuth client → authorized redirect URIs `https://voca.arvinpaundra.xyz/auth/callback` and `http://localhost:5173/auth/callback`; remove the old app's URIs.
 7. **GitHub secrets and variables:** repo → Settings → Secrets and variables → Actions, every secret and variable in the tables above. The kubeconfig:
    ```bash
    kubectl config view --minify --flatten --context kube-oci | base64 | gh secret set KUBECONFIG
    ```
-8. **Cloudflare Pages:** `bunx wrangler@4.20.0 pages project create voca --production-branch master`, then Pages → voca → Custom domains → add `voca.arvinpaundra.dev`. The `voca-origin` record is created by external-dns from the ingress on the first release.
+8. **Cloudflare Pages:** `bunx wrangler@4.20.0 pages project create voca --production-branch master`, then Pages → voca → Custom domains → add `voca.arvinpaundra.xyz`. The `voca-origin` record is created by external-dns from the ingress on the first release.
 9. **First release:** `git tag v1.0.0 origin/master && git push origin v1.0.0`. It migrates the fresh database itself. GHCR makes a new package private: if the migrate step times out on `ImagePullBackOff`, set *Packages → voca-api → Package settings → visibility* to Public and re-run the release.
