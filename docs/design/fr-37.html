@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FR-37 Delete account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&family=Shippori+Mincho:wght@500;600&display=swap">
+<style>
+:root{--bg: #f5f5f5;
+  --surface: #ffffff;
+  --sunken: #fafaf9;
+  --ink: #1c1917;
+  --ink-2: #44403c;
+  --muted: #78716c;
+  --faint: #a8a29e;
+  --line: #e7e5e4;
+  --line-strong: #d6d3d1;
+  --dark: #1c1917;
+  --dark-2: #292524;
+  --dark-line: #2f2b29;
+  --dark-muted: #a8a29e;
+  --lime: #c1ff72;
+  --lime-hover: #aef55a;
+  --lime-tint: #f3ffe3;
+  --lime-ink: #3f6212;
+  --navy: #002f43;
+  --navy-tint: #e6eef1;
+  --bad: #dc2626;
+  --bad-bg: #fef2f2;
+  --bad-line: #fecaca;
+  --ok: #4d7c0f;
+
+
+  --m-new: #d6d3d1;
+  --m-learning: #c1ff72;
+  --m-mature: #002f43;
+
+  --f-display: "Montserrat", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, sans-serif;
+  --f-term: "Shippori Mincho", serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, monospace;}
+body[data-opt="console"]{--r-xs: 3px; --r-sm: 5px; --r: 8px; --r-lg: 10px; --r-btn: 6px; --r-pill: 999px;
+  --card-bd: 1px solid var(--line); --card-sh: none; --card-pad: 16px;
+  --gap: 16px; --gap-lg: 32px; --stack: 12px;
+  --h1: 20px; --h1-lh: 28px; --h2: 12px; --h2-font: var(--f-body); --h2-w: 600; --h2-case: uppercase; --h2-track: .06em;
+  --body: 14px; --small: 13px; --tiny: 12px;
+  --btn-h: 32px; --btn-h-sm: 28px; --ctl-h: 32px;
+  --primary-bg: var(--navy); --primary-fg: #fff; --primary-hover: #0a3d54;
+  --hero-bg: var(--surface); --hero-fg: var(--ink); --hero-muted: var(--muted); --hero-bd: 1px solid var(--line); --hero-chip: var(--sunken);
+  --num-font: var(--f-mono);}
+*,*::before,*::after{box-sizing: border-box;}
+html,body{margin: 0;}
+body{background: var(--bg); color: var(--ink); font: var(--body)/1.55 var(--f-body); -webkit-font-smoothing: antialiased;}
+h1,h2,h3,p{margin: 0;}
+a{color: inherit;}
+button,input,select,textarea{font: inherit; color: inherit;}
+.i{width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;}
+.muted{color: var(--muted);}
+:focus-visible{outline: 2px solid var(--navy); outline-offset: 2px;}
+.doc-top{position: sticky; top: 0; z-index: 50; background: rgba(245,245,245,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);}
+.doc-top-in{max-width: 1240px; margin: 0 auto; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;}
+.doc-brand{font: 600 20px/1 var(--f-body); letter-spacing: -.04em;}
+.doc-brand span{color: var(--muted);}
+.doc-brand small{font: 500 12px var(--f-body); letter-spacing: 0; color: var(--muted); margin-left: 8px;}
+.doc{max-width: 1240px; margin: 0 auto; padding: 32px 16px 120px; display: grid; gap: 56px;}
+.doc-sec{display: grid; gap: 20px; min-width: 0;}
+.doc-sec > header{display: grid; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 12px;}
+.doc-sec > header .eyebrow{font: 600 11px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);}
+.doc-sec > header h2{font: 600 24px/1.2 var(--f-display); letter-spacing: -.01em;}
+.doc-sec > header p{color: var(--muted); font-size: 14px; max-width: 760px;}
+.screen{background: var(--bg); border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; min-width: 0;}
+.screen-bar{display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #ebebea; border-bottom: 1px solid var(--line-strong); font: 500 12px var(--f-mono); color: var(--muted);}
+.screen-bar i{width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong);}
+.screen-bar span{margin-left: 8px;}
+.screen-body{padding: clamp(16px, 3vw, 32px);}
+.screen-body.flush{padding: 0;}
+.back{display: inline-flex; align-items: center; gap: 6px; font-size: var(--small); color: var(--muted); text-decoration: none; width: max-content;}
+.back:hover{color: var(--ink);}
+.eyebrow{font-size: var(--tiny); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);}
+.h1{font: 600 var(--h1)/var(--h1-lh) var(--f-display); letter-spacing: -.02em; overflow-wrap: anywhere;}
+.sub{color: var(--muted); font-size: var(--small);}
+.h2{font: var(--h2-w) var(--h2)/1.3 var(--h2-font); text-transform: var(--h2-case); letter-spacing: var(--h2-track);}
+body[data-opt="console"] .h2{color: var(--muted);}
+.card{grid-template-columns: minmax(0, 1fr); background: var(--surface); border: var(--card-bd); box-shadow: var(--card-sh); border-radius: var(--r-lg); padding: var(--card-pad); display: grid; gap: var(--stack); align-content: start; min-width: 0;}
+.card-head{display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px;}
+.btn{display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--btn-h); padding: 0 calc(var(--btn-h) * .45); border-radius: var(--r-btn); border: 1px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s;}
+.btn:active{transform: translateY(1px);}
+.btn-sm{height: var(--btn-h-sm); padding: 0 12px; font-size: 13px;}
+.btn-ghost{background: transparent; color: var(--ink-2);}
+.btn-ghost:hover{background: rgba(28,25,23,.06);}
+.btn-danger{background: var(--bad); color: #fff;}
+.btn-danger:hover{background: #b91c1c;}
+.btn[disabled]{opacity: .45; cursor: not-allowed;}
+.btn-icon{width: var(--btn-h-sm); height: var(--btn-h-sm); padding: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); border: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;}
+.btn-icon:hover{background: rgba(28,25,23,.06); color: var(--ink);}
+.btn-busy::before{content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite;}
+@keyframes spin{ to { transform: rotate(360deg); } }
+.field{display: grid; gap: 6px; min-width: 0;}
+.field > label,.field > .lbl{font-size: var(--small); font-weight: 500; color: var(--ink-2);}
+.input{width: 100%; height: var(--ctl-h); padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: #fff; font-size: 14px; color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s;}
+.input:hover{border-color: var(--faint);}
+.input:focus{border-color: var(--navy); box-shadow: 0 0 0 3px rgba(0,47,67,.12); background: #fff;}
+.avatar{width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--line); color: var(--ink-2); flex-shrink: 0;}
+.avatar.lg{width: 56px; height: 56px; font-size: 20px;}
+.alert{display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-sm); font-size: var(--small);}
+.alert-bad{background: var(--bad-bg); color: #991b1b; border: 1px solid var(--bad-line);}
+.alert-info{background: var(--navy-tint); color: var(--navy);}
+.alert .grow{flex: 1;}
+.alert button{margin-left: auto;}
+@keyframes shimmer{ to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce){.btn-busy::before{animation: none;}}
+.modal-stage{background: rgba(28,25,23,.42); border-radius: 12px; padding: 32px 16px; display: grid; place-items: center;}
+.modal{background: #fff; width: min(480px, 100%); border-radius: var(--r-lg); box-shadow: 0 24px 64px -12px rgba(0,0,0,.35); display: grid; overflow: hidden;}
+.modal-head{display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: var(--card-pad) var(--card-pad) 0;}
+.modal-head h3{font: 600 18px/1.3 var(--f-display);}
+.modal-head p{font-size: var(--small); color: var(--muted); margin-top: 4px;}
+.modal-body{padding: 20px var(--card-pad); display: grid; gap: 16px;}
+.modal-foot{display: flex; justify-content: flex-end; gap: 8px; padding: 14px var(--card-pad); background: var(--sunken); border-top: 1px solid var(--line);}
+.settings{display: grid; gap: var(--gap); max-width: 760px;}
+.auth-card{width: min(380px, 100%); display: grid; gap: 24px;}
+.gbtn{display: flex; align-items: center; justify-content: center; gap: 12px; height: 46px; border-radius: var(--r-btn); border: 1px solid var(--line-strong); background: #fff; font-weight: 600; font-size: 14px; cursor: pointer;}
+.gbtn:hover{background: var(--sunken);}
+.frames{display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); align-items: start;}
+.phone{width: 100%;}
+.phone-row > div{width: min(390px, 100%);}
+.phone .screen-body{padding: 16px;}
+.phone-row{display: flex; flex-wrap: wrap; gap: 20px; align-items: start;}
+.note{font-size: 13px; color: var(--ink-2); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--r-sm); padding: 10px 14px;}
+.note b{color: var(--ink);}
+.kit{font: 500 11px var(--f-mono); background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--ink-2);}
+.cap{font: 600 12px var(--f-body); color: var(--muted); text-transform: uppercase; letter-spacing: .06em;}
+.frames.wide{grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr));}
+.rule{display: grid; gap: 6px; font-size: 14px; color: var(--ink-2); padding-left: 18px; margin: 0;}
+.danger-card{border-color: var(--bad-line);}
+.danger-card .h2{color: var(--bad);}
+.danger-row{display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;}
+.danger-row .lbl b{display: block; font-size: 14px; font-weight: 600;}
+.danger-row .lbl span{font-size: var(--tiny); color: var(--muted);}
+.phone .danger-row .btn{width: 100%; justify-content: center;}
+.losses{margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: var(--small); color: var(--ink-2);}
+.modal .field code{font: 500 12px var(--f-mono); background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; color: var(--ink);}
+.btn-danger[disabled]{opacity: .45; cursor: not-allowed;}
+.phone .modal-stage{padding: 16px 8px;}
+.phone .modal-foot{flex-direction: column-reverse;}
+.phone .modal-foot .btn{width: 100%; justify-content: center;}
+.signin-stage{display: grid; place-items: center; padding: 40px 16px; background: #fff;}
+.signin-stage .auth-card{width: min(380px, 100%);}
+</style>
+</head>
+<body data-opt="console">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+</svg>
+<div class="doc-top"><div class="doc-top-in"><div class="doc-brand">Vo<span>ca</span><small>FR-37 · Delete account</small></div></div></div>
+<main class="doc">
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">FR-37 · extends FR-2, FR-5 and FR-10</span>
+    <h2>Delete account</h2>
+    <p>A Learner can delete their account from Settings. Before anything happens, a confirmation asks them to type their email. Deleting removes their decks as a deck delete does (FR-2), public ones too. It removes their name, email, photo and Google link from Voca and signs them out on every device. Study history stays, tied to nothing that identifies them. Signing in again with the same Google account starts a new, empty account.</p>
+  </header>
+  <div class="note"><b>The rules the screens below follow</b>
+    <ul class="rule">
+      <li>The action lives in one place: a <b>Danger zone</b> card at the bottom of Settings.</li>
+      <li>“Delete account” stays disabled until the typed text matches the account’s email. Spaces around it and letter case are ignored.</li>
+      <li>Deleting is immediate and permanent. Nothing restores it.</li>
+      <li>Forks other Learners made of a public deck stay theirs, unchanged.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="doc-sec">
+  <header><span class="eyebrow">Page · /app/settings · desktop and phone</span><h2>Settings: Danger zone</h2><p>A new card under Word font, built from <span class="kit">SettingsSection</span> with a red border and a red title. It holds one row: the label and help on the left, <span class="kit">Button variant="danger"</span> on the right (full width on a phone). The Settings loading and error states don’t change: the card shows only once settings have loaded.</p></header>
+  <div class="frames">
+    <div style="display:grid;gap:8px"><span class="cap">Desktop · 1280</span><div class="screen"><div class="screen-bar"><i></i><i></i><i></i><span>voca.app/app/settings</span></div><div class="screen-body"><div class="settings">
+      <section class="card">
+        <div class="card-head"><h2 class="h2">Profile</h2></div>
+        <div style="display:flex;gap:16px;align-items:center"><span class="avatar lg">A</span><div><b>Arvin Paundra</b><div class="muted" style="font-size:13px">arvin@example.com · Signed in with Google</div></div><button class="btn btn-ghost btn-sm" style="margin-left:auto">Sign out</button></div>
+      </section>
+      <section class="card"><div class="card-head"><h2 class="h2">Word font</h2></div><p class="muted" style="font-size:13px">…unchanged…</p></section>
+      <section class="card danger-card">
+        <div class="card-head"><h2 class="h2">Danger zone</h2></div>
+        <div class="danger-row"><div class="lbl"><b>Delete account</b><span>Deletes your decks and signs you out everywhere. This can’t be undone.</span></div><button class="btn btn-danger">Delete account…</button></div>
+      </section>
+    </div></div></div></div>
+    <div style="display:grid;gap:8px"><span class="cap">Phone · 390</span><div class="screen phone" style="max-width:390px"><div class="screen-bar"><i></i><i></i><i></i><span>settings</span></div><div class="screen-body"><div class="settings">
+      <section class="card"><div class="card-head"><h2 class="h2">Word font</h2></div><p class="muted" style="font-size:13px">…unchanged…</p></section>
+      <section class="card danger-card">
+        <div class="card-head"><h2 class="h2">Danger zone</h2></div>
+        <div class="danger-row"><div class="lbl"><b>Delete account</b><span>Deletes your decks and signs you out everywhere. This can’t be undone.</span></div><button class="btn btn-danger">Delete account…</button></div>
+      </section>
+    </div></div></div></div>
+  </div>
+  <div class="note"><b>Interactions.</b> “Delete account…” opens the confirmation below. Nothing changes until the Learner confirms there.</div>
+</section>
+
+<section class="doc-sec">
+  <header><span class="eyebrow">Modal · over /app/settings · desktop</span><h2>Confirm deletion</h2><p>Built from <span class="kit">Modal</span>, <span class="kit">Input</span> and <span class="kit">Button</span>, the same shape as the deck delete confirmation. It lists what goes, then asks for the email. Four states.</p></header>
+  <div class="frames wide">
+    <div style="display:grid;gap:8px"><span class="cap">1 · Opened: nothing typed</span><div class="modal-stage"><div class="modal" role="dialog" aria-labelledby="m1">
+      <div class="modal-head"><div><h3 id="m1">Delete your account?</h3><p>This can’t be undone.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <ul class="losses">
+          <li>Your decks and their words are deleted, including the ones you published to Community.</li>
+          <li>Copies other learners forked from your decks stay theirs.</li>
+          <li>Your name, email and photo are removed from Voca.</li>
+          <li>You’re signed out on every device.</li>
+          <li>Signing in with this Google account again starts a new, empty account.</li>
+        </ul>
+        <div class="field"><label for="c1">Type <code>arvin@example.com</code> to confirm</label><input id="c1" class="input" type="email" autocomplete="off" placeholder="arvin@example.com"></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost">Keep account</button><button class="btn btn-danger" disabled>Delete account</button></div>
+    </div></div></div>
+    <div style="display:grid;gap:8px"><span class="cap">2 · Doesn’t match yet</span><div class="modal-stage"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Delete your account?</h3><p>This can’t be undone.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <ul class="losses">
+          <li>Your decks and their words are deleted, including the ones you published to Community.</li>
+          <li>Copies other learners forked from your decks stay theirs.</li>
+          <li>Your name, email and photo are removed from Voca.</li>
+          <li>You’re signed out on every device.</li>
+          <li>Signing in with this Google account again starts a new, empty account.</li>
+        </ul>
+        <div class="field"><label>Type <code>arvin@example.com</code> to confirm</label><input class="input" value="arvin@exam"></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost">Keep account</button><button class="btn btn-danger" disabled>Delete account</button></div>
+    </div></div></div>
+    <div style="display:grid;gap:8px"><span class="cap">3 · Matches → deleting</span><div class="modal-stage"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Delete your account?</h3><p>This can’t be undone.</p></div><button class="btn-icon" aria-label="Close" disabled><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <ul class="losses">
+          <li>Your decks and their words are deleted, including the ones you published to Community.</li>
+          <li>Copies other learners forked from your decks stay theirs.</li>
+          <li>Your name, email and photo are removed from Voca.</li>
+          <li>You’re signed out on every device.</li>
+          <li>Signing in with this Google account again starts a new, empty account.</li>
+        </ul>
+        <div class="field"><label>Type <code>arvin@example.com</code> to confirm</label><input class="input" value="Arvin@Example.com " disabled></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" disabled>Keep account</button><button class="btn btn-danger btn-busy" disabled>Deleting…</button></div>
+    </div></div></div>
+    <div style="display:grid;gap:8px"><span class="cap">4 · Failed</span><div class="modal-stage"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Delete your account?</h3><p>This can’t be undone.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <ul class="losses">
+          <li>Your decks and their words are deleted, including the ones you published to Community.</li>
+          <li>Copies other learners forked from your decks stay theirs.</li>
+          <li>Your name, email and photo are removed from Voca.</li>
+          <li>You’re signed out on every device.</li>
+          <li>Signing in with this Google account again starts a new, empty account.</li>
+        </ul>
+        <div class="field"><label>Type <code>arvin@example.com</code> to confirm</label><input class="input" value="arvin@example.com"></div>
+        <div role="alert" class="alert alert-bad"><span class="grow">Couldn’t delete your account. Nothing was deleted. Try again.</span></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost">Keep account</button><button class="btn btn-danger">Delete account</button></div>
+    </div></div></div>
+  </div>
+  <div class="note"><b>Interactions.</b> The match ignores spaces around the text and letter case (state 3 matches). Enter submits only when it matches. While deleting, the modal can’t be closed. “Keep account”, ✕, Escape or a click outside closes it, clears the typed text and changes nothing. On failure the modal stays open with the typed text kept, and the account is untouched. On success the app signs out in this tab and every other tab and device, and lands on the sign-in page below.</div>
+</section>
+
+<section class="doc-sec">
+  <header><span class="eyebrow">Modal · phone · 390</span><h2>Confirm deletion on a phone</h2><p>Same content. The buttons stack full width with the danger button on top. Shown: nothing typed, and matched.</p></header>
+  <div class="phone-row">
+    <div style="display:grid;gap:8px"><span class="cap">Nothing typed</span><div class="screen phone"><div class="screen-bar"><i></i><i></i><i></i><span>settings</span></div><div class="screen-body" style="padding:0"><div class="modal-stage" style="border-radius:0"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Delete your account?</h3><p>This can’t be undone.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <ul class="losses">
+          <li>Your decks and their words are deleted, including the ones you published to Community.</li>
+          <li>Copies other learners forked from your decks stay theirs.</li>
+          <li>Your name, email and photo are removed from Voca.</li>
+          <li>You’re signed out on every device.</li>
+          <li>Signing in with this Google account again starts a new, empty account.</li>
+        </ul>
+        <div class="field"><label>Type <code>arvin@example.com</code> to confirm</label><input class="input" type="email" placeholder="arvin@example.com"></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost">Keep account</button><button class="btn btn-danger" disabled>Delete account</button></div>
+    </div></div></div></div></div>
+    <div style="display:grid;gap:8px"><span class="cap">Matched</span><div class="screen phone"><div class="screen-bar"><i></i><i></i><i></i><span>settings</span></div><div class="screen-body" style="padding:0"><div class="modal-stage" style="border-radius:0"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Delete your account?</h3><p>This can’t be undone.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <ul class="losses">
+          <li>Your decks and their words are deleted, including the ones you published to Community.</li>
+          <li>Copies other learners forked from your decks stay theirs.</li>
+          <li>Your name, email and photo are removed from Voca.</li>
+          <li>You’re signed out on every device.</li>
+          <li>Signing in with this Google account again starts a new, empty account.</li>
+        </ul>
+        <div class="field"><label>Type <code>arvin@example.com</code> to confirm</label><input class="input" value="arvin@example.com"></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost">Keep account</button><button class="btn btn-danger">Delete account</button></div>
+    </div></div></div></div></div>
+  </div>
+</section>
+
+<section class="doc-sec">
+  <header><span class="eyebrow">Page · /login · after deleting</span><h2>Signed out, account deleted</h2><p>The sign-in page as it is today, with one <span class="kit">alert-info</span> line above the Google button. It shows once, right after the delete, and is gone after a reload.</p></header>
+  <div class="frames">
+    <div style="display:grid;gap:8px"><span class="cap">Desktop · 1280 (form side)</span><div class="screen"><div class="screen-bar"><i></i><i></i><i></i><span>voca.app/login</span></div><div class="screen-body flush"><div class="signin-stage"><div class="auth-card">
+      <div style="display:grid;gap:6px"><h1 class="h1">Welcome back</h1><p class="sub">Use your Google account. New here? Your account is created on first sign-in.</p></div>
+      <div role="status" class="alert alert-info"><svg class="i"><use href="#i-check"/></svg><span class="grow">Your account has been deleted.</span></div>
+      <button class="gbtn">Continue with Google</button><a class="back" href="#"><svg class="i"><use href="#i-left"/></svg>Back to home</a>
+    </div></div></div></div></div>
+    <div style="display:grid;gap:8px"><span class="cap">Phone · 390</span><div class="screen phone" style="max-width:390px"><div class="screen-bar"><i></i><i></i><i></i><span>login</span></div><div class="screen-body flush"><div class="signin-stage"><div class="auth-card">
+      <div style="display:grid;gap:6px"><h1 class="h1">Welcome back</h1><p class="sub">Use your Google account. New here? Your account is created on first sign-in.</p></div>
+      <div role="status" class="alert alert-info"><svg class="i"><use href="#i-check"/></svg><span class="grow">Your account has been deleted.</span></div>
+      <button class="gbtn">Continue with Google</button><a class="back" href="#"><svg class="i"><use href="#i-left"/></svg>Back to home</a>
+    </div></div></div></div></div>
+  </div>
+  <div class="note"><b>Interactions.</b> Everything but the alert is today’s sign-in page, unchanged. Other open tabs of the deleted account show the sign-in page without the alert, as after any sign-out.</div>
+</section>
+
+<section class="doc-sec">
+  <header><span class="eyebrow">Elsewhere · no new screens</span><h2>What other Learners see</h2></header>
+  <div class="note">
+    <ul class="rule">
+      <li>The deleted Learner’s public decks leave Community at once. A link to one shows the existing “not found” page.</li>
+      <li>A fork of one of those decks keeps its words and progress. Its “Forked from” line behaves as it already does for a deleted deck.</li>
+    </ul>
+  </div>
+</section>
+</main>
+</body>
+</html>
