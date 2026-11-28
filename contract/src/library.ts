@@ -133,8 +133,34 @@ export type DeleteDecksResult = typeof DeleteDecksResult.Type
 
 export const IMPORT_MAX_BYTES = 5 * 1024 * 1024
 
-export const ImportCsv = Schema.Struct({ file: Multipart.SingleFileSchema }).pipe(
-  HttpApiSchema.asMultipart({ maxFileSize: IMPORT_MAX_BYTES, maxParts: 1 })
+export const IMPORT_FIELDS = ["term", "meaning", "reading", "example", "notes"] as const
+
+export const ImportField = Schema.Literals(IMPORT_FIELDS)
+export type ImportField = typeof ImportField.Type
+
+const fieldCount = (columns: ReadonlyArray<ImportField | null>, field: ImportField): number =>
+  columns.filter((column) => column === field).length
+
+const eachFieldOnceWithTermAndMeaning = Schema.makeFilter((columns: ReadonlyArray<ImportField | null>) => {
+  if (IMPORT_FIELDS.some((field) => fieldCount(columns, field) > 1)) {
+    return "A field is matched to more than one column"
+  }
+
+  if (fieldCount(columns, "term") === 0 || fieldCount(columns, "meaning") === 0) {
+    return "Term and Meaning each need a column"
+  }
+
+  return true
+})
+
+export const ColumnMatch = Schema.Array(Schema.NullOr(ImportField)).check(eachFieldOnceWithTermAndMeaning)
+export type ColumnMatch = typeof ColumnMatch.Type
+
+export const ImportCsv = Schema.Struct({
+  file: Multipart.SingleFileSchema,
+  columns: Schema.optionalKey(Schema.fromJsonString(ColumnMatch))
+}).pipe(
+  HttpApiSchema.asMultipart({ maxFileSize: IMPORT_MAX_BYTES, maxParts: 2 })
 )
 
 export const ImportResult = Schema.Struct({ imported: Count, skippedDuplicates: Count })
