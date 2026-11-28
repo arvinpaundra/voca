@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSV Column Matching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&family=Shippori+Mincho:wght@500;600&display=swap">
+<style>
+/* ------------------------------------------------------------------
+   Fixed theme: the current Voca palette and fonts. No option changes these.
+   ------------------------------------------------------------------ */
+:root {
+  --bg: #f5f5f5;          /* neutral-100 */
+  --surface: #ffffff;
+  --sunken: #fafaf9;      /* stone-50 */
+  --ink: #1c1917;         /* stone-900 */
+  --ink-2: #44403c;       /* stone-700 */
+  --muted: #78716c;       /* stone-500 */
+  --faint: #a8a29e;       /* stone-400 */
+  --line: #e7e5e4;        /* stone-200 */
+  --line-strong: #d6d3d1; /* stone-300 */
+  --dark: #1c1917;
+  --dark-2: #292524;      /* stone-800 */
+  --dark-line: #2f2b29;
+  --dark-muted: #a8a29e;
+  --lime: #c1ff72;
+  --lime-hover: #aef55a;
+  --lime-tint: #f3ffe3;
+  --lime-ink: #3f6212;    /* readable lime-family text on white */
+  --navy: #002f43;
+  --navy-tint: #e6eef1;
+  --bad: #dc2626;
+  --bad-bg: #fef2f2;
+  --bad-line: #fecaca;
+  --ok: #4d7c0f;
+
+  /* One maturity scale everywhere (today dashboard and deck page disagree). */
+  --m-new: #d6d3d1;
+  --m-learning: #c1ff72;
+  --m-mature: #002f43;
+
+  --f-display: "Montserrat", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, sans-serif;
+  --f-term: "Shippori Mincho", serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* ------------------------------------------------------------------
+   Option tokens. Same components, three proportions.
+   ------------------------------------------------------------------ */
+body[data-opt="console"] {
+  --r-xs: 3px; --r-sm: 5px; --r: 8px; --r-lg: 10px; --r-btn: 6px; --r-pill: 999px;
+  --card-bd: 1px solid var(--line); --card-sh: none; --card-pad: 16px;
+  --gap: 16px; --gap-lg: 32px; --stack: 12px;
+  --h1: 20px; --h1-lh: 28px; --h2: 12px; --h2-font: var(--f-body); --h2-w: 600; --h2-case: uppercase; --h2-track: .06em;
+  --body: 14px; --small: 13px; --tiny: 12px;
+  --btn-h: 32px; --btn-h-sm: 28px; --ctl-h: 32px;
+  --primary-bg: var(--navy); --primary-fg: #fff; --primary-hover: #0a3d54;
+  --hero-bg: var(--surface); --hero-fg: var(--ink); --hero-muted: var(--muted); --hero-bd: 1px solid var(--line); --hero-chip: var(--sunken);
+  --num-font: var(--f-mono);
+}
+
+/* ------------------------------------------------------------------ base */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: var(--body)/1.55 var(--f-body); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.i { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.i-lg { width: 20px; height: 20px; }
+.faint { color: var(--faint); }
+:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+
+/* ------------------------------------------------------------------ doc chrome (not part of the system) */
+.doc-top { position: sticky; top: 0; z-index: 50; background: rgba(245,245,245,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.doc-top-in { max-width: 1240px; margin: 0 auto; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.doc-brand { font: 600 20px/1 var(--f-body); letter-spacing: -.04em; }
+.doc-brand span { color: var(--muted); }
+.doc-brand small { font: 500 12px var(--f-body); letter-spacing: 0; color: var(--muted); margin-left: 8px; }
+.doc { max-width: 1240px; margin: 0 auto; padding: 32px 16px 120px; display: grid; gap: 56px; }
+.doc-sec { display: grid; gap: 20px; min-width: 0; }
+.doc-sec > header { display: grid; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.doc-sec > header .eyebrow { font: 600 11px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.doc-sec > header h2 { font: 600 24px/1.2 var(--f-display); letter-spacing: -.01em; }
+.doc-sec > header p { color: var(--muted); font-size: 14px; max-width: 760px; }
+.doc-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.spec { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.spec > h3 { font: 600 11px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* Page header: one shape for every page */
+.eyebrow { font-size: var(--tiny); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* Buttons: primary is the single main action per view */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--btn-h); padding: 0 calc(var(--btn-h) * .45); border-radius: var(--r-btn); border: 1px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s; }
+.btn:active { transform: translateY(1px); }
+.btn-sm { height: var(--btn-h-sm); padding: 0 12px; font-size: 13px; }
+.btn-primary { background: var(--primary-bg); color: var(--primary-fg); }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-ghost { background: transparent; color: var(--ink-2); }
+.btn-ghost:hover { background: rgba(28,25,23,.06); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn-icon { width: var(--btn-h-sm); height: var(--btn-h-sm); padding: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); border: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.btn-icon:hover { background: rgba(28,25,23,.06); color: var(--ink); }
+
+/* Form controls */
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > label, .field > .lbl { font-size: var(--small); font-weight: 500; color: var(--ink-2); }
+.field .hint { font-size: var(--tiny); color: var(--muted); }
+.field .err { font-size: var(--tiny); color: var(--bad); display: flex; gap: 6px; align-items: center; }
+.input, .select, .textarea { width: 100%; height: var(--ctl-h); padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: #fff; font-size: 14px; color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s; }
+.input:hover, .select:hover, .textarea:hover { border-color: var(--faint); }
+.input:focus, .select:focus, .textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(0,47,67,.12); background: #fff; }
+.select { appearance: none; padding-right: 32px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
+.form-grid { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+
+/* Feedback: alert, status, skeleton, empty, spinner */
+.alert { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-sm); font-size: var(--small); }
+.alert-bad { background: var(--bad-bg); color: #991b1b; border: 1px solid var(--bad-line); }
+.alert .grow { flex: 1; }
+.alert button { margin-left: auto; }
+
+/* Modal */
+.modal-stage { background: rgba(28,25,23,.42); border-radius: 12px; padding: 32px 16px; display: grid; place-items: center; }
+.modal { background: #fff; width: min(480px, 100%); border-radius: var(--r-lg); box-shadow: 0 24px 64px -12px rgba(0,0,0,.35); display: grid; overflow: hidden; }
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: var(--card-pad) var(--card-pad) 0; }
+.modal-head h3 { font: 600 18px/1.3 var(--f-display); }
+.modal-head p { font-size: var(--small); color: var(--muted); margin-top: 4px; }
+.modal-body { padding: 20px var(--card-pad); display: grid; gap: 16px; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px var(--card-pad); background: var(--sunken); border-top: 1px solid var(--line); }
+
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+.file-drop { border: 1.5px dashed var(--line-2, var(--line)); border-radius: var(--r-sm); padding: 18px; display: grid; gap: 6px; justify-items: center; text-align: center; font-size: var(--small); color: var(--muted); }
+
+/* ------------------------------------------------------------------ FR-35: column matching (new component: ColumnMatch) */
+.cm { display: grid; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.cm-head, .cm-row { display: grid; grid-template-columns: minmax(0, 1fr) 156px; gap: 12px; align-items: center; padding: 8px 12px; }
+.cm-head { background: var(--sunken); border-bottom: 1px solid var(--line); font-size: var(--tiny); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.cm-row { border-top: 1px solid var(--line); }
+.cm-head + .cm-row { border-top: 0; }
+.cm-name { min-width: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.cm-name.blank { font-weight: 500; font-style: italic; }
+.cm-row .select { font-size: 13px; }
+.cm-row.off .cm-name { color: var(--muted); font-weight: 500; }
+.cm-row.off .select { color: var(--muted); }
+.cm.multi .cm-head, .cm.multi .cm-row { grid-template-columns: minmax(0, 1fr) 72px 156px; }
+.cm-in { font-size: var(--tiny); color: var(--muted); white-space: nowrap; }
+.cm-note { font-size: var(--tiny); color: var(--muted); display: flex; gap: 6px; align-items: flex-start; }
+.cm-note.bad { color: var(--bad); }
+p.cm-note { display: block; }
+.cm-note .i { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+.chosen { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: var(--small); }
+.chosen .i { width: 16px; height: 16px; color: var(--muted); flex: none; }
+.chosen .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.chosen b { font-weight: 600; }
+.alert-ok { background: var(--lime-tint); color: var(--lime-ink); }
+.err-list { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 2px; font-size: var(--tiny); }
+.modal.wide { width: min(560px, 100%); }
+.phone-stage { width: 390px; max-width: 100%; justify-self: center; padding: 16px 0 0; display: grid; align-items: end; background: rgba(28,25,23,.42); border-radius: 12px; }
+.phone-stage .modal { width: 100%; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.phone-stage .modal-head, .phone-stage .modal-body, .phone-stage .modal-foot { padding-left: 16px; padding-right: 16px; }
+.phone-stage .cm-head, .phone-stage .cm-row { grid-template-columns: minmax(0, 1fr) 132px; gap: 8px; }
+.phone-stage .cm.multi .cm-head, .phone-stage .cm.multi .cm-row { grid-template-columns: minmax(0, 1fr) 36px 132px; }
+.note { font-size: var(--small); color: var(--ink-2); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; }
+.kit { font: 600 10px var(--f-mono); color: var(--navy); background: var(--navy-tint); border-radius: 3px; padding: 1px 5px; vertical-align: middle; }
+.kit.new { color: var(--ink); background: var(--lime); }
+.doc-grid.two { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+@media (max-width: 900px) { .doc-grid.two { grid-template-columns: 1fr; } }
+/* Flow strip (doc only) */
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; counter-reset: step; }
+.flow li { list-style: none; background: #fff; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 12px; font-size: var(--small); color: var(--ink-2); display: grid; gap: 4px; align-content: start; }
+.flow li b { font-size: 14px; color: var(--ink); }
+.flow li b::before { counter-increment: step; content: counter(step) ". "; color: var(--muted); }
+.flow li.new { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
+.flow .tag { font: 600 10px var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.flow li.new .tag { color: var(--navy); }
+@media (max-width: 900px) { .flow { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body data-opt="console">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+</svg>
+
+<div class="doc-top">
+  <div class="doc-top-in">
+    <div class="doc-brand">Vo<span>ca</span><small>FR-35 · Match CSV columns</small></div>
+  </div>
+</div>
+
+<main class="doc">
+
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">FR-35 · extends FR-4 and FR-29 · replaces FR-25</span>
+    <h2>Match CSV columns</h2>
+    <p>Learners import the CSV files they already have, whatever their column names (<code>kosakata, arti, cara baca</code>). After a file is picked, the import modal you already know gets one more field, “Match columns”: each column name of the file with a dropdown for its Voca field. Only <b>Term</b> and <b>Meaning</b> are required. A column left on “Not imported” is simply ignored. No file sends two columns to one field: in Import CSV, picking a field that another column has moves it there; in Import decks, different names may share a field as long as no single file has both. Columns Voca knows by name start matched. The “Download template” link is gone, and matches are never remembered.</p>
+  </header>
+  <div class="note">Kit mapping: <span class="kit">Modal</span> <span class="kit">Button</span> <span class="kit">Select</span> <span class="kit">ErrorState</span>-style alert. <span class="kit new">new component</span> <b>ColumnMatch</b>: the table of column names and dropdowns; in Import decks it adds an “In” column with the file count. Dropdown options in this order: <b>Not imported</b>, <b>Term</b>, <b>Meaning</b>, <b>Reading</b>, <b>Example</b>, <b>Notes</b>. Known names that start matched: <code>term</code>, <code>meaning</code>, <code>reading</code>, <code>example</code>, <code>notes</code>, and <code>hiragana</code> / <code>pinyin</code> / <code>jyutping</code> for Reading (ignoring case and surrounding spaces). If two known names want the same field, the first column gets it.</div>
+</section>
+
+<!-- ============================================================ FLOW -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Flow · nothing changes after Import</span>
+    <h2>Where matching fits</h2>
+    <p>Matching only reads each file's header row in the modal, before anything is uploaded. Import CSV stays synchronous (FR-4). Import decks still runs in the background (FR-29): the modal closes on Import, and the batch shows in the Imports panel docked bottom-right, with the same progress, per-file results, reload survival and dismiss as today.</p>
+  </header>
+  <ol class="flow" style="margin:0;padding:0">
+    <li><span class="tag">Unchanged</span><b>Pick files</b>Import CSV: one file. Import decks: up to 50 files, 50 MB in total.</li>
+    <li class="new"><span class="tag">New</span><b>Match columns</b>Read from each file's header row. Term and Meaning required; the rest optional.</li>
+    <li><span class="tag">Unchanged</span><b>Import</b>Import decks also asks the two languages. Import is enabled once every file has a Term and a Meaning column.</li>
+    <li><span class="tag">Unchanged</span><b>Result</b>Import CSV: the result in the modal. Import decks: the modal closes; progress and per-file results in the Imports panel (FR-29).</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 1. IMPORT CSV -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Deck page · ⋯ → Import CSV · Modal · desktop 1280 px</span>
+    <h2>Import CSV</h2>
+    <p>Columns are listed in file order. Import stays disabled until Term and Meaning each have a column; the line under the table names what's missing.</p>
+  </header>
+  <div class="doc-grid two">
+    <div class="spec"><h3>Empty: no file yet</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="file-drop"><svg class="i i-lg"><use href="#i-upload"/></svg><span><b style="color:var(--ink)">Choose a file</b> or drop it here</span><span class="hint">CSV with a header row · UTF-8 · up to 5 MB</span></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary" disabled>Import</button></div>
+      </div></div>
+    </div>
+    <div class="spec"><h3>Needs matching: unknown headers</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="chosen"><svg class="i"><use href="#i-book"/></svg><span class="grow"><b>kosakata-bab3.csv</b> · 14 KB</span><button class="btn btn-ghost btn-sm">Change file</button></div>
+          <div class="field"><span class="lbl">Match columns</span>
+            <div class="cm">
+              <div class="cm-head"><span>Your column</span><span>Imports as</span></div>
+              <div class="cm-row off"><span class="cm-name">kosakata</span><select class="select"><option>Not imported</option></select></div>
+              <div class="cm-row off"><span class="cm-name">arti</span><select class="select"><option>Not imported</option></select></div>
+              <div class="cm-row off"><span class="cm-name">cara baca</span><select class="select"><option>Not imported</option></select></div>
+              <div class="cm-row"><span class="cm-name">Notes</span><select class="select"><option>Notes</option></select></div>
+            </div>
+            <span class="cm-note bad"><svg class="i"><use href="#i-alert"/></svg>Choose a column for Term.</span>
+            <span class="cm-note bad"><svg class="i"><use href="#i-alert"/></svg>Choose a column for Meaning.</span>
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary" disabled>Import</button></div>
+      </div></div>
+    </div>
+    <div class="spec"><h3>Ready: Term and Meaning chosen</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="chosen"><svg class="i"><use href="#i-book"/></svg><span class="grow"><b>kosakata-bab3.csv</b> · 14 KB</span><button class="btn btn-ghost btn-sm">Change file</button></div>
+          <div class="field"><span class="lbl">Match columns</span>
+            <div class="cm">
+              <div class="cm-head"><span>Your column</span><span>Imports as</span></div>
+              <div class="cm-row"><span class="cm-name">kosakata</span><select class="select"><option>Term</option></select></div>
+              <div class="cm-row"><span class="cm-name">arti</span><select class="select"><option>Meaning</option></select></div>
+              <div class="cm-row off"><span class="cm-name">cara baca</span><select class="select"><option>Not imported</option></select></div>
+              <div class="cm-row"><span class="cm-name">Notes</span><select class="select"><option>Notes</option></select></div>
+            </div>
+            <span class="cm-note">Columns on “Not imported” are ignored.</span>
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Import</button></div>
+      </div></div>
+    </div>
+    <div class="spec"><h3>Ready on open: known headers start matched</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="chosen"><svg class="i"><use href="#i-book"/></svg><span class="grow"><b>hsk1.csv</b> · 9 KB</span><button class="btn btn-ghost btn-sm">Change file</button></div>
+          <div class="field"><span class="lbl">Match columns</span>
+            <div class="cm">
+              <div class="cm-head"><span>Your column</span><span>Imports as</span></div>
+              <div class="cm-row"><span class="cm-name">Term</span><select class="select"><option>Term</option></select></div>
+              <div class="cm-row"><span class="cm-name">MEANING</span><select class="select"><option>Meaning</option></select></div>
+              <div class="cm-row"><span class="cm-name">pinyin</span><select class="select"><option>Reading</option></select></div>
+              <div class="cm-row off"><span class="cm-name blank">Column 4 (no name)</span><select class="select"><option>Not imported</option></select></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Import</button></div>
+      </div></div>
+    </div>
+    <div class="spec"><h3>Unreadable file</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="chosen"><svg class="i"><use href="#i-book"/></svg><span class="grow"><b>kosakata-bab3.csv</b> · 14 KB</span><button class="btn btn-ghost btn-sm">Change file</button></div>
+          <div class="alert alert-bad" role="alert"><svg class="i"><use href="#i-alert"/></svg><span class="grow">Can't read this file's header. Save it as CSV UTF-8 with a header row, then choose it again.</span></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary" disabled>Import</button></div>
+      </div></div>
+      <p class="cm-note">Shown when the file isn't UTF-8 or is empty. No columns are listed.</p>
+    </div>
+    <div class="spec"><h3>Loading: importing</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="chosen"><svg class="i"><use href="#i-book"/></svg><span class="grow"><b>kosakata-bab3.csv</b> · 14 KB</span><button class="btn btn-ghost btn-sm" disabled>Change file</button></div>
+          <div class="cm" style="opacity:.6"><div class="cm-head"><span>Your column</span><span>Imports as</span></div>
+            <div class="cm-row"><span class="cm-name">kosakata</span><select class="select" disabled><option>Term</option></select></div>
+            <div class="cm-row"><span class="cm-name">arti</span><select class="select" disabled><option>Meaning</option></select></div>
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary" disabled>Importing…</button></div>
+      </div></div>
+    </div>
+    <div class="spec"><h3>Done</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="alert alert-ok" role="status"><svg class="i"><use href="#i-check"/></svg><span class="grow">Imported 212 words · skipped 3 duplicates</span></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-primary">Done</button></div>
+      </div></div>
+    </div>
+    <div class="spec"><h3>Error: rows rejected</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import CSV</h3><p>Add the words in a CSV file to this deck. Nothing is imported if the file has errors.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="chosen"><svg class="i"><use href="#i-book"/></svg><span class="grow"><b>kosakata-bab3.csv</b> · 14 KB</span><button class="btn btn-ghost btn-sm">Change file</button></div>
+          <div class="alert alert-bad" role="alert"><svg class="i"><use href="#i-alert"/></svg><div class="grow">The file has 2 invalid rows. Nothing was imported.
+            <ul class="err-list"><li>Row 14, Meaning (arti): is required</li><li>Row 88, Term (kosakata): is longer than 200 characters</li></ul></div></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Import</button></div>
+      </div></div>
+      <p class="cm-note">Row errors name the Voca field, then the Learner's column. Choosing the fixed file again with “Change file” reads its header again, starting over.</p>
+    </div>
+  </div>
+</section>
+
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Import CSV · phone 390 px</span>
+    <h2>Import CSV on a phone</h2>
+    <p>The modal is a bottom sheet. Column names on the left, dropdowns on the right; long names wrap and nothing scrolls sideways.</p>
+  </header>
+  <div class="doc-grid">
+    <div class="phone-stage"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Import CSV</h3></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <div class="chosen"><svg class="i"><use href="#i-book"/></svg><span class="grow"><b>kosakata-bab3.csv</b> · 14 KB</span><button class="btn btn-ghost btn-sm">Change</button></div>
+        <div class="cm">
+          <div class="cm-head"><span>Your column</span><span>Imports as</span></div>
+          <div class="cm-row"><span class="cm-name">kosakata</span><select class="select"><option>Term</option></select></div>
+          <div class="cm-row off"><span class="cm-name">arti</span><select class="select"><option>Not imported</option></select></div>
+          <div class="cm-row off"><span class="cm-name">cara baca</span><select class="select"><option>Not imported</option></select></div>
+        </div>
+        <span class="cm-note bad"><svg class="i"><use href="#i-alert"/></svg>Choose a column for Meaning.</span>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary" disabled>Import</button></div>
+    </div></div>
+    <div class="phone-stage"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Import CSV</h3></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <div class="alert alert-ok" role="status"><svg class="i"><use href="#i-check"/></svg><span class="grow">Imported 212 words · skipped 3 duplicates</span></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-primary">Done</button></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============================================================ 2. IMPORT DECKS -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Decks list · Import decks · Modal + ColumnMatch · desktop 1280 px</span>
+    <h2>Import decks</h2>
+    <p>The shipped modal, with “Match columns” between the files and the languages. It lists each distinct column name across the picked files once, with how many files have it, most common first; blank header cells share one “(no name)” row. A name is matched once for the whole batch, wherever it sits in each file, so 50 files cost one row per distinct name: identical headers, the same names in any order, and completely different names all work in one batch. Different names may share a field (<code>kosakata</code> and <code>word</code> both on Term) as long as no single file has both. The rules are checked per file: every file needs a Term and a Meaning column and no field on two of its columns; each problem line names its files (the first 3, then “and N more”). On Import the modal closes and the batch goes to the Imports panel, unchanged (FR-29).</p>
+  </header>
+  <div class="doc-grid two">
+    <div class="spec"><h3>Ready: 50 files, mixed headers</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import decks</h3><p>Each CSV file becomes a new deck. The files import in the background; you can leave this page.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="field"><span class="lbl">CSV files <span class="faint" style="font-weight:400">· up to 50</span></span>
+            <div class="file-drop"><svg class="i i-lg"><use href="#i-upload"/></svg><span><b style="color:var(--ink)">Choose files</b> or drop them here</span><span class="hint">CSV with a header row · UTF-8 · 5 MB each</span></div>
+            <span class="hint" role="status">50 files chosen</span>
+          </div>
+          <div class="field"><span class="lbl">Match columns</span>
+            <div class="cm multi">
+              <div class="cm-head"><span>Your column</span><span>In</span><span>Imports as</span></div>
+              <div class="cm-row"><span class="cm-name">kosakata</span><span class="cm-in">30 files</span><select class="select"><option>Term</option></select></div>
+              <div class="cm-row"><span class="cm-name">arti</span><span class="cm-in">30 files</span><select class="select"><option>Meaning</option></select></div>
+              <div class="cm-row"><span class="cm-name">word</span><span class="cm-in">20 files</span><select class="select"><option>Term</option></select></div>
+              <div class="cm-row"><span class="cm-name">translation</span><span class="cm-in">20 files</span><select class="select"><option>Meaning</option></select></div>
+              <div class="cm-row"><span class="cm-name">notes</span><span class="cm-in">20 files</span><select class="select"><option>Notes</option></select></div>
+              <div class="cm-row off"><span class="cm-name">cara baca</span><span class="cm-in">12 files</span><select class="select"><option>Not imported</option></select></div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Term language</label><select class="select"><option>Japanese (ja)</option></select></div>
+            <div class="field"><label>Meaning language</label><select class="select"><option>Indonesian (id)</option></select></div>
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Import</button></div>
+      </div></div>
+      <p class="cm-note" style="display:block">30 files have <code>kosakata, arti</code> or <code>arti, kosakata</code> (order varies), 20 have <code>word, translation, notes</code>, 12 of the first also have <code>cara baca</code>. Six rows for 50 files; only <code>notes</code> starts matched.</p>
+    </div>
+    <div class="spec"><h3>Blocked: a file with two columns on Meaning, one unreadable</h3>
+      <div class="modal-stage"><div class="modal wide" role="dialog">
+        <div class="modal-head"><div><h3>Import decks</h3><p>Each CSV file becomes a new deck. The files import in the background; you can leave this page.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="modal-body">
+          <div class="field"><span class="lbl">CSV files <span class="faint" style="font-weight:400">· up to 50</span></span>
+            <div class="file-drop"><svg class="i i-lg"><use href="#i-upload"/></svg><span><b style="color:var(--ink)">Choose files</b> or drop them here</span><span class="hint">CSV with a header row · UTF-8 · 5 MB each</span></div>
+            <span class="hint" role="status">8 files chosen</span>
+          </div>
+          <div class="field"><span class="lbl">Match columns</span>
+            <div class="cm multi">
+              <div class="cm-head"><span>Your column</span><span>In</span><span>Imports as</span></div>
+              <div class="cm-row"><span class="cm-name">kosakata</span><span class="cm-in">7 files</span><select class="select"><option>Term</option></select></div>
+              <div class="cm-row"><span class="cm-name">arti</span><span class="cm-in">4 files</span><select class="select"><option>Meaning</option></select></div>
+              <div class="cm-row"><span class="cm-name">terjemahan</span><span class="cm-in">4 files</span><select class="select"><option>Meaning</option></select></div>
+            </div>
+            <span class="cm-note bad"><svg class="i"><use href="#i-alert"/></svg>Meaning is chosen for 2 columns in 1 file: Bab 7.csv. Pick one.</span>
+          </div>
+          <div class="alert alert-bad" role="alert"><svg class="i"><use href="#i-alert"/></svg><span class="grow"><b>Bab 8.csv</b>: Can't read this file's header. Save it as CSV UTF-8 with a header row.</span><button class="btn btn-ghost btn-sm">Remove</button></div>
+          <div class="form-grid">
+            <div class="field"><label>Term language</label><select class="select"><option>Japanese (ja)</option></select></div>
+            <div class="field"><label>Meaning language</label><select class="select"><option>Indonesian (id)</option></select></div>
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary" disabled>Import</button></div>
+      </div></div>
+      <p class="cm-note">Sharing Meaning is fine for the 6 files that have only “arti” or only “terjemahan”; Bab 7.csv has both, so it is blocked. The Learner fixes Bab 7.csv in their spreadsheet, or picks the files again without it. Setting “terjemahan” to Not imported would clear this line, but the 3 files that only have it would then lack Meaning: “3 files have no column for Meaning: Bab 4.csv, Bab 5.csv, Bab 6.csv.” Problem lines, in this order: “&lt;Field&gt; is chosen for 2 columns in N files: …. Pick one.” · “N files have no column for Term: ….” · “N files have no column for Meaning: ….”. After Remove, Bab 8.csv leaves the batch. Limits (50 files, 50 MB) and their messages are unchanged.</p>
+    </div>
+  </div>
+</section>
+
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Import decks · phone 390 px</span>
+    <h2>Import decks on a phone</h2>
+    <p>The “In” column shows the number only.</p>
+  </header>
+  <div class="doc-grid">
+    <div class="phone-stage"><div class="modal" role="dialog">
+      <div class="modal-head"><div><h3>Import decks</h3><p>Each CSV file becomes a new deck. The files import in the background; you can leave this page.</p></div><button class="btn-icon" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body">
+        <div class="field"><div class="file-drop"><svg class="i i-lg"><use href="#i-upload"/></svg><span><b style="color:var(--ink)">Choose files</b></span><span class="hint">CSV with a header row · UTF-8 · 5 MB each</span></div>
+          <span class="hint" role="status">50 files chosen</span></div>
+        <div class="cm multi">
+          <div class="cm-head"><span>Your column</span><span>In</span><span>Imports as</span></div>
+          <div class="cm-row"><span class="cm-name">kosakata</span><span class="cm-in">50</span><select class="select"><option>Term</option></select></div>
+          <div class="cm-row"><span class="cm-name">arti</span><span class="cm-in">50</span><select class="select"><option>Meaning</option></select></div>
+          <div class="cm-row"><span class="cm-name">cara baca</span><span class="cm-in">32</span><select class="select"><option>Reading</option></select></div>
+          <div class="cm-row off"><span class="cm-name">catatan</span><span class="cm-in">12</span><select class="select"><option>Not imported</option></select></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Term language</label><select class="select"><option>Japanese (ja)</option></select></div>
+          <div class="field"><label>Meaning language</label><select class="select"><option>Indonesian (id)</option></select></div>
+        </div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Import</button></div>
+    </div></div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>
