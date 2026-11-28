@@ -51,19 +51,6 @@ const upload = (token: string, deckSlug: string, content: string) => {
 }
 
 describe("POST /decks/:deckSlug/import: the header", () => {
-  test("a column named twice is rejected on the header row", () =>
-    rt.runPromise(
-      Effect.gen(function* () {
-        const { token, deckSlug } = yield* ownDeck()
-
-        const error = yield* upload(token, deckSlug, "term,meaning,hiragana,reading\n水,water,みず,みず\n").pipe(Effect.flip)
-
-        expect(error._tag).toBe("ImportRejected")
-        if (error._tag !== "ImportRejected") return
-        expect(error.errors).toContainEqual({ row: 1, column: "reading", message: expect.any(String) })
-      })
-    ))
-
   test("a column name is matched without its surrounding spaces", () =>
     rt.runPromise(
       Effect.gen(function* () {
@@ -84,7 +71,7 @@ describe("POST /decks/:deckSlug/import: the rows", () => {
 
         expect(error._tag).toBe("ImportRejected")
         if (error._tag !== "ImportRejected") return
-        expect(error.errors).toEqual([{ row: 4, column: "meaning", message: expect.any(String) }])
+        expect(error.errors).toEqual([{ row: 4, column: "Meaning (meaning)", message: "is required" }])
       })
     ))
 

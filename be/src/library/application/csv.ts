@@ -1,6 +1,6 @@
 import { Clock, Effect, Result } from "effect"
 import { CurrentLearner, SLUG_LENGTH } from "@voca/contract"
-import type { ImportResult } from "@voca/contract"
+import type { ColumnMatch, ImportResult } from "@voca/contract"
 import { parseCsv, toCsv } from "../domain/csv.ts"
 import { DeckNotFound, CsvRejected } from "../domain/errors.ts"
 import type { CsvRowError } from "../domain/errors.ts"
@@ -49,21 +49,15 @@ export const parseText = (text: string): Effect.Effect<ReadonlyArray<ReadonlyArr
     : Effect.succeed(parsed.success)
 }
 
-/** The words of an uploaded file, each checked against the Word Schemas: any problem rejects the whole file. */
-export const readRows = (bytes: Uint8Array): Effect.Effect<ReadonlyArray<CsvWordRow>, CsvRejected> => {
-  return Effect.gen(function* () {
-    const text = yield* decodeText(bytes)
-    const records = yield* parseText(text)
-    const read = readWords(records)
-
-    if (read.errors.length > 0) {
-      return yield* Effect.fail(
-        rejected(`Nothing was imported. The file has ${read.errors.length} problem(s).`, read.errors)
-      )
-    }
-
-    return read.rows
-  })
+export const readRows = (
+  bytes: Uint8Array,
+  columns?: ColumnMatch
+): Effect.Effect<ReadonlyArray<CsvWordRow>, CsvRejected> => {
+  return Effect.fail(
+    rejected(`not implemented: LB (${bytes.length} bytes, ${columns?.length ?? 0} columns)`, [
+      { row: 1, column: null, message: "not implemented: LB" }
+    ])
+  )
 }
 
 /** New words for the rows: a fresh slug each, all stamped with the same clock time. */
