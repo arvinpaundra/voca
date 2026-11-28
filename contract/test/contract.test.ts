@@ -97,7 +97,7 @@ describe("endpoint inventory", () => {
     "get /api/healthz",
     "post /api/auth/google", "post /api/auth/refresh", "post /api/auth/logout",
     "get /api/me", "patch /api/me/settings", "get /api/me/activity",
-    "get /api/decks", "post /api/decks", "get /api/decks/{deckSlug}", "get /api/decks/{deckSlug}/drills",
+    "get /api/decks", "post /api/decks", "get /api/decks/{deckSlug}", "get /api/decks/{deckSlug}/drills", "get /api/decks/{deckSlug}/setup",
     "patch /api/decks/{deckSlug}", "delete /api/decks/{deckSlug}",
     "post /api/decks/{deckSlug}/publish", "post /api/decks/{deckSlug}/unpublish",
     "get /api/decks/{deckSlug}/words", "post /api/decks/{deckSlug}/words", "post /api/decks/{deckSlug}/words/batch",

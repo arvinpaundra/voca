@@ -106,10 +106,9 @@ GROUP BY d.id, d.title           -- byDrill: the same query grouped by (d.id, c.
 ORDER BY overdue DESC, due DESC;
 ```
 
-The `newAvailable` count is `min(newPerDay − newDoneToday, unstudiedPairs)`, where new-done counts today's reviews with
-`state_before = 'new'` across all drills and `unstudiedPairs` is the same anti-join the deck stats count as new: studyable
-(word, drill) pairs with no Card. The allowance alone would promise words the decks do not have. The per-drill new counts
-on the setup screen come from `/decks/:deckSlug/drills`.
+The `newAvailable` count is `unstudiedPairs`, the same anti-join the deck stats count as new: studyable (word, drill)
+pairs with no Card in decks that are not snoozed. The daily target never caps it (FR-36, ADR 72). The per-drill new counts
+and today's new cards against the target on the setup screen come from `/decks/:deckSlug/setup`.
 
 `estimatedMinutes` is how long the queue is likely to take, measured from the Learner's own pace rather than a guess:
 

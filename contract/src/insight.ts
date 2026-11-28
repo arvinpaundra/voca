@@ -84,7 +84,7 @@ export const Notifications = Schema.Struct({
     byDrill: Schema.Array(Schema.Struct({ drill: Drill, label: Schema.String, due: Count }))
   })),
   hardDue: Count,
-  /** New words the Learner can still start today: the daily allowance, capped by the words that have no Card yet. */
+  /** New cards the Learner can still start: the (word, drill) pairs with no Card, whatever the daily target. */
   newAvailable: Count,
   /** Minutes the queue is likely to take, from the Learner's own pace. Null until they have finished a session. */
   estimatedMinutes: Schema.NullOr(Count)

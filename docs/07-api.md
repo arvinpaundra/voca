@@ -32,7 +32,8 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | GET | `/decks` | `?q&termLang&sort=recent\|title\|words\|due&cursor&limit` → `Page<DeckSummary> & {total, termLangs}` (own decks, with `wordCount` and `dueCount`). No `sort`: newest created first. `recent` = last edited first, `title` A–Z, `words` and `due` biggest first, ties by title. `q` matches the title, `termLang` is an exact tag. `total` and `termLangs` (sorted, distinct) describe the whole library, whatever the query (FR-31) |
 | POST | `/decks` | `{title, description?, termLang, meaningLang}` → `Deck` |
 | GET | `/decks/:deckSlug` | → `Deck & {wordCount, dueCount}` |
-| GET | `/decks/:deckSlug/drills` | → `[{drill, label, due, new}]`: only drills that apply to at least one word (FR-17) |
+| GET | `/decks/:deckSlug/drills` | → `[{drill, label, due, new}]`: only drills that apply to at least one word (FR-17); `new` counts the deck's words with no Card in that drill, whatever the daily target (FR-36) |
+| GET | `/decks/:deckSlug/setup` | → `{drills: [{drill, label, due, new}], newCards: {studied, target}}`: the study setup screen in one request. `drills` is the `/drills` list; `studied` counts today's first reviews (`state_before = 'new'`) in every deck, snoozed ones included, and `target` is the Learner's `newPerDay` (FR-36) |
 | PATCH | `/decks/:deckSlug` | `{title?, description?, termLang?, meaningLang?}` → `Deck` |
 | DELETE | `/decks/:deckSlug` | → `204` |
 | POST | `/decks/:deckSlug/publish` | → `Deck` |

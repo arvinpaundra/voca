@@ -74,7 +74,7 @@ Isolation:
 - Answering the same position twice → `409`. Concurrent answers to the same position are run with `Effect.all({concurrency: 2})`: exactly one succeeds.
 - A wrong first attempt makes the card due on or after the next study-day start.
 - Starting a second session abandons the first one, and the unanswered words of the first stay due.
-- When the daily new-word limit is reached, the session is filled only with due words and is shorter.
+- Past the daily new-card target, a session still fills with new cards up to its size; it is shorter only when the deck runs out of due and new cards (FR-36).
 - **Hard mode:** in a fixture deck containing `生活, 生命, 生物, 食べる, 飲む, 橋(はし), 箸(はし)`, asking about `箸` always includes `橋` among the options, and asking about `生活` includes at least 2 of `生命` / `生物` (the seed is fixed).
 - `DeckTooSmall` for a deck with 3 words.
 
@@ -85,7 +85,7 @@ Isolation:
   - 学习/xuéxí → all 4 drills apply.
 - `/decks/:id/drills` lists only drills that apply to at least one word, with correct due and new counts.
 - **Independent scheduling:** answering 食べる in `term_reading` creates a card for `(食べる, term_reading)` only. The `term_meaning` card is untouched, and the word is still new in `term_meaning`.
-- **Shared new limit:** with `newPerDay = 5`, 3 new words in one drill and 2 in another exhaust the limit.
+- **Shared new target:** with `newPerDay = 5`, 3 first reviews in one drill and 2 in another make `/decks/:deckSlug/setup` report `{studied: 5, target: 5}`, and the drills' new counts stay uncapped.
 - **Answer dedupe:** in `term_reading`, 箸 and 橋 (both はし) never appear as options for each other. In `zh term_reading`, `shì` and `shí` can both be options.
 - **Hard mode:** a fixture deck answered in `term_reading` for 是 includes at least 2 of `shí` / `sì` (tone-stripped similarity, fixed seed).
 - **Mixed sessions** (drills = all 4, size 10):
@@ -112,7 +112,7 @@ Seed a known review history by inserting `reviews` rows directly with hand-compu
 - `recallNow` against the formula at the clock time
 - true retention excludes first reviews of new cards
 - forecast buckets in the Learner's timezone
-- notifications: due and overdue counts, and the new-word limit
+- notifications: due and overdue counts, and new cards available whatever the target
 
 ### 4a. Activity heatmap (FR-18)
 - Reviews seeded across several months → `/me/activity?month=2026-10` returns one entry per active day in October with the right count, and nothing from September or November.
