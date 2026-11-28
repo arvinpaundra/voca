@@ -11,6 +11,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { SegmentedControl } from "../../components/SegmentedControl";
 import { Select } from "../../components/Select";
 import { Skeleton } from "../../components/Skeleton";
+import { Tooltip } from "../../components/Tooltip";
 import { session } from "../../lib/appSession";
 import { meQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
@@ -158,10 +159,14 @@ function StudyPreferences({ settings }: { settings: LearnerSettings }) {
             </FitContent>
           </SettingsRow>
 
-          <SettingsRow label="New words per day" help="How many new words a study day introduces">
+          <SettingsRow
+            label="New cards per day"
+            help="A daily target. Reaching it doesn't stop new cards."
+            info={<Tooltip label="What is a card?">A card is one word in one drill.</Tooltip>}
+          >
             <FitContent>
               <Input
-                aria-label="New words per day"
+                aria-label="New cards per day"
                 type="text"
                 inputMode="numeric"
                 value={draft.newPerDay}

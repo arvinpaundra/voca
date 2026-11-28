@@ -108,7 +108,7 @@ describe("cached pages", () => {
     render(<SettingsPage />);
     await api.expectNoReads("SettingsPage");
 
-    expect((screen.getByRole("textbox", { name: "New words per day" }) as HTMLInputElement).value).toBe("10");
+    expect((screen.getByRole("textbox", { name: "New cards per day" }) as HTMLInputElement).value).toBe("10");
   });
 });
 
@@ -126,7 +126,7 @@ describe("writes", () => {
     render(<SettingsPage />);
     await api.expectNoReads("SettingsPage");
 
-    const newPerDay = screen.getByRole("textbox", { name: "New words per day" });
+    const newPerDay = screen.getByRole("textbox", { name: "New cards per day" });
     await user.clear(newPerDay);
     await user.type(newPerDay, "15");
     await user.click(screen.getByRole("button", { name: "Save changes" }));

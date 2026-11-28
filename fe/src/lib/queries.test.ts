@@ -9,6 +9,7 @@ import {
   communityQuery,
   deckDrillsQuery,
   deckQuery,
+  deckSetupQuery,
   deckListQuery,
   deckStatsQuery,
   dueDecksQuery,
@@ -46,7 +47,7 @@ const fakeSession = () => {
       wordStats: endpoint("insight.wordStats")
     },
     library: { listDecks: endpoint("library.listDecks"), getDeck: endpoint("library.getDeck"), listWords: endpoint("library.listWords") },
-    study: { deckDrills: endpoint("study.deckDrills"), hardWords: endpoint("study.hardWords"), active: endpoint("study.active") },
+    study: { deckDrills: endpoint("study.deckDrills"), deckSetup: endpoint("study.deckSetup"), hardWords: endpoint("study.hardWords"), active: endpoint("study.active") },
     community: { list: endpoint("community.list"), get: endpoint("community.get") }
   }
 
@@ -75,6 +76,7 @@ describe("queries", () => {
     ["insight.deckStats", deckStatsQuery(DECK), ["insight", "deckStats", DECK], { params: { deckSlug: DECK } }],
     ["insight.wordStats", wordStatsQuery(WORD), ["insight", "wordStats", WORD], { params: { wordSlug: WORD } }],
     ["study.deckDrills", deckDrillsQuery(DECK), ["study", "deckDrills", DECK], { params: { deckSlug: DECK } }],
+    ["study.deckSetup", deckSetupQuery(DECK), ["study", "deckSetup", DECK], { params: { deckSlug: DECK } }],
     ["study.active", activeSessionQuery(), ["study", "active"], undefined],
     ["community.get", publicDeckQuery(DECK), ["community", "deck", DECK], { params: { deckSlug: DECK } }]
   ] as const)("%s under its key", async (endpoint, options, key, request) => {

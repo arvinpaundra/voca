@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Option, Result, Schema } from "effect";
-import { DeckSlug, type Drill, type DeckDrill, type Mode, type SessionSize } from "@voca/contract";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { DeckSlug, type Drill, type DeckDrill, type DeckSetup, type Mode, type SessionSize } from "@voca/contract";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { ChoiceCard } from "../../components/ChoiceCard";
@@ -10,7 +10,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { Skeleton } from "../../components/Skeleton";
 import { session } from "../../lib/appSession";
-import { deckDrillsQuery, deckQuery, meQuery } from "../../lib/queries";
+import { deckQuery, deckSetupQuery, meQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { failureTag } from "../deck/wordModel";
 import { startFailure } from "./startFailure";
@@ -54,11 +54,11 @@ export function StudySetupPage({ deckSlug }: { deckSlug: string }) {
 }
 
 function SetupPage({ deckSlug }: { deckSlug: DeckSlug }) {
-  const drills = useQuery(deckDrillsQuery(deckSlug), queryClient);
+  const setup = useQuery(deckSetupQuery(deckSlug), queryClient);
   const learner = useQuery(meQuery(), queryClient);
   const deck = useQuery(deckQuery(deckSlug), queryClient);
 
-  if (drills.isError) {
+  if (setup.isError) {
     return (
       <Frame>
         <ErrorState message="The drills could not be loaded." />
@@ -66,7 +66,7 @@ function SetupPage({ deckSlug }: { deckSlug: DeckSlug }) {
     );
   }
 
-  if (!drills.isSuccess || learner.isPending || deck.isPending) {
+  if (!setup.isSuccess || learner.isPending || deck.isPending) {
     return (
       <Frame>
         <Skeleton label="Loading drills" rows={3} />
@@ -74,7 +74,7 @@ function SetupPage({ deckSlug }: { deckSlug: DeckSlug }) {
     );
   }
 
-  if (drills.data.length === 0) {
+  if (setup.data.drills.length === 0) {
     return (
       <Frame>
         <EmptyState title="This deck has no words to study yet." />
@@ -85,7 +85,8 @@ function SetupPage({ deckSlug }: { deckSlug: DeckSlug }) {
   return (
     <StudyForm
       deckSlug={deckSlug}
-      drills={drills.data}
+      drills={setup.data.drills}
+      newCards={setup.data.newCards}
       defaultSize={learner.data?.settings.defaultSessionSize ?? DEFAULT_SIZE}
       defaultMode={learner.data?.settings.defaultMode ?? "easy"}
       // The title only labels the way back; without it the link says "Deck".
@@ -97,12 +98,13 @@ function SetupPage({ deckSlug }: { deckSlug: DeckSlug }) {
 type StudyFormProps = {
   readonly deckSlug: DeckSlug;
   readonly drills: readonly DeckDrill[];
+  readonly newCards: DeckSetup["newCards"];
   readonly defaultSize: SessionSize;
   readonly defaultMode: Mode;
   readonly deckTitle: string;
 };
 
-function StudyForm({ deckSlug, drills, defaultSize, defaultMode, deckTitle }: StudyFormProps) {
+function StudyForm({ deckSlug, drills, newCards, defaultSize, defaultMode, deckTitle }: StudyFormProps) {
   const [selected, setSelected] = useState<readonly Drill[]>(() =>
     rememberedDrills(window.localStorage, deckSlug, drills.map((drill) => drill.drill))
   );
@@ -191,6 +193,19 @@ function StudyForm({ deckSlug, drills, defaultSize, defaultMode, deckTitle }: St
             ))}
           </div>
         </div>
+
+        <p className="target">
+          New cards today: <b>{newCards.studied} of {newCards.target}</b>
+          {newCards.studied >= newCards.target && (
+            <>
+              {" · "}
+              <span className="done">
+                <Check className="i" aria-hidden="true" />
+                target reached
+              </span>
+            </>
+          )}
+        </p>
 
         <div className="field">
           <span className="lbl">Session size</span>

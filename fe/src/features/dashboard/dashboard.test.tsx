@@ -101,7 +101,7 @@ describe("TodaySection", () => {
     expect(within(today).getByText("Today").classList.contains("eyebrow")).toBe(true);
 
     const headline = within(today).getByRole("heading", { level: 2 });
-    expect(headline.textContent).toBe("You have 32 cards to review and 10 new words waiting.");
+    expect(headline.textContent).toBe("You have 32 cards to review and 10 new cards waiting.");
     expect(headline.querySelector("em")?.textContent).toBe("32 cards");
 
     expect(within(today).getAllByRole("term").map((term) => term.textContent)).toEqual([
@@ -130,10 +130,13 @@ describe("TodaySection", () => {
     expect(start[0]?.closest(".today-cta")).not.toBeNull();
   });
 
-  test("headline variants: only new words, and nothing to do", () => {
-    const { unmount } = render(<TodaySection state={notifications([], 10)} stats={learnerStats(true)} learner={learner} />);
+  test("headline variants: only new cards, and nothing to do", () => {
+    const { unmount } = render(<TodaySection state={notifications([], 40)} stats={learnerStats(true)} learner={learner} />);
 
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("You have 10 new words waiting.");
+    const headline = screen.getByRole("heading", { level: 2 });
+    expect(headline.textContent).toBe("You have 40 new cards waiting.");
+    expect(headline.querySelector("em")?.textContent).toBe("40 new cards");
+    expect(screen.getAllByRole("definition")[1]?.textContent).toBe("40");
     unmount();
 
     render(<TodaySection state={notifications([], 0)} stats={learnerStats(true)} learner={learner} />);

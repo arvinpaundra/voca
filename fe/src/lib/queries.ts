@@ -127,6 +127,12 @@ export const deckDrillsQuery = (deckSlug: DeckSlug) =>
     queryFn: () => orReject(session.call((client) => client.study.deckDrills({ params: { deckSlug } })))
   })
 
+export const deckSetupQuery = (deckSlug: DeckSlug) =>
+  queryOptions({
+    queryKey: ["study", "deckSetup", deckSlug],
+    queryFn: () => orReject(session.call((client) => client.study.deckSetup({ params: { deckSlug } })))
+  })
+
 const hardWordsParams = (filter: HardWordsFilter) => {
   const q = filter.q?.trim() ?? ""
 
