@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test"
 import { DateTime, Effect, Result } from "effect"
-import type { ImportBatch, ImportBatchSlug, ImportFile } from "@voca/contract"
+import type { DeckSlug, ImportBatch, ImportBatchSlug, ImportFile } from "@voca/contract"
 import type { ApiClient } from "./api"
 import { session } from "./appSession"
-import { dismissImport, followImports, importProgress, importsQuery, startImport, type EventSourceLike } from "./imports"
+import { dismissImport, followImports, importCsvFile, importProgress, importsQuery, startImport, type EventSourceLike } from "./imports"
 import { queryClient } from "./queryClient"
 
 const BATCH = "BATCH00000000001" as ImportBatchSlug
@@ -117,7 +117,9 @@ describe("startImport", () => {
     const calls = fakeSession()
     const files = Array.from({ length: 51 }, (_, i) => csv(`deck ${i}.csv`))
 
-    const outcome = await startImport({ files, termLang: "ja", meaningLang: "en" }).then(
+    const columns = files.map(() => ["term", "meaning"] as const)
+
+    const outcome = await startImport({ files, termLang: "ja", meaningLang: "en", columns }).then(
       () => "resolved",
       () => "rejected"
     )
@@ -133,7 +135,8 @@ describe("startImport", () => {
     const started = await startImport({
       files: [csv("N5 verbs.csv"), csv("N5 nouns.csv")],
       termLang: "ja",
-      meaningLang: "en"
+      meaningLang: "en",
+      columns: [["term", "meaning"], [null, "meaning", "term"]]
     })
 
     expect(started).toEqual(batch)
@@ -143,6 +146,37 @@ describe("startImport", () => {
     expect(payload.get("termLang")).toBe("ja")
     expect(payload.get("meaningLang")).toBe("en")
     expect(payload.getAll("files").map((part) => (part as File).name)).toEqual(["N5 verbs.csv", "N5 nouns.csv"])
+    expect(JSON.parse(String(payload.get("columns")))).toEqual([["term", "meaning"], [null, "meaning", "term"]])
+  })
+})
+
+describe("importCsvFile", () => {
+  test("sends the file and its matched columns to the deck, and answers the result", async () => {
+    const calls: Array<{ params: unknown; payload: FormData }> = []
+    const client = {
+      library: {
+        importCsv: (request: { params: unknown; payload: FormData }) => {
+          calls.push(request)
+
+          return Effect.succeed({ imported: 2, skippedDuplicates: 1 })
+        }
+      }
+    }
+    const spy = spyOn(session, "call").mockImplementation(async (f) =>
+      Result.succeed(await Effect.runPromise(f(client as unknown as ApiClient)))
+    )
+    restore.push(() => spy.mockRestore())
+
+    const result = await importCsvFile({
+      deckSlug: "DECK000001" as DeckSlug,
+      file: csv("kosakata.csv"),
+      columns: ["term", "meaning", null]
+    })
+
+    expect(result).toEqual(Result.succeed({ imported: 2, skippedDuplicates: 1 }))
+    expect(calls[0]!.params).toEqual({ deckSlug: "DECK000001" })
+    expect((calls[0]!.payload.get("file") as File).name).toBe("kosakata.csv")
+    expect(JSON.parse(String(calls[0]!.payload.get("columns")))).toEqual(["term", "meaning", null])
   })
 })
 

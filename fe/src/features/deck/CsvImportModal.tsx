@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Result } from "effect";
+import { BookOpen, CircleAlert, Upload } from "lucide-react";
 import type { DeckDetail, ImportResult } from "@voca/contract";
 import { Button } from "../../components/Button";
+import { ColumnMatch, useFileHeaders } from "../../components/ColumnMatch";
 import { Modal } from "../../components/Modal";
-import { session } from "../../lib/appSession";
-import { csvTemplateHref, importFailure, importSummary, type ImportFailure } from "./csvModel";
+import { chooseField, columnLabel, initialMatch, missingLines, UNREADABLE, type Match } from "../../lib/columnMatch";
+import { importCsvFile } from "../../lib/imports";
+import { importFailure, importSummary, type ImportFailure } from "./csvModel";
 
 type CsvImportModalProps = {
   open: boolean;
@@ -26,31 +29,56 @@ type CsvImportDialogProps = {
   onImported: (result: ImportResult) => void;
 };
 
+const sizeLabel = (bytes: number): string => `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
 function CsvImportDialog({ deckSlug, onClose, onImported }: CsvImportDialogProps) {
-  const [file, setFile] = useState<File | null>(null);
+  const inputId = useId();
+  const pickerRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<ReadonlyArray<File>>([]);
+  const [choice, setChoice] = useState<ReadonlyArray<Match> | null>(null);
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [failure, setFailure] = useState<ImportFailure | null>(null);
 
+  const headers = useFileHeaders(files);
+  const file = files[0];
+  const header = file === undefined ? undefined : headers.get(file);
+  const names = header?.kind === "read" ? header.names : null;
+  const match = names === null ? null : (choice ?? initialMatch(names));
+  const lines = match === null ? [] : missingLines(match);
+  const canImport = file !== undefined && match !== null && lines.length === 0;
+
+  const rows =
+    names === null || match === null
+      ? []
+      : names.map((name, index) => ({
+          label: columnLabel(name, index),
+          blank: name.trim() === "",
+          match: match[index] ?? null,
+          files: null,
+        }));
+
   const chooseFile = (chosen: File | undefined) => {
-    setFile(chosen ?? null);
+    setFiles(chosen === undefined ? [] : [chosen]);
+    setChoice(null);
     setSummary(null);
     setFailure(null);
   };
 
-  const importFile = async () => {
-    if (file === null) return;
+  const choose = (index: number, field: Match) => {
+    if (match === null) return;
 
-    const payload = new FormData();
-    payload.append("file", file);
+    setChoice(chooseField(match, index, field));
+  };
+
+  const importFile = async () => {
+    if (file === undefined || match === null) return;
 
     setBusy(true);
     setSummary(null);
     setFailure(null);
 
-    const result = await session.call((client) =>
-      client.library.importCsv({ params: { deckSlug }, payload }),
-    );
+    const result = await importCsvFile({ deckSlug, file, columns: match });
 
     setBusy(false);
     if (Result.isSuccess(result)) {
@@ -76,23 +104,52 @@ function CsvImportDialog({ deckSlug, onClose, onImported }: CsvImportDialogProps
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button busy={busy} disabled={file === null} onClick={() => void importFile()}>
+            <Button busy={busy} disabled={!canImport} onClick={() => void importFile()}>
               Import
             </Button>
           </>
         )
       }
     >
-      <a href={csvTemplateHref()} download="voca-template.csv">
-        Download template
-      </a>
-
       <input
+        id={inputId}
+        ref={pickerRef}
         type="file"
         accept=".csv,text/csv"
         aria-label="CSV file"
+        className="sr-only"
         onChange={(event) => chooseFile(event.currentTarget.files?.[0])}
       />
+
+      {file === undefined ? (
+        <label htmlFor={inputId} className="file-drop">
+          <Upload className="i i-lg" aria-hidden="true" />
+          <span>
+            <b>Choose a file</b> or drop it here
+          </span>
+          <span className="hint">CSV with a header row · UTF-8 · up to 5 MB</span>
+        </label>
+      ) : (
+        <div className="chosen">
+          <BookOpen className="i" aria-hidden="true" />
+          <span className="grow">
+            <b>{file.name}</b> · {sizeLabel(file.size)}
+          </span>
+          <Button variant="ghost" size="sm" aria-label="Change file" disabled={busy} onClick={() => pickerRef.current?.click()}>
+            <span className="cf-full">Change file</span>
+            <span className="cf-short">Change</span>
+          </Button>
+        </div>
+      )}
+
+      {header?.kind === "unreadable" && (
+        <div role="alert" className="alert alert-bad">
+          <CircleAlert className="i" aria-hidden="true" />
+          <span className="grow">{UNREADABLE}</span>
+        </div>
+      )}
+
+      {rows.length > 0 && <ColumnMatch rows={rows} lines={lines} onChoose={choose} />}
 
       {summary !== null && <p role="status">{summary}</p>}
 

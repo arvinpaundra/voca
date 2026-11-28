@@ -1,6 +1,15 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query"
 import { Result } from "effect"
-import { IMPORT_MAX_FILES, type ImportBatch, type ImportBatchSlug, type ImportEvent, type ImportStreamEvent } from "@voca/contract"
+import {
+  IMPORT_MAX_FILES,
+  type ColumnMatch,
+  type DeckSlug,
+  type ImportBatch,
+  type ImportBatchSlug,
+  type ImportEvent,
+  type ImportResult,
+  type ImportStreamEvent
+} from "@voca/contract"
 import { session } from "./appSession.ts"
 import { orReject } from "./queryClient.ts"
 
@@ -38,9 +47,10 @@ export interface StartImport {
   readonly files: ReadonlyArray<File>
   readonly termLang: string
   readonly meaningLang: string
+  readonly columns: ReadonlyArray<ColumnMatch>
 }
 
-export const startImport = ({ files, termLang, meaningLang }: StartImport): Promise<ImportBatch> => {
+export const startImport = ({ files, termLang, meaningLang, columns }: StartImport): Promise<ImportBatch> => {
   if (files.length > IMPORT_MAX_FILES) {
     return Promise.reject(new Error(`An import takes at most ${IMPORT_MAX_FILES} files`))
   }
@@ -54,7 +64,24 @@ export const startImport = ({ files, termLang, meaningLang }: StartImport): Prom
     payload.append("files", file)
   }
 
+  payload.append("columns", JSON.stringify(columns))
+
   return orReject(session.call((client) => client.imports.importDecks({ payload })))
+}
+
+export interface ImportCsvFile {
+  readonly deckSlug: DeckSlug
+  readonly file: File
+  readonly columns: ColumnMatch
+}
+
+export const importCsvFile = ({ deckSlug, file, columns }: ImportCsvFile): Promise<Result.Result<ImportResult, unknown>> => {
+  const payload = new FormData()
+
+  payload.append("file", file)
+  payload.append("columns", JSON.stringify(columns))
+
+  return session.call((client) => client.library.importCsv({ params: { deckSlug }, payload }))
 }
 
 export const dismissImport = (batchSlug: ImportBatchSlug): Promise<void> =>
