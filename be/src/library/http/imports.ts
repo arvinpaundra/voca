@@ -22,7 +22,10 @@ import { ImportBatches, ImportNotifier, ImportQueue, ImportTickets } from "../ap
 import type { Transaction } from "../../shared/transaction.ts"
 
 /** One uploaded file, read into memory: the size is checked first, so a too-big file is never read. */
-const readUpload = (file: Multipart.PersistedFile): Effect.Effect<NewImportFile, PayloadTooLarge> => {
+const readUpload = (
+  file: Multipart.PersistedFile,
+  columns: NewImportFile["columns"]
+): Effect.Effect<NewImportFile, PayloadTooLarge> => {
   return Effect.gen(function* () {
     const upload = Bun.file(file.path)
 
@@ -35,7 +38,7 @@ const readUpload = (file: Multipart.PersistedFile): Effect.Effect<NewImportFile,
       catch: (cause) => cause
     }).pipe(Effect.orDie)
 
-    return { name: file.name, content }
+    return { name: file.name, content, columns }
   })
 }
 
@@ -61,7 +64,8 @@ export const ImportsHandlers = HttpApiBuilder.group(
         Effect.gen(function* () {
           yield* checkTotalSize(payload.files)
 
-          const files = yield* Effect.forEach(payload.files, (file) => readUpload(file))
+          const files = yield* Effect.forEach(payload.files, (file, index) =>
+            readUpload(file, payload.columns?.[index] ?? null))
 
           return yield* startImport({ termLang: payload.termLang, meaningLang: payload.meaningLang, files })
         }).pipe(Effect.provideContext(ports)),

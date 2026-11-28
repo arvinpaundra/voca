@@ -48,7 +48,7 @@ const importPending = (file: StoredFile) => {
     yield* notifier.publish(file.learnerId, { batch: file.batchSlug, status: "running" })
 
     // A rejected file creates no deck; the others of the batch still do.
-    const result = yield* Effect.result(importRows(file, file.content))
+    const result = yield* Effect.result(importRows(file, file.content, file.columns))
 
     if (Result.isFailure(result)) {
       yield* batches.markFailed(file.id, result.failure.errors, result.failure.totalErrors)
@@ -57,7 +57,11 @@ const importPending = (file: StoredFile) => {
 }
 
 /** The deck and its words, and the file marked done, in one transaction: a crash between them can't leave half. */
-const importRows = (file: StoredFile, content: Uint8Array): Effect.Effect<void, CsvRejected, FileNeeds> => {
+const importRows = (
+  file: StoredFile,
+  content: Uint8Array,
+  columns: StoredFile["columns"]
+): Effect.Effect<void, CsvRejected, FileNeeds> => {
   return Effect.gen(function* () {
     const title = deckTitleOf(file.name)
 
@@ -69,7 +73,7 @@ const importRows = (file: StoredFile, content: Uint8Array): Effect.Effect<void, 
       )
     }
 
-    const rows = yield* readRows(content)
+    const rows = yield* readRows(content, columns ?? undefined)
     const decks = yield* DeckRepo
     const words = yield* WordRepo
     const batches = yield* ImportBatches

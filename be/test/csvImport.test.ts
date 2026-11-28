@@ -109,18 +109,6 @@ describe("POST /decks/:deckSlug/import", () => {
       })
     ))
 
-  test("the download template, unchanged, imports with 0 words added", () =>
-    rt.runPromise(
-      Effect.gen(function* () {
-        const { token, deckSlug } = yield* ownDeck()
-
-        const result = yield* upload(token, deckSlug, "term,meaning,reading,example,notes\n")
-
-        expect(result).toEqual({ imported: 0, skippedDuplicates: 0 })
-        expect(yield* liveWordCount(deckSlug)).toBe(0)
-      })
-    ))
-
   test("duplicates in the file and against the deck are skipped and counted, by the normalized key", () =>
     rt.runPromise(
       Effect.gen(function* () {
@@ -163,7 +151,7 @@ describe("POST /decks/:deckSlug/import", () => {
         expect(error._tag).toBe("ImportRejected")
         if (error._tag !== "ImportRejected") return
         expect(error.totalErrors).toBe(1)
-        expect(error.errors).toEqual([{ row: 501, column: "meaning", message: expect.any(String) }])
+        expect(error.errors).toEqual([{ row: 501, column: "Meaning (meaning)", message: "is required" }])
         expect(yield* liveWordCount(deckSlug)).toBe(0)
       })
     ))
@@ -178,26 +166,9 @@ describe("POST /decks/:deckSlug/import", () => {
 
         expect(error._tag).toBe("ImportRejected")
         if (error._tag !== "ImportRejected") return
+        expect(error.errors[0]).toEqual({ row: 2, column: "Meaning (meaning)", message: "is required" })
         expect(error.errors).toHaveLength(100)
         expect(error.totalErrors).toBe(150)
-        expect(error.errors[0]!.row).toBe(2)
-      })
-    ))
-
-  test.each([
-    ["an unknown column", "term,meaning,colour\n赤,red,red\n", "colour"],
-    ["a missing required column", "term,reading\n赤,あか\n", "meaning"]
-  ])("%s rejects the header (row 1)", (_, csv, column) =>
-    rt.runPromise(
-      Effect.gen(function* () {
-        const { token, deckSlug } = yield* ownDeck()
-
-        const error = yield* upload(token, deckSlug, csv).pipe(Effect.flip)
-
-        expect(error._tag).toBe("ImportRejected")
-        if (error._tag !== "ImportRejected") return
-        expect(error.errors).toContainEqual({ row: 1, column, message: expect.any(String) })
-        expect(yield* liveWordCount(deckSlug)).toBe(0)
       })
     ))
 

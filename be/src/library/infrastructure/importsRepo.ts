@@ -6,6 +6,7 @@ import {
   DeckTitle,
   ImportBatchSlug,
   ImportFileStatus,
+  ColumnMatch,
   ImportRowError,
   LangTag
 } from "@voca/contract"
@@ -44,7 +45,8 @@ const StoredFileRow = Schema.Struct({
   meaningLang: LangTag,
   name: Schema.String,
   status: ImportFileStatus,
-  content: Schema.NullOr(Schema.Uint8Array)
+  content: Schema.NullOr(Schema.Uint8Array),
+  columns: Schema.NullOr(ColumnMatch)
 })
 
 const IdRow = Schema.Struct({ id: Schema.BigIntFromString })
@@ -93,14 +95,15 @@ export const ImportBatchesLive = Layer.effect(
         batchId: Schema.BigInt,
         position: Schema.Number,
         name: Schema.String,
-        content: Schema.Uint8Array
+        content: Schema.Uint8Array,
+        columns: Schema.NullOr(Schema.String)
       }),
       Result: IdRow,
       execute: (file) => sql`
         INSERT INTO import_files (batch_id, position, name, content, status, deck_id, imported, skipped_duplicates,
-                                  errors, total_errors)
+                                  errors, total_errors, columns)
         VALUES (${file.batchId}, ${file.position}, ${file.name}, ${file.content}, 'pending', NULL, 0, 0,
-                '[]'::jsonb, 0)
+                '[]'::jsonb, 0, ${file.columns}::jsonb)
         RETURNING id::text AS id`
     })
 
@@ -144,7 +147,7 @@ export const ImportBatchesLive = Layer.effect(
       execute: (fileId) => sql`
         SELECT f.id::text AS id, f.batch_id::text AS "batchId", b.slug AS "batchSlug",
                b.learner_id::text AS "learnerId", b.term_lang AS "termLang", b.meaning_lang AS "meaningLang",
-               f.name, f.status, f.content
+               f.name, f.status, f.content, f.columns
         FROM import_files f
         JOIN import_batches b ON b.id = f.batch_id
         WHERE f.id = ${fileId}`
@@ -171,9 +174,13 @@ export const ImportBatchesLive = Layer.effect(
         const ids = yield* Effect.forEach(
           batch.files.map((file, position) => ({ file, position })),
           ({ file, position }) =>
-            insertFile({ batchId, position, name: file.name, content: file.content }).pipe(
-              Effect.map((row) => row.id)
-            )
+            insertFile({
+              batchId,
+              position,
+              name: file.name,
+              content: file.content,
+              columns: file.columns === null ? null : JSON.stringify(file.columns)
+            }).pipe(Effect.map((row) => row.id))
         )
 
         return ids

@@ -1,11 +1,12 @@
 import type { Effect, Option, Stream } from "effect"
 import { Context } from "effect"
-import type { ImportBatch, ImportBatchSlug, ImportEvent, ImportFileStatus } from "@voca/contract"
+import type { ColumnMatch, ImportBatch, ImportBatchSlug, ImportEvent, ImportFileStatus } from "@voca/contract"
 import type { CsvRowError } from "../domain/errors.ts"
 
 export interface NewImportFile {
   readonly name: string
   readonly content: Uint8Array
+  readonly columns: ColumnMatch | null
 }
 
 /** A batch to store: `files` in upload order, every one of them pending. */
@@ -35,6 +36,7 @@ export interface StoredFile {
   readonly name: string
   readonly status: ImportFileStatus
   readonly content: Uint8Array | null
+  readonly columns: ColumnMatch | null
 }
 
 /** The outcome of a file that imported: its deck and the counts the upload page shows. */

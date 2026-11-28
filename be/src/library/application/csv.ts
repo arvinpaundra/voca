@@ -1,6 +1,6 @@
 import { Clock, Effect, Result } from "effect"
 import { CurrentLearner, SLUG_LENGTH } from "@voca/contract"
-import type { ImportResult } from "@voca/contract"
+import type { ColumnMatch, ImportResult } from "@voca/contract"
 import { parseCsv, toCsv } from "../domain/csv.ts"
 import { DeckNotFound, CsvRejected } from "../domain/errors.ts"
 import type { CsvRowError } from "../domain/errors.ts"
@@ -49,12 +49,14 @@ export const parseText = (text: string): Effect.Effect<ReadonlyArray<ReadonlyArr
     : Effect.succeed(parsed.success)
 }
 
-/** The words of an uploaded file, each checked against the Word Schemas: any problem rejects the whole file. */
-export const readRows = (bytes: Uint8Array): Effect.Effect<ReadonlyArray<CsvWordRow>, CsvRejected> => {
+export const readRows = (
+  bytes: Uint8Array,
+  columns?: ColumnMatch
+): Effect.Effect<ReadonlyArray<CsvWordRow>, CsvRejected> => {
   return Effect.gen(function* () {
     const text = yield* decodeText(bytes)
     const records = yield* parseText(text)
-    const read = readWords(records)
+    const read = readWords(records, columns)
 
     if (read.errors.length > 0) {
       return yield* Effect.fail(
@@ -77,14 +79,15 @@ export const newWordDrafts = (rows: ReadonlyArray<CsvWordRow>, createdAt: number
  */
 export const importCsv = (
   deckSlug: string,
-  bytes: Uint8Array
+  bytes: Uint8Array,
+  columns?: ColumnMatch
 ): Effect.Effect<ImportResult, DeckNotFound | CsvRejected, ImportNeeds> =>
   Effect.gen(function* () {
     const { id } = yield* CurrentLearner
     const words = yield* WordRepo
     const transaction = yield* Transaction
     const deckId = yield* findOwnedDeckId(id, deckSlug)
-    const rows = yield* readRows(bytes)
+    const rows = yield* readRows(bytes, columns)
     const createdAt = yield* Clock.currentTimeMillis
     const drafts = yield* newWordDrafts(rows, createdAt)
     const written = yield* transaction.run(words.insertNew(deckId, drafts))
