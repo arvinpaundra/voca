@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
 import { DeckTooSmall, DrillNotAvailable, NothingToStudy, NotFound, QuestionAlreadyAnswered, SessionNotActive } from "./errors.ts"
-import { Count, DeckTitle, Drill, Instant, LangTag, Mode, Page, PageQuery, Reading, SearchQuery, SessionSize } from "./primitives.ts"
+import { Count, DeckTitle, Drill, Instant, LangTag, Mode, NewPerDay, Page, PageQuery, Reading, SearchQuery, SessionSize } from "./primitives.ts"
 import { DeckDrill, WordWithCards } from "./library.ts"
 import { DeckSlug, SessionSlug, WordSlug } from "./slug.ts"
 
@@ -100,6 +100,12 @@ export type HardWordsSummary = typeof HardWordsSummary.Type
 export const HardWordPage = Schema.Struct({ ...Page(HardWord).fields, summary: HardWordsSummary })
 export type HardWordPage = typeof HardWordPage.Type
 
+export const NewCardsToday = Schema.Struct({ studied: Count, target: NewPerDay })
+export type NewCardsToday = typeof NewCardsToday.Type
+
+export const DeckSetup = Schema.Struct({ drills: Schema.Array(DeckDrill), newCards: NewCardsToday })
+export type DeckSetup = typeof DeckSetup.Type
+
 const cardParams = { wordSlug: WordSlug, drill: Drill }
 
 export class StudyGroup extends HttpApiGroup.make("study").add(
@@ -107,6 +113,11 @@ export class StudyGroup extends HttpApiGroup.make("study").add(
   HttpApiEndpoint.get("deckDrills", "/decks/:deckSlug/drills", {
     params: deckParams,
     success: Schema.Array(DeckDrill),
+    error: NotFound
+  }),
+  HttpApiEndpoint.get("deckSetup", "/decks/:deckSlug/setup", {
+    params: deckParams,
+    success: DeckSetup,
     error: NotFound
   }),
   /** Abandons any active session first (one active session per Learner). A session always holds at least one word. */

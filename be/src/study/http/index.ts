@@ -37,6 +37,8 @@ export const StudyHandlers = HttpApiBuilder.group(
           Effect.catchTag("DeckNotFound", notFound("Deck"))
         ),
 
+      deckSetup: () => Effect.die("not implemented: NB"),
+
       start: ({ payload }) => {
         if (payload.scope.kind === "hard") {
           return startHardSession({ drills: payload.drills, size: payload.size, mode: payload.mode }).pipe(

@@ -56,7 +56,7 @@ Each drill is a separate skill, so each `(word, drill)` pair has its **own Card*
   - There are no rows for drills a Learner never uses.
   - Adding a reading to a word later needs no backfill.
   - The Card has no `new` state. If it exists, it has been reviewed, and its memory fields are always set.
-- **The daily new limit (`newPerDay`) is shared across drills.** It counts first-ever reviews (`reviews.state_before = 'new'`) during the study day.
+- **The daily new-card target (`newPerDay`) is shared across drills and never limits a session (FR-36).** It counts first-ever reviews (`reviews.state_before = 'new'`) during the study day, in every deck. A session takes the due cards first, then new cards up to its size.
 - **Hard Words and leeches are per card.** Marking a word hard in *Pinyin → Hanzi* flags only that drill. The word page shows one toggle per drill the Learner has already studied.
 
 ## Session setup (FR-17)
@@ -77,7 +77,7 @@ Mode   [Easy] [Hard]
 - **A word appears in only one drill per session.** If 食べる → "to eat" is asked first, a later たべる → 食べる question would already have its answer revealed. This keeps FR-13's "picked once" rule per word, not per card.
 - **Selection** (given the selected drills D):
   1. **Due:** cards with `drill ∈ D` and `due < studyDay.end`. When a word has several due cards, keep only its most overdue one (`DISTINCT ON (word_id) … ORDER BY word_id, due`). Then take the most overdue words first, up to `size`.
-  2. **New:** fill the rest round-robin across D, taking the oldest applicable word that has no card in that drill and isn't already in the session. The daily new limit still applies.
+  2. **New:** fill the rest round-robin across D, taking the oldest applicable word that has no card in that drill and isn't already in the session. The daily new-card target does not limit it (FR-36).
   3. **Shuffle** the result, so directions are interleaved.
 - **A retry keeps its question's drill.**
 - The last selected set is remembered per deck in `localStorage` (`voca.drills.<deckSlug>`), as a per-device preference.
