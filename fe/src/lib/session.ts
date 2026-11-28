@@ -4,39 +4,23 @@ import { callApi, type ApiClient, type ApiOptions } from "./api.ts"
 import type { createTokenStore } from "./tokens.ts"
 
 export interface SessionDeps {
-  /** The token store (tokens.ts): both tokens persist in storage. */
   readonly store: ReturnType<typeof createTokenStore>
-  /** Passed to `callApi`; tests give a fake `fetch`. */
   readonly baseUrl?: string
   readonly fetch?: typeof globalThis.fetch
-  /** Web Locks: `(name, fn) => navigator.locks.request(name, fn)`. Only one tab refreshes at a time. */
   readonly lock: <T>(name: string, fn: () => Promise<T>) => Promise<T>
-  /** Epoch milliseconds. */
   readonly now: () => number
-  /** Called once when the session ends: sign-out, or a refresh that failed. The app then goes to /login. */
   readonly onSignedOut: () => void
 }
 
 export interface Session {
-  /**
-   * One API call with the session's access token: refreshes first when fewer than 60 s
-   * remain; on 401 Unauthorized refreshes once and retries once. Resolves to a `Result`, like `callApi`.
-   */
   readonly call: <A, E>(f: (client: ApiClient) => Effect.Effect<A, E>) => Promise<Result.Result<A, E | unknown>>
-  /**
-   * One call without a bearer token, for public routes such as Google sign-in. Never refreshes and never signs out:
-   * a 401 there means the request was refused, not that the session ended.
-   */
   readonly callPublic: <A, E>(f: (client: ApiClient) => Effect.Effect<A, E>) => Promise<Result.Result<A, E | unknown>>
-  /** Stores the tokens of a successful sign-in (`POST /auth/google`). */
   readonly signIn: (tokens: AuthTokens) => void
-  /** `POST /auth/logout` with the refresh token (best effort), then clears the tokens and calls `onSignedOut`. */
   readonly signOut: () => Promise<void>
 }
 
 const REFRESH_LOCK = "voca-refresh"
 
-// "rejected" ends the session; "failed" (network, server) keeps the tokens so a later call can try again.
 type Rotation = "rotated" | "rejected" | "failed"
 
 const hasTag = (error: unknown, tag: string): boolean =>
@@ -57,11 +41,9 @@ export const createSession = (deps: SessionDeps): Session => {
     deps.onSignedOut()
   }
 
-  // Concurrent callers share one refresh, so a single rotation happens per burst of 401s.
   let inFlight: Promise<Rotation> | null = null
 
   const rotate = async (): Promise<Rotation> => {
-    // Read the refresh token here, inside the lock: another tab may have rotated it while we waited.
     const refreshToken = store.getRefresh()
     if (refreshToken === null) return "rejected"
 
@@ -96,7 +78,6 @@ export const createSession = (deps: SessionDeps): Session => {
     const attempt = () => callApi(options(() => store.getAccess()), f)
     const first = await attempt()
     if (Result.isSuccess(first) || !isUnauthorized(first.failure)) return first
-    // Another call already refreshed while this one was in flight: retry with the new token, without refreshing again.
     if (store.getAccess() === used && (await refresh()) !== "rotated") return first
     return attempt()
   }

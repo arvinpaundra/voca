@@ -1,8 +1,3 @@
-// May the decision thread merge this PR itself? `bun scripts/merge-gate.ts <pr>` prints `merge: ok`, or the reasons the
-// owner has to merge it. Rules 1-4 are checked here; rule 5 (the worker's report
-// flags nothing) is the dispatcher's own check. Exit 0 = ok, 1 = needs the owner.
-
-/** Paths whose mistakes are expensive or silent: the FE↔BE contract, schema, auth, the guards themselves, dependencies. */
 export const CRITICAL = [
   "contract/**", "be/migrations/**", "be/src/identity/**", "be/src/shared/**",
   "lint/**", "scripts/**", ".github/**", ".githooks/**", ".claude/**",
@@ -12,11 +7,11 @@ export const MAX_FILES = 8
 export const MAX_LINES = 300
 
 export interface PrFacts {
-  readonly ciGreen: boolean // the `verify` check succeeded on the current head
-  readonly behindMaster: number // commits on master the branch doesn't have
-  readonly linkedTaskIssue: boolean // linked to an issue labelled `task`, so CI ran the path guard
+  readonly ciGreen: boolean
+  readonly behindMaster: number
+  readonly linkedTaskIssue: boolean
   readonly files: ReadonlyArray<{ readonly path: string; readonly lines: number }>
-  readonly locked: ReadonlyArray<string> // the task's locked tests: written by the dispatcher, not counted in the size
+  readonly locked: ReadonlyArray<string>
 }
 
 export const assess = (pr: PrFacts): Array<string> => {
@@ -41,7 +36,6 @@ const gh = (...args: Array<string>) => {
   return p.stdout.toString()
 }
 
-/** The PR's facts from GitHub; exits 2 when `gh` fails. */
 export const prFacts = (n: string): PrFacts => {
   type Pr = {
     headRefOid: string
@@ -53,7 +47,6 @@ export const prFacts = (n: string): PrFacts => {
   const pr = JSON.parse(gh("pr", "view", n, "--json", "headRefOid,baseRefName,statusCheckRollup,closingIssuesReferences,files")) as Pr
   const behind = Number(gh("api", `repos/{owner}/{repo}/compare/${pr.baseRefName}...${pr.headRefOid}`, "-q", ".behind_by").trim())
 
-  // The linked task issue, if any: its `locked` paths (yaml block) don't count toward the size.
   let linkedTaskIssue = false
   const locked: Array<string> = []
   for (const { number } of pr.closingIssuesReferences) {

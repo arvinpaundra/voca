@@ -1,9 +1,3 @@
-// Before a task is dispatched: its locked tests must be red against its stubs, and every failure must come from the
-// task's own stubs (`not implemented: <TASK>`). Anything else (a 401, another task's stub, a wrong expectation) means
-// the tests or the task split are wrong, and a worker would burn its budget finding that out.
-//
-//   bun scripts/precheck.ts LB be/test/decks.test.ts be/test/words.test.ts
-
 export {}
 
 interface Failure {
@@ -29,7 +23,6 @@ const run = Bun.spawnSync(["bun", "test", ...testPaths], {
 })
 const output = `${run.stdout}${run.stderr}`
 
-// Bun prints a failing test's output, then its `(fail) <name>` line.
 const failures: Array<Failure> = []
 let buffer: Array<string> = []
 

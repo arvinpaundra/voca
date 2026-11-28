@@ -1,6 +1,3 @@
-// Google OAuth 2.0 authorization code flow with PKCE.
-// Client-side only: starts the redirect to Google and holds the PKCE params in sessionStorage.
-
 const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const SCOPE = "openid email profile";
 const VERIFIER_KEY = "voca.pkce.verifier";
@@ -18,7 +15,6 @@ function randomBytes(length: number): Uint8Array {
   return bytes;
 }
 
-/** RFC 7636: 43–128 chars of `[A-Za-z0-9\-._~]`. 32 bytes → 43 base64url chars. */
 export function generateCodeVerifier(): string {
   return base64Url(randomBytes(32));
 }
@@ -36,7 +32,6 @@ export function redirectUri(): string {
   return `${window.location.origin}/auth/callback`;
 }
 
-/** Stores the PKCE params and sends the browser to Google. */
 export async function beginSignIn(clientId: string): Promise<void> {
   const verifier = generateCodeVerifier();
   const state = generateState();
@@ -55,7 +50,6 @@ export async function beginSignIn(clientId: string): Promise<void> {
   window.location.assign(`${GOOGLE_AUTH_ENDPOINT}?${params.toString()}`);
 }
 
-/** Consumes the stored PKCE params after the redirect back. */
 export function consumePkce(): { verifier: string; state: string } | null {
   const verifier = sessionStorage.getItem(VERIFIER_KEY);
   const state = sessionStorage.getItem(STATE_KEY);

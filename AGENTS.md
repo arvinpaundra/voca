@@ -17,7 +17,7 @@ If the spec, the contract or a locked test looks wrong, **stop and report it**. 
 ## Code and commits
 
 - Write for the reviewer: a blank line between logical steps, one statement per line, and long argument lists, objects, chains and conditions broken across lines.
-- Comments say what the code can't: why, an invariant, a trap. Never point to docs (a `docs/` path, a section name, an ADR or FR number).
+- **No code comments.** `bun run lint` bans them (`lint/comments.yml`). Make the code say it (names, types, small functions); a non-obvious decision goes in the ADR log (`docs/13-decisions.md`), not a comment. The ban is a ratchet: files already free of comments must stay so, and the `ignores` list shrinks as `/delete-comment` cleans more. Delete a comment rather than add to a listed file.
 - Commit message: the header only, `type(scope): subject`. One logical change per commit. No attribution.
 - Never `--no-verify`, never plain `--force`, never push to `master`, never merge, never edit an issue, never commit `.env` or secrets. `.claude/hooks/guard.ts` refuses these; if it blocks you, report it.
 

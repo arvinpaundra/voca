@@ -6,9 +6,7 @@ type TokenStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">
 
 const REFRESH_MARGIN_MS = 60_000
 
-// Both tokens persist in the given storage, so a reload and every other tab reuse them.
 export const createTokenStore = (storage: TokenStorage) => {
-  // Read on every call, never cached: another tab may have stored a newer token.
   const readExpiresAt = (): number | null => {
     const raw = storage.getItem(ACCESS_EXPIRES_KEY)
     if (raw === null) return null
@@ -22,13 +20,11 @@ export const createTokenStore = (storage: TokenStorage) => {
     setRefresh: (token: string): void => storage.setItem(REFRESH_KEY, token),
     getAccess: (): string | null => storage.getItem(ACCESS_KEY),
 
-    /** `expiresIn` is in seconds; `now` is epoch milliseconds. */
     setAccess: (token: string, expiresIn: number, now: number): void => {
       storage.setItem(ACCESS_KEY, token)
       storage.setItem(ACCESS_EXPIRES_KEY, String(now + expiresIn * 1000))
     },
 
-    /** True when there is no access token, its expiry is unreadable, or fewer than 60 s remain at `now` (epoch ms). */
     needsRefresh: (now: number): boolean => {
       if (storage.getItem(ACCESS_KEY) === null) return true
 

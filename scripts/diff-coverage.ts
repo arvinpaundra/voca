@@ -1,13 +1,7 @@
-// Did the tests run the code this branch adds? `verify --issue` calls `check` after the test steps, with each
-// workspace's lcov report. An uncovered added line means a missing test: behaviour the worker added has its own test.
-
-/** Code a task can add that its tests are expected to run. The React screens have no unit tests, so fe stops at lib. */
 const SCOPE = ["be/src/**", "fe/src/lib/**"]
-// main.ts only boots the server; the tests serve the same app through app.ts.
 const EXCLUDE = ["be/src/main.ts", "**/*.test.ts", "**/*.test.tsx"]
 export const MIN_RATIO = 0.9
 
-/** Path → its added line numbers, from `git diff -U0`. */
 export const addedLines = (diff: string): Map<string, Array<number>> => {
   const added = new Map<string, Array<number>>()
   let lines: Array<number> | undefined
@@ -31,7 +25,6 @@ export const addedLines = (diff: string): Map<string, Array<number>> => {
   return added
 }
 
-/** Path (from the repo root) → line → hits, from an lcov report whose paths are relative to `workspace`. */
 export const parseLcov = (lcov: string, workspace: string): Map<string, Map<number, number>> => {
   const files = new Map<string, Map<number, number>>()
   let hits: Map<number, number> | undefined
@@ -64,9 +57,7 @@ export interface Result {
   readonly ok: boolean
   readonly executable: number
   readonly covered: number
-  /** `path:line` of each added executable line no test ran. */
   readonly uncovered: Array<string>
-  /** Changed files no test loaded at all: reported, not failed. */
   readonly unloaded: Array<string>
 }
 
@@ -85,7 +76,6 @@ export const check = (added: Map<string, Array<number>>, coverage: Map<string, M
       continue
     }
 
-    // Lines missing from the report aren't executable (comments, types, blank lines): they don't count.
     for (const line of lines) {
       const count = hits.get(line)
       if (count === undefined) continue
@@ -96,8 +86,6 @@ export const check = (added: Map<string, Array<number>>, coverage: Map<string, M
   }
 
   const ratio = executable === 0 ? 1 : covered / executable
-  // ponytail: an unloaded file only warns. Re-export barrels, adapters the tests stub (googleOAuth) and production
-  // config are legitimately never loaded; a new module no test reaches slips through until the owner's review.
   return { ok: ratio >= MIN_RATIO, executable, covered, uncovered, unloaded }
 }
 

@@ -10,20 +10,16 @@ export type CallbackOutcome =
   | { readonly kind: "failed"; readonly reason: SignInFailure }
 
 export interface CallbackDeps {
-  /** `window.location.search` on `/auth/callback`, e.g. `?code=…&state=…`. */
   readonly search: string
-  /** Reads and removes the PKCE verifier and state stored before the redirect; null when there are none. */
   readonly pkce: () => { readonly verifier: string; readonly state: string } | null
   readonly session: Session
   readonly redirectUri: string
   readonly timezone: string
 }
 
-/** Finishes the Google redirect: checks the callback, exchanges the code, stores the tokens. */
 export const completeSignIn = async (deps: CallbackDeps): Promise<CallbackOutcome> => {
   const params = new URLSearchParams(deps.search)
 
-  // Read the PKCE first, every time: it is removed on read, so a failed callback cannot be retried with it.
   const pkce = deps.pkce()
 
   if (params.has("error")) return { kind: "failed", reason: "google-error" }
@@ -51,10 +47,6 @@ export const completeSignIn = async (deps: CallbackDeps): Promise<CallbackOutcom
   return { kind: "signed-in", learner: result.success.learner }
 }
 
-/**
- * The signed-in Learner on app load, or null when there is no session. The access token never survives a reload,
- * so this goes through the session, which refreshes first.
- */
 export const loadCurrentLearner = async (
   session: Session,
   store: Pick<ReturnType<typeof createTokenStore>, "getRefresh">

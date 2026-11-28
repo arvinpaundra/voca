@@ -1,9 +1,3 @@
-// After a workflow: the independent re-check of each task PR, without an agent. CI already re-ran the full gate on the
-// pushed code (with the path guard, because the PR is linked to its task issue); this reads that result and looks for
-// stubs left in the files the PR changed.
-//
-//   bun scripts/recheck.ts 60 61 62
-
 interface Pr {
   readonly headRefName: string
   readonly headRefOid: string
@@ -20,7 +14,6 @@ const run = (cmd: Array<string>) => {
 const isTaskIssue = (issue: number) =>
   run(["gh", "issue", "view", String(issue), "--json", "labels", "-q", ".labels[].name"]).out.split("\n").includes("task")
 
-/** What keeps the PR from being done; empty when it is. `next.ts` routes on the same list. */
 export const recheck = (pr: string): Array<string> => {
   const view = run(["gh", "pr", "view", pr, "--json", "headRefName,headRefOid,statusCheckRollup,closingIssuesReferences,files"])
   if (!view.ok) return [`cannot read PR #${pr}`]

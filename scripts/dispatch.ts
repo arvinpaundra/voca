@@ -1,14 +1,3 @@
-// Starts one fresh headless Claude session per task (implementer) or per finding (repairer), all in parallel, each in
-// its own worktree, and collects their replies. No LLM decides anything here.
-//
-//   bun scripts/dispatch.ts /tmp/dispatch/<fr>/tasks.json
-//
-// The file: { "feature": "<fr>",
-//             "tasks": [{ "issue", "hash", "base", "branch", "title" }],              base = the dispatch commit
-//             "heals": [{ "issue", "hash", "pr", "branch", "finding", "files" }] }    `next.ts` writes these
-//
-// State and logs live in /tmp/dispatch/<fr>/: rounds.json (repair rounds per PR), replies/<issue>.json,
-// and each session's raw output in logs/.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 
 export interface Task {
@@ -36,11 +25,9 @@ export interface Reply {
   readonly couldNotDo: string
 }
 
-// Each round on the same PR moves up a tier; past round 4 a human decides.
 const TIER: Record<number, string> = { 1: "haiku", 2: "haiku", 3: "sonnet", 4: "opus" }
 export const tier = (round: number): string | undefined => TIER[round]
 
-// Today's heaviest worker took 97 turns; the limits stop a looping session, not a slow one.
 const LIMITS = {
   implementer: { maxTurns: 150, minutes: 60 },
   repairer: { maxTurns: 40, minutes: 20 }
@@ -58,7 +45,6 @@ const REPLY_SCHEMA = {
   required: ["pr", "worktree", "green", "disputed", "couldNotDo"]
 }
 
-/** The session's reply, or a failed one that says why: anything but a valid reply goes to the owner. */
 export const parseReply = (stdout: string, worktree: string, timedOut: boolean, minutes: number): Reply => {
   const failed = (why: string): Reply => ({ pr: null, worktree, green: false, disputed: null, couldNotDo: why })
   if (timedOut) return failed(`timed out after ${minutes} min`)
@@ -83,7 +69,6 @@ const git = (...args: Array<string>) => {
 
 const root = () => git("rev-parse", "--show-toplevel")
 
-/** The worktree checked out on `branch`, created if there is none. */
 const worktreeFor = (branch: string, base?: string): string => {
   const listed = git("worktree", "list", "--porcelain").split("\n\n")
   const existing = listed.find((entry) => entry.includes(`\nbranch refs/heads/${branch}`))
@@ -93,7 +78,6 @@ const worktreeFor = (branch: string, base?: string): string => {
   if (base) {
     git("worktree", "add", "-b", branch, path, base)
   } else {
-    // A heal on a PR whose worktree is gone: the pushed branch is the truth.
     git("fetch", "-q", "origin", branch)
     git("worktree", "add", "-B", branch, path, `origin/${branch}`)
   }
@@ -109,7 +93,6 @@ const run = async (role: keyof typeof LIMITS, prompt: string, cwd: string, log: 
     "claude", "-p", prompt,
     "--agent", role,
     ...(model ? ["--model", model] : []),
-    // Only the project's settings, rules and hooks; no MCP servers, skills or extra tools: a 7k start instead of 48k.
     "--setting-sources", "project",
     "--strict-mcp-config",
     "--tools", "Bash,Read,Edit,Write",
@@ -155,7 +138,6 @@ if (import.meta.main) {
   const roundsFile = `${dir}/rounds.json`
   const rounds: Record<string, number> = existsSync(roundsFile) ? JSON.parse(readFileSync(roundsFile, "utf8")) : {}
 
-  // Worktrees are made one at a time (git locks), then every session runs in parallel.
   const jobs: Array<() => Promise<string>> = []
 
   for (const t of input.tasks ?? []) {

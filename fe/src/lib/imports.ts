@@ -4,13 +4,9 @@ import { IMPORT_MAX_FILES, type ImportBatch, type ImportBatchSlug, type ImportEv
 import { session } from "./appSession.ts"
 import { orReject } from "./queryClient.ts"
 
-// Importing several decks (FR-29): start a batch, read the batches, and follow their progress live over SSE.
-
 export interface ImportProgress {
-  /** Files finished, imported or failed. */
   readonly done: number
   readonly total: number
-  /** The file being imported, else the next one waiting; null once every file is finished. */
   readonly current: string | null
   readonly finished: boolean
 }
@@ -31,7 +27,6 @@ export const importProgress = (batch: ImportBatch): ImportProgress => {
   }
 }
 
-/** The Learner's batches not yet dismissed. The only source of import state: a reload or a new sign-in reads it again. */
 export const importsQuery = () =>
   queryOptions({
     queryKey: ["imports"],
@@ -45,7 +40,6 @@ export interface StartImport {
   readonly meaningLang: string
 }
 
-/** Uploads the batch. More than 50 files reject before any request. */
 export const startImport = ({ files, termLang, meaningLang }: StartImport): Promise<ImportBatch> => {
   if (files.length > IMPORT_MAX_FILES) {
     return Promise.reject(new Error(`An import takes at most ${IMPORT_MAX_FILES} files`))
@@ -66,7 +60,6 @@ export const startImport = ({ files, termLang, meaningLang }: StartImport): Prom
 export const dismissImport = (batchSlug: ImportBatchSlug): Promise<void> =>
   orReject(session.call((client) => client.imports.dismissImport({ params: { batchSlug } }))).then(() => undefined)
 
-/** The part of the browser's `EventSource` the follower uses, so tests can pass a fake. */
 export interface EventSourceLike {
   onmessage: ((event: { readonly data: string }) => void) | null
   onerror: ((event: unknown) => void) | null
@@ -75,18 +68,12 @@ export interface EventSourceLike {
 
 export interface FollowImports {
   readonly queryClient: QueryClient
-  /** Defaults to `new EventSource(url)`. */
   readonly open?: (url: string) => EventSourceLike
-  /** Wait before reconnecting after the stream fails. */
   readonly retryMs?: number
 }
 
 const openBrowserStream = (url: string): EventSourceLike => new EventSource(url) as unknown as EventSourceLike
 
-/**
- * Keeps one event stream open while signed in: each event refetches the imports, and a finished batch the decks too.
- * A failed stream reconnects with a fresh ticket. Returns a function that closes it for good.
- */
 export const followImports = ({
   queryClient,
   open = openBrowserStream,
@@ -113,7 +100,6 @@ export const followImports = ({
     }, retryMs)
   }
 
-  // A ticket is single use, so every connection asks for a new one.
   const connect = async (): Promise<void> => {
     const ticket = await session.call((client) => client.imports.importEventsTicket())
 
@@ -132,7 +118,6 @@ export const followImports = ({
     stream.onmessage = (message) => {
       const event = JSON.parse(message.data) as ImportStreamEvent
 
-      // The server's keep-alive: it only stops proxies from closing an idle stream, so it carries no batch change.
       if (event.status === "ping") return
 
       refetch(event)

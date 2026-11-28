@@ -1,14 +1,3 @@
-// UI evidence for the definition of done: screenshots of the fe dev server, straight to files in .shots/.
-// Each spec is `route[:width][:dark][:state]`:
-//
-//   bun scripts/shots.ts /login /login:390 /:1280:dark                 public pages
-//   bun scripts/shots.ts --mock /app /app/decks /app/study::wrong      signed-in pages against a fake /api
-//   bun scripts/shots.ts --design                                      every screen of the Console design
-//
-// --mock signs in with a fake refresh token and answers /api/* from scripts/shots-fixtures.ts (the design's sample
-// data), with the clock frozen on the design's date. States: `complete` (a finished session), `wrong` (press 1 on
-// the question, which the fake API marks wrong), `finish` (answer right and end the session), `select` (turn on the decks list's select mode and tick the first deck), `imports` and `imports-done` (the FR-29 import panel: one batch running, or all finished). --design writes .shots/design-<screen>.png for side-by-side checks.
-// First run downloads Chromium once (`bunx playwright install chromium`).
 import { mkdirSync } from "node:fs"
 import { resolve } from "node:path"
 import { parseArgs } from "node:util"
@@ -38,7 +27,6 @@ if (opt.design) {
   await page.goto(`file://${resolve("docs/design/ui-refinement.html")}#console`)
   await page.waitForTimeout(1000)
 
-  // The sticky option picker would sit on top of the screens.
   await page.addStyleTag({ content: ".doc-top { display: none !important; }" })
 
   const screens = await page.$$(".screen")

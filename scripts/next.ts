@@ -1,8 +1,3 @@
-// After a dispatch: the next step for each task PR, decided by rules, not by a model. Combines the re-check, the
-// merge gate, the worker's reply, the first CI error and the repair round count. Runs the rebases itself and writes
-// the repairs as a ready dispatch file.
-//
-//   bun scripts/next.ts --feature <fr> 60 61 62
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import type { Heal, Reply } from "./dispatch.ts"
@@ -20,14 +15,10 @@ export type Action =
 export interface Facts {
   readonly ci: "pending" | "success" | "failure"
   readonly conflicting: boolean
-  /** recheck's list, without the CI line (that's `ci`). */
   readonly problems: ReadonlyArray<string>
-  /** merge-gate's reasons. */
   readonly reasons: ReadonlyArray<string>
   readonly reply: Reply | undefined
-  /** Repair rounds already run on this PR. */
   readonly rounds: number
-  /** The first error of the failed CI run, when `ci` is "failure". */
   readonly failure: { readonly finding: string; readonly files: ReadonlyArray<string> } | undefined
 }
 
@@ -59,9 +50,7 @@ export const route = (f: Facts): Action => {
   return { kind: "merge" }
 }
 
-/** The first failing verify step from `gh run view --log-failed`, and up to 3 repo files it names. */
 export const firstError = (log: string): { finding: string; files: Array<string> } => {
-  // Each row is "<job>\t<step>\t<timestamp> <text>".
   const rows = log.split("\n").map((row) => row.replace(/^[^\t]*\t[^\t]*\t\S+ ?/, "").replace(/^##\[group\]/, ""))
   const start = rows.findIndex((row) => row.startsWith("✗ "))
   const from = start === -1 ? Math.max(0, rows.length - 40) : start
@@ -72,7 +61,6 @@ export const firstError = (log: string): { finding: string; files: Array<string>
     .join("\n")
     .trim()
 
-  // Tests run inside their workspace and print `src/…`; typecheck and lint print paths from the repo root.
   const workspace = /^✗ test (\w+)/.exec(rows[from] ?? "")?.[1]
   const paths = excerpt.match(/(?<![\w/])(?:(?:be|fe|contract|scripts)\/|src\/|test\/)[\w./-]+\.(?:tsx?|sql)\b/g) ?? []
   const rooted = paths.map((p) => (workspace && /^(src|test)\//.test(p) ? `${workspace}/${p}` : p))
