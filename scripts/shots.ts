@@ -15,7 +15,7 @@ const DESIGN_SCREENS = [
 ]
 
 if (specs.length === 0 && !opt.design) {
-  console.error("usage: bun scripts/shots.ts [--mock] <route[:width][:dark][:state]>...  |  bun scripts/shots.ts --design")
+  console.error("usage: bun scripts/shots.ts [--mock] <route[:width|:WxH][:dark][:state]>...  |  bun scripts/shots.ts --design")
   process.exit(1)
 }
 
@@ -76,12 +76,14 @@ const fakeApi = async (page: Page, state: string, problems: string[]) => {
 let failed = false
 for (const spec of specs) {
   const [route = "/", ...parts] = spec.split(":")
-  const width = Number(parts.find((p) => /^\d+$/.test(p)) ?? 1280)
+  const viewport = parts.find((p) => /^\d+x\d+$/.test(p))?.split("x").map(Number)
+  const width = viewport?.[0] ?? Number(parts.find((p) => /^\d+$/.test(p)) ?? 1280)
+  const height = viewport?.[1] ?? (width < 600 ? 844 : 800)
   const dark = parts.includes("dark")
-  const state = parts.find((p) => p !== "" && p !== "dark" && !/^\d+$/.test(p)) ?? ""
+  const state = parts.find((p) => p !== "" && p !== "dark" && !/^\d+(x\d+)?$/.test(p)) ?? ""
 
   const context = await browser.newContext({
-    viewport: { width, height: width < 600 ? 844 : 800 },
+    viewport: { width, height },
     colorScheme: dark ? "dark" : "light",
     ...(opt.mock ? { timezoneId: TIMEZONE } : {}),
   })
@@ -92,7 +94,7 @@ for (const spec of specs) {
 
   await page.goto(`${base}${route}`)
   await page.waitForTimeout(800)
-  if (state === "wrong") {
+  if (state === "wrong" || state === "long60") {
     await page.keyboard.press("1")
     await page.waitForTimeout(400)
   }
@@ -111,7 +113,7 @@ for (const spec of specs) {
   const suffix = `${dark ? "-dark" : ""}${state ? `-${state}` : ""}`
   const name = `${route.replace(/^\/|\/$/g, "").replace(/\//g, "_") || "home"}-${width}${suffix}.png`
   const out = `.shots/${name}`
-  await page.screenshot({ path: out, fullPage: true })
+  await page.screenshot({ path: out, fullPage: viewport === undefined })
   await context.close()
 
   if (problems.length > 0) {

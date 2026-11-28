@@ -150,6 +150,28 @@ const question = {
   ],
 }
 
+const LONG_PROMPTS: Record<string, string> = {
+  long: "to be absent-minded, to be careless",
+  long60: "to do something carelessly and regret it a moment afterwards",
+}
+
+const longQuestion = (text: string) => ({
+  ...question,
+  drill: "meaning_term",
+  drillLabel: "Meaning → Word",
+  prompt: { text, ruby: null },
+  options: ["うっかりする", "ぼんやりする", "しっかりする", "のんびりする"].map((option, index) => ({
+    wordSlug: wordSlug(index + 1),
+    text: option,
+  })),
+})
+
+const questionFor = (state: string) => {
+  const long = LONG_PROMPTS[state]
+
+  return long === undefined ? question : longQuestion(long)
+}
+
 const studySession = (state: string) => ({
   slug: "SESS0000000001",
   drills: ["term_meaning"],
@@ -158,7 +180,7 @@ const studySession = (state: string) => ({
   size: 20,
   status: state === "complete" ? "completed" : "active",
   cleared: state === "complete" ? 20 : 8,
-  questions: state === "complete" ? [] : [question],
+  questions: state === "complete" ? [] : [questionFor(state)],
 })
 
 const drillStats = (drill: string, label: string, maturity: string, overrides: Record<string, unknown>) => ({
