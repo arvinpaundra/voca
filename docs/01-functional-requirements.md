@@ -149,7 +149,7 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
   - **zh:** pinyin with tone marks.
   - **yue:** jyutping.
   - **Other languages:** optional.
-- Labels follow the language: Word / Hiragana for ja, and Hanzi / Pinyin for zh.
+- Labels follow the language: Word / Kana for ja (FR-34), and Hanzi / Pinyin for zh.
 
 ## FR-17 Drills: choose the direction before each session (M)
 
@@ -157,8 +157,8 @@ A deck summary shows counts by maturity, a due forecast for the next 7 days, and
 - There are four drills in every language. Labels are shown per language, using ja and zh as examples:
   - **term_meaning:** Word → Meaning (Hanzi → Meaning)
   - **meaning_term:** Meaning → Word (Meaning → Hanzi)
-  - **term_reading:** Word → Hiragana (Hanzi → Pinyin)
-  - **reading_term:** Hiragana → Word (Pinyin → Hanzi)
+  - **term_reading:** Word → Kana (Hanzi → Pinyin)
+  - **reading_term:** Kana → Word (Pinyin → Hanzi)
 - The reading drills apply only to words that have a reading.
 - Only drills that apply to at least one word in the deck are listed, each with today's due and new counts. The default is the set last used for that deck.
 - **Each (word, drill) is scheduled independently.** The daily new-word limit is shared across drills.
@@ -395,7 +395,7 @@ Extends FR-3. The default font makes kanji, kana and hangul hard to read; Learne
 
 - In the settings, the Learner picks the font for word content from a fixed list of styles: **System default**, **Sans**, **Serif**, **Rounded**, **Handwriting** (textbook stroke forms).
 - The style applies only to word content in a CJK language: Japanese (kanji, hiragana, katakana), Chinese (`zh-Hans`, `zh-Hant`) and Korean. Content in any other language (`en`, `id`, right-to-left scripts, …) always uses the app font, whatever style is chosen.
-- It covers all of a word's content (term, reading, meaning, example, notes) that is in a CJK language, wherever it is shown: the deck page, the word modal, the word page, study sessions and flashcards.
+- It covers all of a word's content (term, reading, meaning, example, notes) that is in a CJK language, wherever it is shown: the deck page, the word modal, the word page, study sessions and flashcards. FR-34 narrows this to CJK characters only.
 - The choice is remembered on that device; a new device starts with System default.
 - **Won't:** custom font upload, font size, syncing across devices, changing the interface's own font, a font choice for alphabetic languages.
 
@@ -463,6 +463,37 @@ Extends FR-23. A Voca link pasted into X, WhatsApp, Slack, Telegram or iMessage 
 - `og:image` and `twitter:image` are absolute `https://` URLs. Opening one without signing in returns a 1200×630 PNG under 300 KB.
 - Pasting the landing URL into a new X post shows the image as a large card (X shows no title or description).
 - Pasting the landing URL into the Facebook Sharing Debugger shows the title, description and image. The only warning allowed is the missing `fb:app_id`.
+
+## FR-34 Word font changes CJK characters only, "Kana", and long prompts (S)
+
+Extends FR-30, FR-16 and FR-17. The word font changes every character of a Japanese or Chinese field, so the Latin letters and digits in an example such as 「Tシャツを3枚買った」 take the Handwriting face and read poorly. The Learner chose the font for kanji and kana, not for the Latin text around them. Separately, the Japanese reading is labelled "Hiragana", which Japanese learners don't use as a field name; "Kana" is the common word. And in a study session a long word or meaning is drawn as large as a short one, so on a phone it pushes the answers and the Next button below the screen.
+
+- The chosen style applies character by character, only to kanji, hiragana, katakana, hanzi, hangul and CJK punctuation (。、「」).
+- Latin letters, including pinyin and jyutping with tone marks, digits, Latin punctuation and spaces keep the app font, even inside a Japanese or Chinese field.
+- A CJK character in any field of a word takes the style, including a meaning or note written in another language (`Polite form: 買います`). It uses the face for the deck's term language.
+- The surfaces are those of FR-30: the deck page, the word modal, the word page, study sessions and flashcards.
+- The settings row "Word font" says what it changes. Help: "Changes only kanji, kana, hanzi and hangul in your words. Latin letters (including pinyin), numbers and punctuation keep the app font." The preview becomes `勉強 · Tシャツを3枚 · belajar`.
+- In a Japanese deck, the reading's label is **Kana** instead of **Hiragana** wherever it appears: the word form, word list, word modal, word page, flashcard back and Hard words. The reading drills read **Word → Kana** and **Kana → Word** everywhere a drill is named. The reading is still written in hiragana (FR-16), and the CSV still accepts `reading` and the `hiragana` alias.
+- In a study session, the prompt's size follows its length (characters as typed, spaces included), and it wraps rather than being cut off:
+  - 1–6 characters: as today (52 px on a phone, up to 80 px on desktop).
+  - 7–14 characters: 36 px on a phone, 48 px on desktop.
+  - 15 or more: 24 px on a phone, 32 px on desktop.
+- On a phone (narrower than 640 px), once a question is answered, the result bar with Next is pinned to the bottom of the screen, above the browser's safe area, and never covers the last option. On wider screens it stays below the answers, as today.
+- **Won't:** a style for Arabic, Hebrew, Thai, Cyrillic or other scripts (they keep the app font), a style for pinyin, a font change for form inputs, new styles, prompt sizing for flashcards.
+
+**UI:** `docs/design/fr-34.html`
+
+**Acceptance**
+- After choosing Handwriting, a `ja` word whose example is `セールでTシャツを3枚買った。` renders the kana and kanji of the example in the Handwriting face and `T` and `3` in the app font, on the deck page, in the word modal, on the word page, in a study session and on a flashcard.
+- After choosing Handwriting, a `ja`→`en` word whose notes are `Polite form: 買います` renders `買います` in the Handwriting face and `Polite form:` in the app font.
+- After choosing Handwriting, a `zh-Hans` word 学习 with the reading `xuéxí` renders 学习 in the Handwriting face and `xuéxí` in the app font.
+- After choosing Handwriting, an `id`→`en` word renders entirely in the app font.
+- The settings row "Word font" shows the help text above, word for word, and the preview `勉強 · Tシャツを3枚 · belajar`.
+- A Japanese deck shows "Word → Kana" and "Kana → Word" in the drill picker, as the question label and on the word page, and "Kana" as the reading label in the word form and word modal. No screen of a Japanese deck shows the word "Hiragana" as a label.
+- A Chinese deck still shows "Hanzi → Pinyin" and "Pinyin"; a deck in another language still shows "Reading".
+- In a study session, the prompt `食べる` is drawn at today's size, `お疲れ様でした` at 36 px on a phone and 48 px on desktop, and `to be absent-minded, to be careless` at 24 px on a phone and 32 px on desktop.
+- At 390 × 664 (an iPhone 14 in Safari, toolbars shown), a question whose prompt is `to be absent-minded, to be careless` shows the prompt and all four options without scrolling.
+- At 390 × 664, after answering a question whose prompt is 60 characters long, the Next button is on screen without scrolling, and tapping it moves to the next question.
 
 ## Extra ideas (not in your list)
 

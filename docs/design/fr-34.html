@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FR-34 Word font scripts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&family=Shippori+Mincho:wght@500;600&display=swap">
+<!-- Klee One and Noto Serif SC are the shipped Handwriting faces (FR-30), loaded here only to show sample words. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Serif+SC:wght@500&display=swap">
+<style>
+:root {
+  --bg: #f5f5f5; --surface: #ffffff; --sunken: #fafaf9;
+  --ink: #1c1917; --ink-2: #44403c; --muted: #78716c; --faint: #a8a29e;
+  --line: #e7e5e4; --line-strong: #d6d3d1;
+  --dark: #1c1917; --lime: #c1ff72; --lime-tint: #f3ffe3; --lime-ink: #3f6212;
+  --navy: #002f43; --navy-tint: #e6eef1;
+  --bad: #dc2626; --bad-bg: #fef2f2; --bad-line: #fecaca;
+
+  --f-display: "Montserrat", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, sans-serif;
+  --f-term: "Shippori Mincho", serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Console option tokens */
+  --r-xs: 4px; --r-sm: 8px; --r: 12px; --r-lg: 16px; --r-btn: 8px; --r-pill: 999px;
+  --card-bd: 1px solid transparent; --card-sh: 0 1px 2px rgba(28,25,23,.04), 0 12px 32px -16px rgba(28,25,23,.12); --card-pad: 28px;
+  --gap: 20px; --stack: 18px;
+  --h1: 34px; --h1-lh: 40px; --h2: 18px;
+  --body: 15px; --small: 13px; --tiny: 12px;
+  --btn-h: 42px; --btn-h-sm: 34px; --ctl-h: 44px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: var(--body)/1.55 var(--f-body); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+code { font: 12px var(--f-mono); background: #ecebea; padding: 1px 5px; border-radius: 4px; }
+
+/* document chrome */
+.doc { max-width: 1340px; margin: 0 auto; padding: 32px 16px 120px; display: grid; gap: 56px; }
+.doc-head { display: grid; gap: 8px; max-width: 760px; }
+.doc-sec { display: grid; gap: 20px; min-width: 0; }
+.doc-sec > header { display: grid; gap: 6px; max-width: 760px; }
+.doc-sec > header h2 { font: 600 22px/1.3 var(--f-display); }
+.doc-sec > header p, .note { color: var(--ink-2); font-size: 14px; }
+.note { max-width: 760px; border-left: 3px solid var(--line-strong); padding: 4px 0 4px 12px; }
+.note b { color: var(--ink); }
+.kit { font: 600 11px var(--f-mono); color: var(--navy); background: var(--navy-tint); padding: 2px 6px; border-radius: 4px; justify-self: start; }
+.kit.new { color: var(--lime-ink); background: var(--lime-tint); }
+.eyebrow { font-size: var(--tiny); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+
+.screen { background: var(--bg); border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; min-width: 0; }
+.screen-bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #ebebea; border-bottom: 1px solid var(--line-strong); font: 500 12px var(--f-mono); color: var(--muted); }
+.screen-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); }
+.screen-bar span { margin-left: 8px; }
+.screen-body { padding: 32px; }
+.w-desk { width: 1280px; max-width: 100%; }
+.w-phone { width: 390px; max-width: 100%; }
+.w-phone .screen-body { padding: 16px; }
+
+/* kit */
+.h1 { font: 600 var(--h1)/var(--h1-lh) var(--f-display); letter-spacing: -.02em; }
+.sub { color: var(--muted); font-size: var(--small); }
+.page-head { display: grid; gap: 6px; margin-bottom: 24px; }
+.h2 { font: 600 var(--h2)/1.3 var(--f-display); letter-spacing: -.01em; }
+.card { background: var(--surface); border: var(--card-bd); box-shadow: var(--card-sh); border-radius: var(--r-lg); padding: var(--card-pad); display: grid; gap: var(--stack); align-content: start; min-width: 0; }
+.w-phone .card { padding: 20px; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+.settings { display: grid; gap: var(--gap); max-width: 760px; }
+.set-row { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 8px 32px; padding: 20px 0; border-top: 1px solid var(--line); align-items: start; }
+.set-row:first-of-type { border-top: 0; padding-top: 4px; }
+.set-row .lbl b { display: block; font-size: 14px; font-weight: 600; }
+.set-row .lbl span { font-size: var(--tiny); color: var(--muted); }
+.w-phone .set-row { grid-template-columns: 1fr; }
+.select { width: 100%; height: var(--ctl-h); padding: 0 32px 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: #fff; font-size: 14px; color: var(--ink); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+.menu { margin-top: 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: #fff; box-shadow: 0 8px 24px -12px rgba(28,25,23,.25); padding: 4px; display: grid; }
+.menu span { padding: 8px 10px; border-radius: 6px; font-size: 14px; }
+.menu span.on { background: var(--sunken); font-weight: 600; }
+.preview { margin-top: 10px; font-size: 20px; line-height: 1.5; overflow-wrap: anywhere; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > .lbl { font-size: var(--small); font-weight: 500; color: var(--ink-2); }
+.input { width: 100%; height: var(--ctl-h); padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: #fff; font-size: 14px; display: flex; align-items: center; }
+.input.ph { color: var(--faint); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.w-phone .form-grid { grid-template-columns: 1fr; }
+.choices { display: grid; gap: 8px; }
+.choice { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--line); background: #fff; }
+.choice .box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--line-strong); flex-shrink: 0; }
+.choice.on { border-color: var(--ink); background: var(--sunken); }
+.choice.on .box { background: var(--ink); border-color: var(--ink); }
+.choice .t { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; }
+.choice .m { font-size: var(--tiny); color: var(--muted); }
+.prompt { background: #fff; box-shadow: var(--card-sh); border-radius: var(--r-lg); padding: 40px 24px; display: grid; justify-items: center; gap: 24px; }
+.prompt .drill { font-size: var(--tiny); color: var(--muted); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.prompt .term { font-size: 64px; line-height: 1.15; font-weight: 600; }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 560px; }
+.w-phone .options { grid-template-columns: 1fr; }
+.opt { display: flex; align-items: center; min-height: 56px; padding: 12px 16px; border-radius: var(--r); border: 1px solid var(--line); background: #fff; font-size: 18px; }
+
+/* word sample */
+.word-card { display: grid; gap: 14px; }
+.wf-term { font-size: 40px; line-height: 1.2; font-weight: 600; }
+.wf-term rt { font-size: .38em; color: var(--muted); font-weight: 400; }
+.wf-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; font-size: 17px; }
+.wf-row > span:first-child { font-size: var(--small); color: var(--muted); padding-top: 3px; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 860px) { .compare { grid-template-columns: 1fr; } }
+.tag { font-size: var(--tiny); font-weight: 600; padding: 2px 8px; border-radius: var(--r-pill); justify-self: start; }
+.tag.before { background: var(--bad-bg); color: #991b1b; }
+.tag.after { background: var(--lime); color: var(--ink); }
+
+/* How the page fakes the chosen style: CJK runs get the Handwriting face, everything else the app font.
+   .all-hw shows today's behaviour, where Latin letters and digits in a Japanese field take it too. */
+.hw-ja { font-family: "Klee One", var(--f-body); }
+.hw-zh { font-family: "Noto Serif SC", var(--f-body); }
+.all-hw, .all-hw * { font-family: "Klee One", serif !important; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: var(--small); color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.mark .hw-ja, .mark .hw-zh { background: var(--lime-tint); box-shadow: inset 0 -2px 0 var(--lime); }
+
+/* phone study mock: the 390 × 664 viewport of an iPhone 14 in Safari with its toolbars */
+.phone-frame { position: relative; width: 390px; max-width: 100%; height: 664px; overflow: hidden; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 28px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.appbar { margin: -16px -16px 0; height: 52px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 16px; font: 600 15px var(--f-display); flex-shrink: 0; }
+.study-top { display: flex; align-items: center; gap: 12px; }
+.study-top .x { width: 34px; height: 34px; border-radius: 50%; background: #e7e5e4; display: grid; place-items: center; font-size: 14px; }
+.study-top .cnt { font-size: 13px; color: var(--muted); }
+.strip { flex: 1; display: flex; gap: 3px; }
+.strip i { flex: 1; height: 6px; border-radius: 999px; background: #e7e5e4; }
+.strip i.r { background: var(--lime); } .strip i.cur { background: var(--ink); }
+.phone-frame .prompt { padding: 28px 16px; gap: 24px; }
+.pterm { font-family: var(--f-term); font-weight: 600; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.phone-frame .options { grid-template-columns: 1fr; }
+.phone-frame .opt { gap: 12px; font-size: 16px; font-weight: 500; }
+.opt kbd { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line); display: grid; place-items: center; font: 600 11px var(--f-mono); color: var(--muted); background: var(--sunken); flex-shrink: 0; }
+.opt.right-o { border-color: #84cc16; background: var(--lime-tint); }
+.opt.wrong-o { border-color: var(--bad-line); background: var(--bad-bg); color: #991b1b; }
+.opt.dim { opacity: .45; }
+.verdict-inline, .verdict-pinned { display: flex; align-items: center; gap: 8px; padding: 12px 12px 12px 16px; border-radius: var(--r); font-size: 14px; background: var(--bad-bg); color: #991b1b; border: 1px solid var(--bad-line); }
+.verdict-pinned { position: absolute; left: 12px; right: 12px; bottom: 24px; box-shadow: 0 -8px 24px -12px rgba(28,25,23,.25); }
+.nextbtn { margin-left: auto; background: var(--lime); color: var(--ink); padding: 8px 14px; border-radius: var(--r-btn); font-size: 13px; white-space: nowrap; }
+.fold { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; background: repeating-linear-gradient(-45deg, #fecaca, #fecaca 6px, #fef2f2 6px, #fef2f2 12px); color: #991b1b; font: 600 11px var(--f-mono); display: grid; place-items: center; }
+.fold-note { color: var(--muted); font-size: 13px; text-align: center; }
+
+table.spec { border-collapse: collapse; font-size: 14px; background: #fff; border-radius: var(--r); overflow: hidden; max-width: 760px; }
+table.spec th, table.spec td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.spec th { font-size: var(--tiny); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--sunken); }
+.diff-old { color: var(--muted); text-decoration: line-through; }
+</style>
+</head>
+<body>
+<main class="doc">
+
+<header class="doc-head">
+  <span class="eyebrow">FR-34 · extends FR-30, FR-16, FR-17</span>
+  <h1 class="h1">Word font: CJK characters only, “Kana”, and long prompts</h1>
+  <p class="sub">The chosen word font changes only kanji, kana, hanzi and hangul, character by character. Latin letters (pinyin included), digits and punctuation keep the app font. The Japanese reading label becomes “Kana”.</p>
+  <div class="legend mark" style="margin-top:8px"><span><i style="background:var(--lime)"></i>Highlighted on this page only: the characters that take the chosen style. The app shows no highlight.</span></div>
+</header>
+
+<!-- ============================================================ 1. SETTINGS -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Page · /app/settings · Display section</span>
+    <h2>Settings: Word font (desktop, 1280 px)</h2>
+    <p>Same row, new help text and a preview that mixes scripts, so the Learner sees that “T” and “3” don’t change.</p>
+  </header>
+
+  <div class="screen w-desk"><div class="screen-bar"><i></i><i></i><i></i><span>voca.app/app/settings</span></div>
+    <div class="screen-body">
+      <div class="page-head"><h1 class="h1">Settings</h1><p class="sub">Your account and how study sessions start.</p></div>
+      <div class="settings">
+        <section class="card">
+          <span class="kit">SettingsSection · Card</span>
+          <div class="card-head"><h2 class="h2">Display</h2></div>
+          <div class="set-row">
+            <div class="lbl"><b>Word font</b><span>Changes only kanji, kana, hanzi and hangul in your words. Latin letters (including pinyin), numbers and punctuation keep the app font.</span></div>
+            <div>
+              <span class="kit">Select</span>
+              <div class="select" style="display:flex;align-items:center;margin-top:6px">Handwriting</div>
+              <p class="preview mark"><span lang="ja"><span class="hw-ja">勉強</span> · T<span class="hw-ja">シャツを</span>3<span class="hw-ja">枚</span></span> · <span lang="id">belajar</span></p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <table class="spec">
+    <tr><th>Element</th><th>Copy</th></tr>
+    <tr><td>Row label</td><td>Word font</td></tr>
+    <tr><td>Help (new)</td><td>Changes only kanji, kana, hanzi and hangul in your words. Latin letters (including pinyin), numbers and punctuation keep the app font.<br><span class="diff-old">The typeface for words, their readings and examples</span></td></tr>
+    <tr><td>Options (unchanged)</td><td>System default · Sans · Serif · Rounded · Handwriting</td></tr>
+    <tr><td>Preview (new)</td><td><span lang="ja">勉強 · Tシャツを3枚</span> · belajar<br><span class="diff-old">勉強 · belajar</span></td></tr>
+  </table>
+  <p class="note"><b>States.</b> The choice is read from this device, so the row has no loading or error state of its own; it shows with the Settings page’s existing skeleton and error. <b>System default</b> renders the preview entirely in the app font. A change applies at once, with no Save, as today.</p>
+</section>
+
+<section class="doc-sec">
+  <header><h2>Settings: Word font (phone, 390 px)</h2><p>The row stacks; the help text wraps under the label. Shown with the Select open.</p></header>
+  <div class="screen w-phone"><div class="screen-bar"><i></i><i></i><i></i><span>settings</span></div>
+    <div class="screen-body">
+      <section class="card">
+        <div class="card-head"><h2 class="h2">Display</h2></div>
+        <div class="set-row">
+          <div class="lbl"><b>Word font</b><span>Changes only kanji, kana, hanzi and hangul in your words. Latin letters (including pinyin), numbers and punctuation keep the app font.</span></div>
+          <div>
+            <div class="select" style="display:flex;align-items:center">Handwriting</div>
+            <div class="menu"><span>System default</span><span>Sans</span><span>Serif</span><span>Rounded</span><span class="on">Handwriting</span></div>
+            <p class="preview mark"><span lang="ja"><span class="hw-ja">勉強</span> · T<span class="hw-ja">シャツを</span>3<span class="hw-ja">枚</span></span> · <span lang="id">belajar</span></p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2. WHAT CHANGES -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Every word surface · deck page, word modal, word page, study, flashcards, Hard words</span>
+    <h2>Which characters change (Handwriting chosen)</h2>
+    <p>Before: a Japanese field drew everything in the style, Latin letters and digits included. After: only CJK characters change. A CJK character in a Latin-language field, such as a note written in English, takes the style too. It uses the face for the deck’s term language.</p>
+  </header>
+
+  <div class="compare">
+    <div class="card word-card">
+      <span class="tag before">Before (FR-30)</span>
+      <div class="all-hw">
+        <p class="wf-term" lang="ja"><ruby>買う<rt>かう</rt></ruby></p>
+      </div>
+      <div class="wf-row"><span>Meaning</span><span lang="en">to buy</span></div>
+      <div class="wf-row all-hw"><span>Example</span><span lang="ja">セールでTシャツを3枚買った。</span></div>
+      <div class="wf-row"><span>Notes</span><span lang="en">Polite form: 買います. Past: 買った.</span></div>
+    </div>
+    <div class="card word-card mark">
+      <span class="tag after">After (FR-34)</span>
+      <p class="wf-term" lang="ja"><ruby class="hw-ja">買う<rt class="hw-ja">かう</rt></ruby></p>
+      <div class="wf-row"><span>Meaning</span><span lang="en">to buy</span></div>
+      <div class="wf-row"><span>Example</span><span lang="ja"><span class="hw-ja">セールで</span>T<span class="hw-ja">シャツを</span>3<span class="hw-ja">枚買った。</span></span></div>
+      <div class="wf-row"><span>Notes</span><span lang="en">Polite form: <span class="hw-ja" lang="ja">買います</span>. Past: <span class="hw-ja" lang="ja">買った</span>.</span></div>
+    </div>
+  </div>
+
+  <div class="compare">
+    <div class="card word-card mark">
+      <span class="tag after">Chinese deck · pinyin stays in the app font</span>
+      <p class="wf-term" lang="zh-Hans"><ruby class="hw-zh">学习<rt lang="zh-Latn-pinyin" style="font-family:var(--f-body)">xuéxí</rt></ruby></p>
+      <div class="wf-row"><span>Meaning</span><span lang="en">to study</span></div>
+      <div class="wf-row"><span>Example</span><span lang="zh-Hans"><span class="hw-zh">我每天学习</span>2<span class="hw-zh">个小时。</span></span></div>
+    </div>
+    <div class="card word-card">
+      <span class="tag after">Indonesian → English deck · nothing changes</span>
+      <p class="wf-term" lang="id" style="font-family:var(--f-body)">belajar</p>
+      <div class="wf-row"><span>Meaning</span><span lang="en">to study</span></div>
+      <div class="wf-row"><span>Example</span><span lang="id">Saya belajar 2 jam setiap hari.</span></div>
+    </div>
+  </div>
+
+  <table class="spec">
+    <tr><th>Character</th><th>Takes the chosen style?</th></tr>
+    <tr><td>Kanji, hiragana, katakana, hanzi, hangul, CJK punctuation (。、「」)</td><td>Yes, in any field of a word</td></tr>
+    <tr><td>Latin letters, including pinyin and jyutping with tone marks</td><td>No, app font</td></tr>
+    <tr><td>Digits (3, 2026), Latin punctuation, spaces</td><td>No, app font</td></tr>
+    <tr><td>Arabic, Hebrew, Thai, Cyrillic and other scripts</td><td>No, app font (Won’t, for now)</td></tr>
+  </table>
+  <p class="note"><b>Unchanged:</b> buttons, labels, navigation and form inputs keep the interface font. Sizes, weights, colours and ruby layout stay as they are; only the face of CJK characters changes.</p>
+</section>
+
+<!-- ============================================================ 3. KANA LABEL -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Labels · every Japanese deck</span>
+    <h2>“Hiragana” becomes “Kana”</h2>
+    <p>Wherever a Japanese deck names its reading field or a reading drill. Chinese (Hanzi / Pinyin), Cantonese (Hanzi / Jyutping) and other languages (Word / Reading) are unchanged.</p>
+  </header>
+
+  <table class="spec">
+    <tr><th>Where</th><th>Before</th><th>After</th></tr>
+    <tr><td>Drill picker, question label, word page drill tabs, word modal directions, Hard words, notifications</td><td>Word → Hiragana<br>Hiragana → Word</td><td><b>Word → Kana</b><br><b>Kana → Word</b></td></tr>
+    <tr><td>Add / edit word form, word modal, word page, flashcard back, deck word list</td><td>Hiragana</td><td><b>Kana</b></td></tr>
+  </table>
+
+  <div class="row">
+    <div class="screen w-desk" style="width:640px"><div class="screen-bar"><i></i><i></i><i></i><span>voca.app/app/decks/japanese-n5-verbs/study</span></div>
+      <div class="screen-body">
+        <section class="card" style="max-width:520px;margin:0 auto">
+          <span class="kit">ChoiceCard</span>
+          <div class="field"><span class="lbl">Drills</span>
+            <div class="choices">
+              <div class="choice on"><span class="box"></span><span class="t">Word → Meaning</span><span class="m">14 due · 10 new</span></div>
+              <div class="choice"><span class="box"></span><span class="t">Meaning → Word</span><span class="m">0 due · 10 new</span></div>
+              <div class="choice on"><span class="box"></span><span class="t">Word → Kana</span><span class="m">6 due · 10 new</span></div>
+              <div class="choice"><span class="box"></span><span class="t">Kana → Word</span><span class="m">3 due · 10 new</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="screen w-phone"><div class="screen-bar"><i></i><i></i><i></i><span>study</span></div>
+      <div class="screen-body">
+        <section class="prompt mark">
+          <span class="drill">Word → Kana</span>
+          <p class="term" lang="ja"><span class="hw-ja">買う</span></p>
+          <div class="options" lang="ja">
+            <div class="opt"><span class="hw-ja">かう</span></div>
+            <div class="opt"><span class="hw-ja">かす</span></div>
+            <div class="opt"><span class="hw-ja">あう</span></div>
+            <div class="opt"><span class="hw-ja">かく</span></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="screen w-desk" style="width:640px"><div class="screen-bar"><i></i><i></i><i></i><span>Add word · Japanese N5 verbs</span></div>
+      <div class="screen-body">
+        <section class="card">
+          <span class="kit">WordForm · Input</span>
+          <div class="form-grid">
+            <div class="field"><span class="lbl">Word</span><div class="input" lang="ja">買う</div></div>
+            <div class="field"><span class="lbl">Kana</span><div class="input" lang="ja">かう</div></div>
+            <div class="field"><span class="lbl">Meaning</span><div class="input">to buy</div></div>
+            <div class="field"><span class="lbl">Example</span><div class="input ph">Optional</div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="screen w-phone"><div class="screen-bar"><i></i><i></i><i></i><span>Add word</span></div>
+      <div class="screen-body">
+        <section class="card">
+          <div class="form-grid">
+            <div class="field"><span class="lbl">Word</span><div class="input" lang="ja">買う</div></div>
+            <div class="field"><span class="lbl">Kana</span><div class="input" lang="ja">かう</div></div>
+            <div class="field"><span class="lbl">Meaning</span><div class="input">to buy</div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Content is unchanged:</b> a Japanese reading is still written in hiragana (FR-16), and the CSV header still accepts <code>reading</code> and the <code>hiragana</code> alias. Form inputs keep the interface font, as today; only the label text changes.</p>
+</section>
+
+<!-- ============================================================ 4. LONG PROMPTS -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Page · /app/study · question</span>
+    <h2>Long prompts fit; Next stays on screen (phone, 390 × 664)</h2>
+    <p>Before: a long word or meaning is drawn at 52 px, wraps over several lines, and pushes the answers and the Next bar below the fold. After: the prompt size follows its length, and once answered the Verdict bar with Next is pinned to the bottom of the screen.</p>
+  </header>
+
+  <div class="row">
+    <div class="phone-frame">
+      <span class="tag before" style="position:absolute;top:8px;right:8px;z-index:2">Before</span>
+      <div class="appbar">Voca</div>
+      <div class="study-top"><span class="x">✕</span><span class="strip"><i class="r"></i><i class="r"></i><i class="cur"></i><i></i><i></i><i></i><i></i></span><span class="cnt">3 / 7</span></div>
+      <section class="prompt">
+        <span class="drill">Meaning → Word</span>
+        <p class="pterm" style="font-size:52px">to be absent-minded, to be careless</p>
+        <div class="options">
+          <div class="opt wrong-o" lang="ja"><kbd>1</kbd>うっかりする</div>
+          <div class="opt right-o" lang="ja"><kbd>2</kbd>ぼんやりする</div>
+          <div class="opt dim" lang="ja"><kbd>3</kbd>しっかりする</div>
+          <div class="opt dim" lang="ja"><kbd>4</kbd>のんびりする</div>
+        </div>
+      </section>
+      <div class="verdict-inline">✕ Not quite: <span lang="ja">ぼんやりする</span> <b class="nextbtn">Next →</b></div>
+      <div class="fold">664 px · screen ends here, Next is below</div>
+    </div>
+
+    <div class="phone-frame">
+      <span class="tag after" style="position:absolute;top:8px;right:8px;z-index:2">After</span>
+      <div class="appbar">Voca</div>
+      <div class="study-top"><span class="x">✕</span><span class="strip"><i class="r"></i><i class="r"></i><i class="cur"></i><i></i><i></i><i></i><i></i></span><span class="cnt">3 / 7</span></div>
+      <section class="prompt">
+        <span class="drill">Meaning → Word</span>
+        <p class="pterm" style="font-size:24px">to be absent-minded, to be careless</p>
+        <div class="options">
+          <div class="opt wrong-o" lang="ja"><kbd>1</kbd>うっかりする</div>
+          <div class="opt right-o" lang="ja"><kbd>2</kbd>ぼんやりする</div>
+          <div class="opt dim" lang="ja"><kbd>3</kbd>しっかりする</div>
+          <div class="opt dim" lang="ja"><kbd>4</kbd>のんびりする</div>
+        </div>
+      </section>
+      <div class="verdict-pinned"><span class="kit" style="position:absolute;top:-22px;left:16px">Verdict · pinned</span>✕ Not quite: <span lang="ja">ぼんやりする</span><b class="nextbtn">Next →</b></div>
+    </div>
+
+    <div class="phone-frame">
+      <span class="tag after" style="position:absolute;top:8px;right:8px;z-index:2">After · 7–14 chars</span>
+      <div class="appbar">Voca</div>
+      <div class="study-top"><span class="x">✕</span><span class="strip"><i class="r"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i></span><span class="cnt">2 / 7</span></div>
+      <section class="prompt">
+        <span class="drill">Word → Meaning</span>
+        <p class="pterm" lang="ja" style="font-size:36px">お疲れ様でした</p>
+        <div class="options">
+          <div class="opt"><kbd>1</kbd>thank you for your hard work</div>
+          <div class="opt"><kbd>2</kbd>welcome back</div>
+          <div class="opt"><kbd>3</kbd>excuse me for leaving first</div>
+          <div class="opt"><kbd>4</kbd>good morning</div>
+        </div>
+      </section>
+      <p class="fold-note">Unanswered: no Verdict bar yet.</p>
+    </div>
+  </div>
+
+  <table class="spec">
+    <tr><th>Prompt length</th><th>Phone (&lt; 640 px)</th><th>Desktop</th><th>Example</th></tr>
+    <tr><td>1–6 characters</td><td>52 px (today)</td><td>up to 80 px (today)</td><td><span lang="ja">食べる</span> · eat</td></tr>
+    <tr><td>7–14 characters</td><td>36 px</td><td>48 px</td><td><span lang="ja">お疲れ様でした</span> · to forget</td></tr>
+    <tr><td>15 or more</td><td>24 px</td><td>32 px</td><td>to be absent-minded, to be careless</td></tr>
+  </table>
+  <p class="note"><b>Interactions.</b> Length counts characters as typed, spaces included. A prompt is never cut off or ellipsised; it wraps. On a phone the pinned Verdict bar sits above the browser’s bottom safe area and the page gets matching bottom padding, so it never covers the last option. Enter and the Next button work as today. On desktop (640 px and wider) the Verdict stays below the answers, as today. Flashcards are unchanged.</p>
+</section>
+
+</main>
+</body>
+</html>
