@@ -589,6 +589,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .hist .ok { color: var(--ok); font-weight: 600; }
 .hist .no { color: #991b1b; font-weight: 600; }
 .hist .num { text-align: right; }
+@media (max-width: 640px) {
+  .hist li { grid-template-columns: repeat(3, minmax(0, 1fr)); overflow-wrap: normal; }
+}
 .w-deck { font-size: var(--tiny); color: var(--muted); }
 .w-mark { width: 10px; height: 10px; border-radius: 50%; background: var(--lime); }
 .w-mark.w { background: #fca5a5; }
