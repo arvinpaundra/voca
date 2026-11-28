@@ -12,6 +12,7 @@ import {
 import { abandonSession, activeSession, startHardSession, startSession } from "../application/sessions.ts"
 import { answerQuestion } from "../application/answer.ts"
 import { deckDrills } from "../application/deckDrills.ts"
+import { deckSetup } from "../application/deckSetup.ts"
 import { listHardWords, markHard, unmarkHard } from "../application/hardWords.ts"
 import type { StudyRepo } from "../application/studyRepo.ts"
 import type { Transaction } from "../../shared/transaction.ts"
@@ -37,7 +38,11 @@ export const StudyHandlers = HttpApiBuilder.group(
           Effect.catchTag("DeckNotFound", notFound("Deck"))
         ),
 
-      deckSetup: () => Effect.die("not implemented: NB"),
+      deckSetup: ({ params }) =>
+        deckSetup(params.deckSlug).pipe(
+          Effect.provideContext(ports),
+          Effect.catchTag("DeckNotFound", notFound("Deck"))
+        ),
 
       start: ({ payload }) => {
         if (payload.scope.kind === "hard") {

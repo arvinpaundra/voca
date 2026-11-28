@@ -41,8 +41,7 @@ export const notifications = Effect.gen(function* () {
   }
 
   const due = rows.reduce((sum, row) => sum + row.due, 0)
-  const unstudied = yield* repo.unstudiedPairs({ learnerId, deckId: null }, now)
-  const newAvailable: number = yield* Effect.die("not implemented: NB")
+  const newAvailable = yield* repo.unstudiedPairs({ learnerId, deckId: null }, now)
 
   const paces = yield* repo.sessionPaces(learnerId)
 

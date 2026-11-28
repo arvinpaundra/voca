@@ -67,13 +67,12 @@ export const startSession = (
         const dueAt = dueIndexOf(yield* repo.deckCards(learnerId, deck.id))
         const dueBefore = DateTime.toEpochMillis(day.end)
         const due = pickDue({ words, dueAt, drills: request.drills, dueBefore, size: request.size })
-        const limit: number = yield* Effect.die("not implemented: NB")
         const fresh = pickNew({
           words,
           hasCard: (wordId, drill) => dueAt.has(cardKey(wordId, drill)),
           drills: request.drills,
           taken: new Set(due.map(({ pick }) => pick.word.id)),
-          limit
+          limit: request.size - due.length
         })
 
         // Shuffled, so the due words don't always come first on the screen.
