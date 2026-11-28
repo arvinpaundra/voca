@@ -2,7 +2,7 @@ import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/http-api"
 import { Multipart } from "effect/http"
 import { ImportRowError, ImportRunning, NotFound, PayloadTooLarge, Unauthorized } from "./errors.ts"
-import { IMPORT_MAX_BYTES } from "./library.ts"
+import { ColumnMatch, IMPORT_MAX_BYTES } from "./library.ts"
 import { Count, DeckTitle, Instant, LangTag } from "./primitives.ts"
 import { DeckSlug, ImportBatchSlug } from "./slug.ts"
 
@@ -19,8 +19,15 @@ export const IMPORT_MAX_TOTAL_BYTES = 50 * 1024 * 1024
 export const ImportDecks = Schema.Struct({
   termLang: LangTag,
   meaningLang: LangTag,
-  files: Multipart.FilesSchema.check(Schema.isMinLength(1), Schema.isMaxLength(IMPORT_MAX_FILES))
-}).pipe(
+  files: Multipart.FilesSchema.check(Schema.isMinLength(1), Schema.isMaxLength(IMPORT_MAX_FILES)),
+  columns: Schema.optionalKey(Schema.fromJsonString(Schema.Array(ColumnMatch)))
+}).check(
+  Schema.makeFilter((payload) =>
+    payload.columns === undefined || payload.columns.length === payload.files.length
+      ? true
+      : "columns needs one match per file"
+  )
+).pipe(
   HttpApiSchema.asMultipart({ maxFileSize: IMPORT_MAX_BYTES, maxParts: IMPORT_MAX_FILES + 10 })
 )
 

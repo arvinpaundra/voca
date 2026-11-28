@@ -46,14 +46,14 @@ On `/auth/google`, `timezone` is used only when the account is created.
 | POST | `/decks/:deckSlug/words/batch` | `{words: CreateWord[1..50]}` → `Word[]` in request order; all or nothing (FR-26) |
 | PATCH | `/words/:wordSlug` | partial Word → `Word` |
 | DELETE | `/words/:wordSlug` | → `204` |
-| POST | `/decks/:deckSlug/import` | `multipart/form-data` field `file` (≤ 5 MB) → `{imported, skippedDuplicates}` |
+| POST | `/decks/:deckSlug/import` | `multipart/form-data` field `file` (≤ 5 MB) and optional `columns` (JSON `ColumnMatch`, ADR 70) → `{imported, skippedDuplicates}` |
 | GET | `/decks/:deckSlug/export` | → `text/csv` |
 
 ### Imports (FR-29)
 
 | Method | Path | Body → Response |
 |---|---|---|
-| POST | `/imports` | `multipart/form-data`: `termLang`, `meaningLang`, `files` (1–50, each ≤ 5 MB, ≤ 50 MB in all) → `ImportBatch`; more than 50 files → `400`, over 50 MB in all → `413`, nothing stored |
+| POST | `/imports` | `multipart/form-data`: `termLang`, `meaningLang`, `files` (1–50, each ≤ 5 MB, ≤ 50 MB in all), optional `columns` (JSON, one `ColumnMatch` per file in file order, ADR 70) → `ImportBatch`; more than 50 files → `400`, over 50 MB in all → `413`, nothing stored |
 | GET | `/imports` | → `ImportBatch[]`: not dismissed, newest first |
 | DELETE | `/imports/:batchSlug` | → `204`; `409 ImportRunning` while a file is pending or running |
 | POST | `/imports/events/ticket` | → `{ticket}`: single use, valid 30 s |

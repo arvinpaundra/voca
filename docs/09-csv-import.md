@@ -17,7 +17,8 @@ term,meaning,pinyin
 ```
 
 - **Encoding:** UTF-8. A leading BOM (U+FEFF) is stripped, because Excel adds one. Any other encoding is rejected with a hint: "Save as CSV UTF-8".
-- **Header:** required. Column names are case-insensitive and may come in any order. `term` and `meaning` are required; `reading`, `example`, and `notes` are optional. `hiragana`, `pinyin`, and `jyutping` are accepted as aliases for `reading`. Unknown columns cause a rejection, so typos are caught.
+- **Header:** required, the first record. The Learner matches each column to a field before importing (FR-35, ADR 70): the upload carries `columns`, one entry per header column in file order (`term`, `meaning`, `reading`, `example`, `notes`, or `null` for Not imported). Term and Meaning need a column each, and no field takes two. A `null` column is never read or checked. A list whose length differs from the header is rejected on row 1. Without `columns`, the known names are matched (case and surrounding spaces ignored; `hiragana`, `pinyin` and `jyutping` mean `reading`; the first column wins a field) and every other column is ignored.
+- **Row errors** name the field, then the Learner's column: `Row 14, Meaning (arti): is required`; a blank header reads `Meaning (column 4)`.
 - **Dialect:** RFC 4180. Values can be quoted, a doubled quote (`""`) escapes a quote, and quoted values can span lines. Lines may end in CRLF or LF. The delimiter is always a comma.
 - **Limits:**
   - 5 MB, enforced by the multipart `maxFileSize` limit on the contract's `ImportCsv` payload, which returns 413 before parsing starts
@@ -48,7 +49,7 @@ multipart file ─▶ bytes ─▶ TextDecoder("utf-8", {fatal:true})   ── i
 A single-deck import stays synchronous, as above. A batch of up to 50 files would hold a request for tens of seconds, so it runs on **beanstalkd**:
 
 ```
-POST /imports (multipart) ─▶ one transaction: import_batches row + one import_files row per file (bytes in `content`)
+POST /imports (multipart) ─▶ one transaction: import_batches row + one import_files row per file (bytes in `content`, its match in `columns`)
                           ─▶ put one job per file, body {fileId}            -- a job is capped at 64 KiB, the file is not
 worker fiber (in the API) ─▶ reserve ─▶ mark the file running, publish {batch, status: "running"}
                           ─▶ the pipeline above, into a new deck named after the file
