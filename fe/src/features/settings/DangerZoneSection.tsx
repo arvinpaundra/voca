@@ -115,9 +115,9 @@ function DeleteAccountDialog({ email, onClose }: { email: string; onClose: () =>
       </div>
 
       {failed && (
-        <p role="alert" className="err">
-          {FAILURE}
-        </p>
+        <div role="alert" className="alert alert-bad">
+          <span className="grow">{FAILURE}</span>
+        </div>
       )}
     </Modal>
   );
