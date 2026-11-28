@@ -10,13 +10,6 @@ export interface ImportFailure {
 
 const GENERIC_FAILURE = "Could not import the file. Try again.";
 
-/** The header row every import file starts with; a file holding only this imports nothing and reports no error. */
-export const CSV_HEADER = "term,meaning,reading,example,notes";
-
-/** The template as a data URI, ready for a download link. */
-export const csvTemplateHref = (): string =>
-  `data:text/csv;charset=utf-8,${encodeURIComponent(`${CSV_HEADER}\n`)}`;
-
 const isImportRejected = (error: unknown): error is ImportRejected => failureTag(error) === "ImportRejected";
 
 const plural = (count: number, one: string, many: string): string => (count === 1 ? one : many);

@@ -1,8 +1,19 @@
 import { useRef, useState, type FormEvent } from "react";
+import { CircleAlert } from "lucide-react";
 import { IMPORT_MAX_FILES, IMPORT_MAX_TOTAL_BYTES } from "@voca/contract";
 import { Button } from "../../components/Button";
-import { ColumnMatch } from "../../components/ColumnMatch";
+import { ColumnMatch, useFileHeaders, type ColumnRow } from "../../components/ColumnMatch";
 import { Modal } from "../../components/Modal";
+import {
+  BATCH_UNREADABLE,
+  batchProblems,
+  batchRows,
+  fileColumns,
+  initialBatchMatch,
+  matchOf,
+  type BatchMatch,
+  type Match
+} from "../../lib/columnMatch";
 import { startImport } from "../../lib/imports";
 import { queryClient } from "../../lib/queryClient";
 import { LanguageField, languageCodeMessage, languageCodePattern } from "./LanguageField";
@@ -32,14 +43,53 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
   // The actions live in the dialog footer, outside the form, so Import submits the form through its ref.
   const formRef = useRef<HTMLFormElement>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [choice, setChoice] = useState<BatchMatch | null>(null);
   const [termLang, setTermLang] = useState("");
   const [meaningLang, setMeaningLang] = useState("");
   const [languageErrors, setLanguageErrors] = useState<LanguageErrors>({ termLang: null, meaningLang: null });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const headers = useFileHeaders(files);
   const tooManyFiles = files.length > IMPORT_MAX_FILES;
   const tooLarge = overTotalLimit(files);
+  const loaded = files.every((file) => headers.has(file));
+  const unreadable = files.filter((file) => headers.get(file)?.kind === "unreadable");
+  const batch = files.flatMap((file) => {
+    const header = headers.get(file);
+
+    return header?.kind === "read" ? [{ file, name: file.name, header: header.names }] : [];
+  });
+  const rows = batchRows(batch);
+  const match = choice ?? initialBatchMatch(rows);
+  const problems = batchProblems(batch, match);
+  const blocked = !loaded || unreadable.length > 0 || problems.length > 0 || tooManyFiles || tooLarge;
+
+  const rowViews: ReadonlyArray<ColumnRow> = rows.map((row) => ({
+    label: row.label,
+    blank: row.key === "",
+    match: matchOf(match, row.key),
+    files: row.files,
+  }));
+
+  const chooseFiles = (chosen: File[]) => {
+    setFiles(chosen);
+    setChoice(null);
+    setError(null);
+  };
+
+  const removeFile = (removed: File) => {
+    setFiles(files.filter((file) => file !== removed));
+    setError(null);
+  };
+
+  const choose = (index: number, field: Match) => {
+    const row = rows[index];
+
+    if (row === undefined) return;
+
+    setChoice({ ...match, [row.key]: field });
+  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,13 +110,18 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
     }
 
     // Checked here too, so an oversized selection never reaches the server.
-    if (tooManyFiles || tooLarge) return;
+    if (tooManyFiles || tooLarge || blocked) return;
 
     setBusy(true);
     setError(null);
 
     try {
-      await startImport({ files, termLang: nextTermLang, meaningLang: nextMeaningLang, columns: [] });
+      await startImport({
+        files,
+        termLang: nextTermLang,
+        meaningLang: nextMeaningLang,
+        columns: batch.map((entry) => fileColumns(entry.header, match)),
+      });
     } catch {
       setBusy(false);
       setError("Could not start the import. Try again.");
@@ -91,7 +146,7 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
           </Button>
           <Button
             busy={busy}
-            disabled={tooManyFiles || tooLarge}
+            disabled={blocked}
             onClick={() => formRef.current?.requestSubmit()}
           >
             Import
@@ -105,17 +160,32 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
           multiple
           accept=".csv,text/csv"
           aria-label="CSV files"
-          onChange={(event) => {
-            setFiles(Array.from(event.currentTarget.files ?? []));
-            setError(null);
-          }}
+          onChange={(event) => chooseFiles(Array.from(event.currentTarget.files ?? []))}
         />
+
+        <p className="import-hint">CSV with a header row · UTF-8 · 5 MB each</p>
 
         <p role="status">
           {files.length === 1 ? "1 file chosen" : `${files.length} files chosen`}
         </p>
 
-        <ColumnMatch />
+        {unreadable.length > 0 && (
+          <div role="alert" className="alert alert-bad">
+            <CircleAlert size={16} aria-hidden="true" />
+            <ul className="grow">
+              {unreadable.map((file, index) => (
+                <li key={index}>
+                  <b>{file.name}</b>: {BATCH_UNREADABLE}{" "}
+                  <button type="button" className="btn btn-ghost btn-sm" aria-label={`Remove ${file.name}`} onClick={() => removeFile(file)}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {loaded && rowViews.length > 0 && <ColumnMatch rows={rowViews} lines={problems} onChoose={choose} />}
 
         <LanguageField
           label="Term language"
