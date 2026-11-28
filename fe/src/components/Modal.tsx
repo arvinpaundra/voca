@@ -6,7 +6,6 @@ const FOCUSABLE = "button, [href], input, select, textarea, [tabindex]:not([tabi
 export function Modal({
   open,
   title,
-  titleClassName,
   titleLang,
   description,
   onClose,
@@ -14,8 +13,7 @@ export function Modal({
   children,
 }: {
   open: boolean;
-  title: string;
-  titleClassName?: string | undefined;
+  title: ReactNode;
   // The language of the title, when it is word content in a language the word font covers.
   titleLang?: string | undefined;
   description?: string;
@@ -65,7 +63,7 @@ export function Modal({
       <div className="modal">
         <div className="modal-head">
           <div>
-            <h3 id={titleId} className={titleClassName} lang={titleLang}>
+            <h3 id={titleId} lang={titleLang}>
               {title}
             </h3>
             {description !== undefined && <p>{description}</p>}
