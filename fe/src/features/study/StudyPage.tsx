@@ -27,6 +27,7 @@ import { SessionSummary } from "./SessionSummary";
 import { advance } from "./queue";
 import { segments, tally } from "./progress";
 import { isHardStudy, studyReturnHref } from "./returnTo";
+import { promptSize } from "./promptSize";
 import { answerLang, promptLang } from "./scriptLang";
 import { QuestionPrompt } from "./QuestionPrompt";
 import { requestedSize, shortSessionNotice } from "./shortSession";
@@ -325,7 +326,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
 
         <SessionNotice notice={notice} />
 
-        <section className="prompt">
+        <section className="prompt" data-size={promptSize(head.prompt.text)}>
           <QuestionPrompt question={head} termLang={studySession.termLang} />
 
           <AnswerOptions
@@ -334,6 +335,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
             chosenSlug={feedback?.chosen ?? null}
             disabled={busy}
             lang={answerLang(head.drill, studySession.termLang)}
+            faceLang={studySession.termLang}
             onChoose={(wordSlug) => {
               const option = head.options.find((candidate) => candidate.wordSlug === wordSlug);
               if (option !== undefined) void choose(head, option.wordSlug);
@@ -350,6 +352,7 @@ function StudyFlow({ studySession }: { studySession: Session }) {
             readingLang={readingLang(studySession.termLang)}
             termLang={verdictTermLang}
             answerLang={verdictAnswerLang}
+            faceLang={studySession.termLang}
             onNext={next}
           />
         )}
