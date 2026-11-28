@@ -129,7 +129,12 @@ export const LearnerRepoLive = Layer.effect(
           default_session_size: settings.defaultSessionSize,
           default_mode: settings.defaultMode
         })}
-        WHERE id = ${id}`.pipe(Effect.asVoid, Effect.orDie)
+        WHERE id = ${id}`.pipe(Effect.asVoid, Effect.orDie),
+      erase: (id, at) =>
+        sql`
+          UPDATE learners
+          SET deleted_at = ${new Date(at)}, email = '', name = '', google_sub = '', avatar_url = NULL
+          WHERE id = ${id}`.pipe(Effect.asVoid, Effect.orDie)
     })
   })
 )

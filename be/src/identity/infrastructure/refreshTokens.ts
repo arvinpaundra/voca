@@ -52,6 +52,14 @@ export const RefreshTokensLive = Layer.effect(
           ),
           Effect.asVoid,
           Effect.orDie
+        ),
+      revokeAllOf: (learnerId) =>
+        now.pipe(
+          Effect.flatMap((at) =>
+            sql`UPDATE refresh_tokens SET revoked_at = ${at} WHERE learner_id = ${learnerId} AND revoked_at IS NULL`
+          ),
+          Effect.asVoid,
+          Effect.orDie
         )
     })
   })
