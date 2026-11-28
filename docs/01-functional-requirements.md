@@ -562,6 +562,35 @@ Extends FR-1, FR-7 and FR-17. The setting "New words per day" counts cards, one 
 - With 30 new cards already today and 40 new cards left in the Learner's decks, the dashboard's "new" figure shows 40 and its headline says "40 new cards waiting".
 - New cards studied from a snoozed deck count toward "New cards today".
 
+## FR-37 Delete account (S)
+
+Extends FR-2, FR-5 and FR-10. A Learner who wants to leave Voca has no way to do it: their name, email and photo stay stored, and their public decks keep showing their name in Community. A Learner can delete their own account. What identifies them is removed, and what other Learners hold stays theirs.
+
+- Settings ends with a **Danger zone** card holding one row: "Delete account", help "Deletes your decks and signs you out everywhere. This can't be undone.", and a danger button "Delete account…".
+- The button opens a confirmation, "Delete your account?", subtitle "This can't be undone." It lists what happens, word for word as in the design, and asks the Learner to type their email. "Delete account" stays disabled until the typed text matches the account's email, ignoring spaces around it and letter case. "Keep account", ✕, Escape or a click outside closes it and changes nothing.
+- Deleting is immediate and permanent. There is no grace period and no restore.
+- Every deck the Learner owns is deleted as a single deck delete does (FR-2): it leaves the library and Community, public decks included.
+- The account's name, email, photo and Google link are erased. Study history (review logs) is kept, tied to nothing that identifies the Learner.
+- Every token of the account is revoked at once: this tab, other tabs and other devices are signed out, and a still-valid access token is refused.
+- This tab lands on the sign-in page with "Your account has been deleted." The notice is gone after a reload.
+- Signing in again with the same Google account creates a new, empty account with default settings, as a first sign-in does.
+- Forks other Learners made of the deleted Learner's decks keep their words and progress. Their "Forked from" line behaves as it does for any deleted deck.
+- If the delete fails, the modal stays open with "Couldn't delete your account. Nothing was deleted. Try again." and the account is unchanged.
+- **Won't:** a grace period or undo, an export before deleting (the CSV export idea stays separate), deleting someone else's account, an admin delete screen, keeping public decks alive under a "Deleted learner" name.
+
+**UI:** `docs/design/fr-37.html`
+
+**Acceptance**
+- Settings shows the Danger zone card with the label, help and button above, word for word.
+- In the confirmation, "Delete account" is disabled with nothing typed and with a partial email, and enabled for the exact email, the email in other letter case, and the email with spaces around it.
+- Closing the confirmation any of the four ways leaves the account, its decks and its sign-in unchanged.
+- After confirming, the browser shows the sign-in page with "Your account has been deleted."; after a reload the notice is gone.
+- After the delete, the account's access token and refresh token both get 401, including an access token issued less than 15 minutes earlier.
+- After the delete, none of the account's decks appears in Community or opens by its slug, and a deck another Learner forked from one of them still opens with all its words and progress.
+- After the delete, the stored account holds no name, email, photo URL or Google ID, and no API response returns them.
+- Signing in again with the same Google account returns a Learner with a new slug, no decks and default settings.
+- When the delete fails, the modal shows the failure message, and the account still signs in and owns all its decks.
+
 ## Extra ideas (not in your list)
 
 | Idea | Priority | Why |
