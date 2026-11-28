@@ -446,6 +446,21 @@ Extends FR-2, FR-6, FR-19 and FR-31. A long term, example, note or drill label m
 - At the phone breakpoint (640 px, FR-31) and at every narrower width down to 320 px, and also just above it at 641 px, a word whose term is 30 characters with a reading, and whose example and notes are 300 characters each, shows all of its text and the whole header. The page has no horizontal scroll. This holds on the word page, in the deck page's modal, and in a drill that has no card yet.
 - At the same widths, the dashboard of a Learner with a deck whose drill label reads "Pinyin → Hanzi 1 · Meaning → Hanzi 2 · Hanzi → Meaning 1" shows all four Today counts (due, new, hard, overdue) and each full label. The page has no horizontal scroll.
 
+## FR-33 Link previews when sharing (S)
+
+Extends FR-23. A Voca link pasted into X, WhatsApp, Slack, Telegram or iMessage shows as a bare URL. A card with the name, a one-line pitch and an image makes the link recognisable and more likely to be opened.
+
+- A link to the landing page (`/`) shows a card titled "Voca · Remember every word", with the same one-line description as the page's own, and a preview image.
+- On X the card is a large image card, not a small thumbnail.
+- The image is 1200×630 px. It shows the Voca logo, the name "Voca" and the line "Remember every word" on the app's dark background (`#1c1917`), and its text stays legible at the small size a chat app shows it.
+- A link to any other page (sign-in, Dashboard, a deck) shows the same card. The card never shows private content such as a deck's title or words.
+- **Won't:** a card per public deck or per word, per-language cards, or a card that changes with the Learner.
+
+**Acceptance**
+- The HTML served for `/`, `/login` and a deck URL, fetched without running JavaScript, has `og:title`, `og:description`, `og:image`, `og:url`, `og:type`, `twitter:card` ("summary_large_image") and `twitter:image`.
+- `og:image` and `twitter:image` are absolute `https://` URLs. Opening one without signing in returns a 1200×630 PNG under 300 KB.
+- Pasting the landing URL into the X Card Validator and the Facebook Sharing Debugger shows the title, description and image, with no warnings.
+
 ## Extra ideas (not in your list)
 
 | Idea | Priority | Why |
