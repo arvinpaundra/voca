@@ -6,7 +6,8 @@ import { Modal } from "../../components/Modal";
 import { StatStrip } from "../../components/StatStrip";
 import { wordStatsQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
-import { WORD_FONT_CLASS } from "../../lib/wordFont";
+import { WordText } from "../../components/WordText";
+import { WORD_FONT_CLASS, cjkRuns } from "../../lib/wordFont";
 import { wordHref } from "../word/wordHref";
 import { percent, stability } from "../word/wordFormat";
 
@@ -68,31 +69,34 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
       </Button>
     );
 
+  // The title is a plain string in Modal, so only a wholly CJK term can take the word font there.
+  const titleIsCjk = cjkRuns(word.term).every((run) => run.cjk);
+
   return (
     <Modal
       open
       title={word.term}
-      titleClassName={WORD_FONT_CLASS}
+      titleClassName={titleIsCjk ? WORD_FONT_CLASS : undefined}
       titleLang={termLang}
       onClose={onClose}
       footer={footer}
     >
       <div className="grid gap-3">
         {word.reading !== null && (
-          <p className={WORD_FONT_CLASS} lang={termLang} dir="auto">
-            {word.reading}
+          <p lang={termLang} dir="auto">
+            <WordText text={word.reading} faceLang={termLang} />
           </p>
         )}
 
-        <p className={WORD_FONT_CLASS} lang={meaningLang} dir="auto">
-          {word.meaning}
+        <p lang={meaningLang} dir="auto">
+          <WordText text={word.meaning} faceLang={termLang} />
         </p>
 
         {example !== null && (
           <dl>
             <dt>Example</dt>
-            <dd className={WORD_FONT_CLASS} lang={termLang} dir="auto">
-              {example}
+            <dd lang={termLang} dir="auto">
+              <WordText text={example} faceLang={termLang} />
             </dd>
           </dl>
         )}
@@ -100,8 +104,8 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
         {notes !== null && (
           <dl>
             <dt>Notes</dt>
-            <dd className={WORD_FONT_CLASS} dir="auto">
-              {notes}
+            <dd dir="auto">
+              <WordText text={notes} faceLang={termLang} />
             </dd>
           </dl>
         )}

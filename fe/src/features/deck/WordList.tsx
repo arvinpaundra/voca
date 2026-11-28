@@ -3,8 +3,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { readingLang, type Deck, type WordWithCards } from "@voca/contract";
 import { Badge } from "../../components/Badge";
 import { IconButton } from "../../components/IconButton";
-import { cx } from "../../components/cx";
-import { WORD_FONT_CLASS } from "../../lib/wordFont";
+import { WordText } from "../../components/WordText";
 
 const MATURE_DAYS = 21;
 
@@ -35,15 +34,17 @@ function StateBadge({ state }: { state: WordState }) {
 }
 
 // The design bolds the term where it occurs in the example.
-function Example({ example, term }: { example: string; term: string }) {
+function Example({ example, term, faceLang }: { example: string; term: string; faceLang: string }) {
   const at = example.indexOf(term);
-  if (at < 0) return <>{example}</>;
+  if (at < 0) return <WordText text={example} faceLang={faceLang} />;
 
   return (
     <>
-      {example.slice(0, at)}
-      <b>{term}</b>
-      {example.slice(at + term.length)}
+      <WordText text={example.slice(0, at)} faceLang={faceLang} />
+      <b>
+        <WordText text={term} faceLang={faceLang} />
+      </b>
+      <WordText text={example.slice(at + term.length)} faceLang={faceLang} />
     </>
   );
 }
@@ -79,26 +80,28 @@ export function WordList({
       {words.map((word) => (
         <li key={word.slug}>
           <article className="word row-open" onClick={() => onOpen(word)}>
-            <span className={cx("w-term", WORD_FONT_CLASS)} lang={deck.termLang} dir="auto">
+            <span className="w-term" lang={deck.termLang} dir="auto">
               <button type="button" aria-label={`Open ${word.term}`} style={termButtonStyle}>
                 {word.reading === null ? (
-                  word.term
+                  <WordText text={word.term} faceLang={deck.termLang} />
                 ) : (
                   <ruby>
-                    {word.term}
-                    <rt lang={readingLang(deck.termLang)}>{word.reading}</rt>
+                    <WordText text={word.term} faceLang={deck.termLang} />
+                    <rt lang={readingLang(deck.termLang)}>
+                      <WordText text={word.reading} faceLang={deck.termLang} />
+                    </rt>
                   </ruby>
                 )}
               </button>
             </span>
 
             <div className="w-body">
-              <span className={cx("w-meaning", WORD_FONT_CLASS)} lang={deck.meaningLang} dir="auto">
-                {word.meaning}
+              <span className="w-meaning" lang={deck.meaningLang} dir="auto">
+                <WordText text={word.meaning} faceLang={deck.termLang} />
               </span>
               {word.example !== null && word.example !== "" && (
-                <span className={cx("w-example", WORD_FONT_CLASS)} lang={deck.termLang} dir="auto">
-                  <Example example={word.example} term={word.term} />
+                <span className="w-example" lang={deck.termLang} dir="auto">
+                  <Example example={word.example} term={word.term} faceLang={deck.termLang} />
                 </span>
               )}
             </div>

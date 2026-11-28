@@ -27,9 +27,9 @@ describe("QuestionPrompt", () => {
   test("term_meaning: the term alone, with no ruby even when the payload has one", () => {
     const { container } = render(<QuestionPrompt question={question("term_meaning", "食べる", "たべる")} termLang="ja" />);
 
-    const term = screen.getByText("食べる");
-    expect(term.classList.contains("term")).toBe(true);
-    expect(term.getAttribute("lang")).toBe("ja");
+    const term = container.querySelector(".term");
+    expect(term?.textContent).toBe("食べる");
+    expect(term?.getAttribute("lang")).toBe("ja");
     expect(container.querySelector("ruby, rt")).toBeNull();
     expect(container.textContent).not.toContain("たべる");
   });

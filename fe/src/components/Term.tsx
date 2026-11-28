@@ -1,5 +1,5 @@
-import { WORD_FONT_CLASS } from "../lib/wordFont";
 import { cx } from "./cx";
+import { WordText } from "./WordText";
 
 type TermProps = {
   term: string;
@@ -17,22 +17,19 @@ type TermProps = {
 export function Term({ term, reading, lang, readingLang, dir, size = "md", className }: TermProps) {
   return (
     <span
-      className={cx(
-        "term-face font-medium leading-[1.2]",
-        WORD_FONT_CLASS,
-        size === "lg" ? "text-[76px]" : "text-[48px]",
-        className,
-      )}
+      className={cx("term-face font-medium leading-[1.2]", size === "lg" ? "text-[76px]" : "text-[48px]", className)}
       lang={lang}
       dir={dir}
     >
       {reading ? (
         <ruby>
-          {term}
-          <rt lang={readingLang}>{reading}</rt>
+          <WordText text={term} faceLang={lang} />
+          <rt lang={readingLang}>
+            <WordText text={reading} faceLang={lang} />
+          </rt>
         </ruby>
       ) : (
-        term
+        <WordText text={term} faceLang={lang} />
       )}
     </span>
   );

@@ -38,4 +38,17 @@ export const applyWordFont = (): void => {
 
 export type Run = { readonly text: string; readonly cjk: boolean };
 
-export const cjkRuns = (text: string): readonly Run[] => [{ text: `not implemented: WF ${text}`, cjk: false }];
+const CJK_CHARACTER = /(?![\^@-⹿])[\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Hangul}]/u;
+
+const runOf = (character: string): Run => ({ text: character, cjk: CJK_CHARACTER.test(character) });
+
+const extend = (runs: readonly Run[], character: string): readonly Run[] => {
+  const last = runs[runs.length - 1];
+  const next = runOf(character);
+
+  if (last === undefined || last.cjk !== next.cjk) return [...runs, next];
+
+  return [...runs.slice(0, -1), { text: last.text + character, cjk: last.cjk }];
+};
+
+export const cjkRuns = (text: string): readonly Run[] => [...text].reduce<readonly Run[]>(extend, []);

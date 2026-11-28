@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Select } from "../../components/Select";
-import { WORD_FONT_CLASS, WORD_FONTS, setWordFont, wordFont, type WordFont } from "../../lib/wordFont";
+import { WordText } from "../../components/WordText";
+import { WORD_FONTS, setWordFont, wordFont, type WordFont } from "../../lib/wordFont";
 import { SettingsRow } from "./SettingsRow";
 import { SettingsSection } from "./SettingsSection";
 
@@ -27,7 +28,10 @@ export function WordFontSection() {
 
   return (
     <SettingsSection title="Display">
-      <SettingsRow label="Word font" help="The typeface for words, their readings and examples">
+      <SettingsRow
+        label="Word font"
+        help="Changes only kanji, kana, hanzi and hangul in your words. Latin letters (including pinyin), numbers and punctuation keep the app font."
+      >
         <div>
           <Select
             label="Word font"
@@ -36,8 +40,8 @@ export function WordFontSection() {
             onChange={choose}
           />
 
-          <p className={WORD_FONT_CLASS} style={{ fontSize: 20, marginTop: 8 }}>
-            <span lang="ja">勉強</span> · <span lang="id">belajar</span>
+          <p style={{ fontSize: 20, marginTop: 8 }}>
+            <WordText text="勉強 · Tシャツを3枚 · belajar" faceLang="ja" />
           </p>
         </div>
       </SettingsRow>
