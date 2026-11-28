@@ -25,7 +25,9 @@ export const MeHandlers = HttpApiBuilder.group(
           Effect.provideContext(ports),
           Effect.map(toLearner),
           Effect.orDie
-        )
+        ),
+
+      delete: () => Effect.die("not implemented: AB")
     })
   })
 )

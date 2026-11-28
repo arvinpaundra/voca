@@ -242,12 +242,12 @@ Each delete is one use case running in **one transaction**. Each step is an expl
 |---|---|
 | `deleteWord(wordId)` | 1. `UPDATE words SET deleted_at = now`<br>2. `UPDATE cards SET deleted_at = now WHERE word_id = $1` (all drills)<br>3. If the Learner's active session has a pending question for this word, abandon that session |
 | `deleteDeck(deckId)` | 1. `UPDATE decks SET deleted_at = now, visibility = 'private', published_at = NULL` (it disappears from Community)<br>2. `UPDATE words … WHERE deck_id = $1 AND deleted_at IS NULL`<br>3. `UPDATE cards … WHERE word_id IN (those words)`<br>4. Abandon any active session scoped to the deck, or one with pending questions from it |
-| `deleteLearner` (not in the MVP API) | Revoke all refresh tokens, soft-delete their decks (as above), then set `learners.deleted_at` |
+| `deleteAccount` (`DELETE /me`, FR-37) | 1. Soft-delete every live deck the Learner owns, each as `deleteDeck` does<br>2. Their `pending` import files: `status = 'failed'`, `content = NULL`<br>3. Revoke all their refresh tokens<br>4. One `UPDATE learners SET deleted_at = now, email = '', name = '', google_sub = '', avatar_url = NULL` |
 
 - **Logs stay intact.** `reviews` and `session_questions` are never touched. Analytics queries join `words` and filter `deleted_at IS NULL`, so history for deleted words simply stops showing.
 - **Forks:** `forked_from_id` keeps pointing at a deleted source deck, and the UI shows "forked from a deleted deck". Forked copies are unaffected.
 - **No restore.** There is no UI for it (YAGNI). `deleted_at` exists for history integrity and accidental-delete recovery by an admin, who runs `UPDATE … SET deleted_at = NULL` in one transaction across the same rows.
-- **Hard purge:** soft-deleted rows are kept forever for now. `ponytail:` add a purge job (and an account-deletion path for privacy requests) when storage or privacy law requires it. Expired `refresh_tokens` are still hard-deleted: they are security material with no history value and no dependants.
+- **Hard purge:** soft-deleted rows are kept forever for now. `ponytail:` add a purge job when storage or privacy law requires it. A deleted account keeps no name, email, photo or Google ID (FR-37). Expired `refresh_tokens` are still hard-deleted: they are security material with no history value and no dependants.
 
 ## Notes
 
