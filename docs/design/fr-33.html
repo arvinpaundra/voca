@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FR-33 Link preview image</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&display=swap">
+<style>
+:root {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --sunken: #fafaf9;
+  --ink: #1c1917;
+  --ink-2: #44403c;
+  --muted: #78716c;
+  --line: #e7e5e4;
+  --dark: #1c1917;
+  --dark-muted: #a8a29e;
+  --lime: #c1ff72;
+  --navy: #002f43;
+  --f-display: "Montserrat", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
+main { max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px; }
+h1.page { font: 700 28px/34px var(--f-display); margin: 0 0 4px; }
+.lede { color: var(--muted); margin: 0 0 40px; }
+section.doc { margin-bottom: 56px; }
+section.doc > h2 { font: 600 18px/24px var(--f-display); margin: 0 0 4px; }
+section.doc > p.sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+.note { font-size: 13px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-width: 760px; }
+.note b { font-weight: 600; }
+.tag { display: inline-block; font: 600 11px/18px var(--f-body); letter-spacing: .04em; text-transform: uppercase; padding: 0 8px; border-radius: 999px; background: var(--sunken); border: 1px solid var(--line); color: var(--muted); margin-left: 8px; vertical-align: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.cap { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.cap b { color: var(--ink); font-weight: 600; }
+
+/* ------------------------------------------------------------------
+   The image. #og-card is the screenshot target: exactly 1200×630,
+   nothing outside it belongs to the PNG.
+   ------------------------------------------------------------------ */
+.og {
+  width: 1200px;
+  height: 630px;
+  background: #1c1917;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 52px;
+  overflow: hidden;
+  flex: none;
+  position: relative;
+}
+.og > svg, .og > h1 { position: relative; z-index: 1; }
+
+/* Background layer. Everything stays outside the centred logo and line
+   (x 300–900, y 110–520), so nothing ever sits behind the text. */
+.og .fx { position: absolute; inset: 0; z-index: 0; }
+.og .fx > * { position: absolute; }
+.og .c { width: 40px; height: 52px; border-radius: 9px; border: 2px solid #44403c; }
+.og .c.lime { border: 0; background: var(--lime); opacity: .7; }
+.og .c.solid { border: 0; background: #57534e; }
+.og .d { width: 8px; height: 8px; border-radius: 50%; background: #57534e; }
+.og .d.lime { background: var(--lime); opacity: .7; }
+
+.og .lockup { height: 112px; width: auto; display: block; }
+.og h1 {
+  margin: 0;
+  font: 700 104px/104px var(--f-display);
+  letter-spacing: -3.5px;
+  text-align: center;
+}
+.og .stop { color: var(--lime); }
+
+/* Scaled copies: the same element, shrunk with transform so they are
+   pixel-for-pixel what a chat app downsamples. */
+.scaled { position: relative; overflow: hidden; }
+.scaled > .og { transform-origin: 0 0; position: absolute; top: 0; left: 0; }
+.s400 { width: 400px; height: 210px; }
+.s400 > .og { transform: scale(.33333); }
+.s300 { width: 300px; height: 158px; }
+.s300 > .og { transform: scale(.25); }
+
+/* A generic chat link preview, not any one app's chrome. */
+.chat { width: 400px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.chat .msg { padding: 10px 12px 8px; font-size: 14px; color: #2563eb; word-break: break-all; }
+.chat .meta { padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+.chat .meta .host { font-size: 12px; color: var(--muted); }
+.chat .meta .t { font-weight: 600; font-size: 14px; }
+.chat .meta .d { font-size: 13px; color: var(--ink-2); }
+.chat.darkmode { background: #292524; border-color: #2f2b29; }
+.chat.darkmode .meta { border-color: #2f2b29; }
+.chat.darkmode .meta .t { color: #fff; }
+.chat.darkmode .meta .d, .chat.darkmode .meta .host { color: var(--dark-muted); }
+.chat.darkmode .msg { color: #93c5fd; }
+
+.wide { overflow-x: auto; padding-bottom: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1 class="page">FR-33 Link preview image</h1>
+  <p class="lede">The image behind every shared Voca link. The first section is the finished image; the second shows it at chat size.</p>
+
+  <!-- 1 ---------------------------------------------------------- -->
+  <section class="doc">
+    <h2>1 · The image, 1200 × 630 <span class="tag">new: not a kit component</span></h2>
+    <p class="sub">Screenshot <code>#og-card</code> once fonts have loaded. The PNG is exactly this element: nothing around it is part of the image.</p>
+
+    <div class="wide">
+      <div class="og" id="og-card">
+        <!-- Loose flashcards and dots: the logo's cards, scattered. -->
+        <div class="fx" aria-hidden="true">
+          <span class="c" style="left:90px;top:70px;transform:rotate(-14deg)"></span>
+          <span class="c solid" style="left:200px;top:210px;transform:rotate(9deg) scale(.8)"></span>
+          <span class="c lime" style="left:70px;top:330px;transform:rotate(-6deg) scale(1.2)"></span>
+          <span class="c" style="left:190px;top:480px;transform:rotate(16deg) scale(.9)"></span>
+          <span class="c" style="left:1060px;top:60px;transform:rotate(12deg) scale(1.1)"></span>
+          <span class="c lime" style="left:960px;top:190px;transform:rotate(-10deg) scale(.7)"></span>
+          <span class="c solid" style="left:1090px;top:300px;transform:rotate(-18deg)"></span>
+          <span class="c" style="left:980px;top:450px;transform:rotate(7deg) scale(1.25)"></span>
+          <span class="d" style="left:400px;top:60px"></span>
+          <span class="d lime" style="left:250px;top:120px"></span>
+          <span class="d" style="left:130px;top:420px"></span>
+          <span class="d" style="left:780px;top:70px"></span>
+          <span class="d lime" style="left:940px;top:380px"></span>
+          <span class="d" style="left:1120px;top:560px"></span>
+          <span class="d" style="left:470px;top:570px"></span>
+          <span class="d lime" style="left:760px;top:575px"></span>
+        </div>
+        <!-- Logo, tone="dark", withName: the same lockup as the site header on dark. -->
+        <svg class="lockup" role="img" aria-label="Voca" viewBox="0 0 150 64">
+          <rect x="10" y="9" width="36" height="46" rx="8" fill="#fff" transform="rotate(-12 28 32)"/>
+          <rect x="20" y="10" width="36" height="46" rx="8" fill="#c1ff72" stroke="#1c1917" stroke-width="2" transform="rotate(6 38 33)"/>
+          <path d="M30 27 L38 43 L46 27" fill="none" stroke="#002f43" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(6 38 33)"/>
+          <text x="74" y="43" font-family="Montserrat, sans-serif" font-weight="700" font-size="32" letter-spacing="-1.3" fill="#fff">voca</text>
+        </svg>
+        <h1>Remember<br>every word<span class="stop">.</span></h1>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>Spec.</b> Background <code>#1c1917</code>. Logo: the kit's <code>Logo</code> with <code>tone="dark"</code> and its lowercase “voca” wordmark, 112 px tall, centred, no tile. Line: “Remember every word.”, Montserrat 700, 104 px, line height 104 px, tracking −3.5 px, white, two lines, centred, 52 px below the logo; the full stop in lime <code>#c1ff72</code>. The whole group is centred both ways, so nothing sits near an edge an app might crop.<br>
+      <b>Background.</b> Eight flashcards (40 × 52 px, 9 px corners, scaled 0.7–1.25, tilted up to 18°) and eight 8 px dots, scattered around the edges: outlined in stone-700 <code>#44403c</code>, filled stone-600 <code>#57534e</code>, or lime at 70% opacity. None sits behind the logo or the line.<br>
+      <b>Screenshot.</b> Capture after <code>document.fonts.ready</code>; with a fallback font the line runs wider and the PNG is wrong. Save as PNG; it must stay under 300 KB (a flat image like this is about 30–60 KB).
+    </div>
+  </section>
+
+  <!-- 2 ---------------------------------------------------------- -->
+  <section class="doc">
+    <h2>2 · At chat size</h2>
+    <p class="sub">The same element scaled down. At 400 px the line is about 35 px tall and the wordmark about 19 px; at 300 px, about 26 px and 14 px. Both read clearly, and the cards recede into texture.</p>
+
+    <div class="row">
+      <div>
+        <div class="chat">
+          <div class="msg">https://voca.arvinpaundra.xyz/</div>
+          <div class="scaled s400"><div class="og clone"></div></div>
+          <div class="meta">
+            <div class="host">voca.arvinpaundra.xyz</div>
+            <div class="t">Voca · Remember every word</div>
+            <div class="d">Voca is a web app for learning vocabulary with spaced repetition, in any language.</div>
+          </div>
+        </div>
+        <div class="cap"><b>400 px</b>, light chat</div>
+      </div>
+
+      <div>
+        <div class="chat darkmode">
+          <div class="msg">https://voca.arvinpaundra.xyz/app/decks/jlpt-n5</div>
+          <div class="scaled s400"><div class="og clone"></div></div>
+          <div class="meta">
+            <div class="host">voca.arvinpaundra.xyz</div>
+            <div class="t">Voca · Remember every word</div>
+            <div class="d">Voca is a web app for learning vocabulary with spaced repetition, in any language.</div>
+          </div>
+        </div>
+        <div class="cap"><b>400 px</b>, dark chat, a deck link: same card, no deck title</div>
+      </div>
+
+      <div>
+        <div class="scaled s300"><div class="og clone"></div></div>
+        <div class="cap"><b>300 px</b>, the smallest common preview</div>
+      </div>
+    </div>
+
+    <div class="note">The chat frames are generic, not any one app's. Title and description are the card's text from the FR; the description is the page's own <code>meta description</code>, and the title has no full stop. Every Voca URL (landing, sign-in, a deck) shows this same card. X shows only the image, with no title or description.</div>
+  </section>
+</main>
+
+<script>
+  // One source of truth: every scaled copy is a clone of #og-card's content.
+  const src = document.getElementById("og-card");
+  for (const el of document.querySelectorAll(".og.clone")) {
+    el.innerHTML = src.innerHTML;
+  }
+</script>
+</body>
+</html>
