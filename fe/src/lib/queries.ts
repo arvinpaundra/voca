@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
-import type { Cursor as CursorSchema, DeckSetup, DeckSlug, DeckSort, Drill, WordSlug } from "@voca/contract"
+import type { Cursor as CursorSchema, DeckSlug, DeckSort, Drill, WordSlug } from "@voca/contract"
 import type { ApiClient } from "./api.ts"
 import { session } from "./appSession.ts"
 import { PAGE_SIZE } from "./paging.ts"
@@ -130,7 +130,7 @@ export const deckDrillsQuery = (deckSlug: DeckSlug) =>
 export const deckSetupQuery = (deckSlug: DeckSlug) =>
   queryOptions({
     queryKey: ["study", "deckSetup", deckSlug],
-    queryFn: (): Promise<DeckSetup> => Promise.reject(new Error(`not implemented: NF: ${deckSlug}`))
+    queryFn: () => orReject(session.call((client) => client.study.deckSetup({ params: { deckSlug } })))
   })
 
 const hardWordsParams = (filter: HardWordsFilter) => {

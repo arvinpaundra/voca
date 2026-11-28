@@ -1,10 +1,23 @@
 import type { ReactNode } from "react";
 
-export function SettingsRow({ label, help, children }: { label: string; help: string; children: ReactNode }) {
+export function SettingsRow({
+  label,
+  help,
+  info,
+  children,
+}: {
+  label: string;
+  help: string;
+  info?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="set-row">
       <div className="lbl">
-        <b>{label}</b>
+        <b>
+          {label}
+          {info === undefined ? null : <> {info}</>}
+        </b>
         <span>{help}</span>
       </div>
 
