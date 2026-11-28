@@ -32,6 +32,7 @@ export function Verdict({
   termLang?: string | undefined;
   // The language of the answer when it is a term; undefined for a meaning.
   answerLang?: string | undefined;
+  faceLang?: string | undefined;
   onNext: () => void;
 }) {
   // A focused button already turns Enter into a click; handling it here too would advance twice.

@@ -19,6 +19,7 @@ export function AnswerOptions({
   chosenSlug: string | null;
   disabled?: boolean;
   lang?: string | undefined;
+  faceLang?: string | undefined;
   onChoose: (wordSlug: string) => void;
 }) {
   const answered = chosenSlug !== null;
