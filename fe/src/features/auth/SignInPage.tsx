@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CircleAlert } from "lucide-react";
+import { ArrowLeft, Check, CircleAlert } from "lucide-react";
 import { Spinner } from "../../components/Spinner";
+import { takeDeletedNotice } from "../../lib/account";
 import { beginSignIn } from "../../lib/auth";
 import { Logo } from "../../components/Logo";
 
@@ -32,6 +33,11 @@ export function SignInPage() {
   const configured = clientId != null && clientId !== "";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleted, setDeleted] = useState(false);
+
+  useEffect(() => {
+    if (takeDeletedNotice()) setDeleted(true);
+  }, []);
 
   // A page restored from the back-forward cache keeps its state, so the busy flag from the
   // redirect would still show "Redirecting…" when the learner comes back from Google.
@@ -85,6 +91,13 @@ export function SignInPage() {
             <h1 className="h1">Welcome back</h1>
             <p className="sub">Use your Google account. New here? Your account is created on first sign-in.</p>
           </div>
+
+          {deleted && (
+            <div role="status" className="alert alert-info">
+              <Check className="i" aria-hidden="true" />
+              <span>Your account has been deleted.</span>
+            </div>
+          )}
 
           <button type="button" className="gbtn" disabled={!configured || busy} onClick={handleSignIn}>
             {busy ? <Spinner size="sm" label="Redirecting" /> : <GoogleIcon />}

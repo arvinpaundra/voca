@@ -10,6 +10,9 @@ export function Modal({
   description,
   onClose,
   footer,
+  busy = false,
+  closeOnBackdrop = false,
+  stackFooter = false,
   children,
 }: {
   open: boolean;
@@ -19,10 +22,19 @@ export function Modal({
   description?: string;
   onClose: () => void;
   footer?: ReactNode;
+  busy?: boolean;
+  closeOnBackdrop?: boolean;
+  stackFooter?: boolean;
   children: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+
+  const dismiss = () => {
+    if (busy) return;
+
+    onClose();
+  };
 
   useEffect(() => {
     const element = dialog.current;
@@ -45,11 +57,16 @@ export function Modal({
         if (event.key !== "Escape") return;
 
         event.preventDefault();
-        onClose();
+        dismiss();
       }}
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        dismiss();
+      }}
+      onClick={(event) => {
+        if (!closeOnBackdrop || event.target !== event.currentTarget) return;
+
+        dismiss();
       }}
       style={{
         border: 0,
@@ -68,12 +85,14 @@ export function Modal({
             </h3>
             {description !== undefined && <p>{description}</p>}
           </div>
-          <button type="button" className="btn-icon" aria-label="Close" onClick={onClose}>
+          <button type="button" className="btn-icon" aria-label="Close" disabled={busy} onClick={dismiss}>
             <X className="i" aria-hidden="true" />
           </button>
         </div>
         <div className="modal-body">{children}</div>
-        {footer !== undefined && <div className="modal-foot">{footer}</div>}
+        {footer !== undefined && (
+          <div className={stackFooter ? "modal-foot modal-foot-stack" : "modal-foot"}>{footer}</div>
+        )}
       </div>
     </dialog>
   );
