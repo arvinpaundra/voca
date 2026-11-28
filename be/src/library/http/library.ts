@@ -143,7 +143,7 @@ export const LibraryHandlers = HttpApiBuilder.group(
             catch: (cause) => cause
           }).pipe(Effect.orDie)
 
-          return yield* importWords(params.deckSlug, bytes)
+          return yield* importWords(params.deckSlug, bytes, payload.columns)
         }).pipe(
           Effect.provideContext(ports),
           Effect.catchTag("DeckNotFound", notFound("Deck")),

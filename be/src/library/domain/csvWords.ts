@@ -1,13 +1,10 @@
 import { Option, Result, Schema } from "effect"
-import { Example, Meaning, Notes, Reading, Term } from "@voca/contract"
+import { Example, ImportField, Meaning, Notes, Reading, Term } from "@voca/contract"
+import type { ColumnMatch } from "@voca/contract"
 import type { CsvRowError } from "./errors.ts"
 
 export const MAX_IMPORT_ROWS = 20_000
 
-/** The columns a word is built from. `hiragana`, `pinyin` and `jyutping` are aliases of `reading`. */
-export type WordColumn = "term" | "meaning" | "reading" | "example" | "notes"
-
-/** One data row of an import, text trimmed and checked against the Word Schemas; empty optional text is `null`. */
 export interface CsvWordRow {
   readonly term: string
   readonly meaning: string
@@ -16,7 +13,12 @@ export interface CsvWordRow {
   readonly notes: string | null
 }
 
-const ALIASES = new Map<string, WordColumn>([
+interface MatchedColumn {
+  readonly field: ImportField
+  readonly label: string
+}
+
+const ALIASES = new Map<string, ImportField>([
   ["term", "term"],
   ["meaning", "meaning"],
   ["reading", "reading"],
@@ -27,9 +29,17 @@ const ALIASES = new Map<string, WordColumn>([
   ["notes", "notes"]
 ])
 
-const REQUIRED: ReadonlyArray<WordColumn> = ["term", "meaning"]
+const REQUIRED: ReadonlyArray<ImportField> = ["term", "meaning"]
 
-const LIMITS: Record<WordColumn, number> = {
+const LABELS: Record<ImportField, string> = {
+  term: "Term",
+  meaning: "Meaning",
+  reading: "Reading",
+  example: "Example",
+  notes: "Notes"
+}
+
+const LIMITS: Record<ImportField, number> = {
   term: 200,
   meaning: 500,
   reading: 200,
@@ -45,72 +55,106 @@ const decoders = {
   notes: Schema.decodeUnknownOption(Notes)
 }
 
-const mapHeader = (header: ReadonlyArray<string>): Result.Result<ReadonlyArray<WordColumn>, ReadonlyArray<CsvRowError>> => {
-  const errors: Array<CsvRowError> = []
-  const columns: Array<WordColumn> = []
-  const seen = new Set<WordColumn>()
+const columnName = (raw: string, index: number): string => {
+  const name = raw.trim()
 
-  for (const raw of header) {
-    const name = raw.trim()
-    const column = ALIASES.get(name.toLowerCase())
-
-    if (column === undefined) {
-      errors.push({ row: 1, column: name, message: `Unknown column "${name}"` })
-      continue
-    }
-
-    if (seen.has(column)) {
-      errors.push({ row: 1, column: name, message: `Column "${column}" appears more than once` })
-    }
-
-    seen.add(column)
-    columns.push(column)
-  }
-
-  for (const required of REQUIRED) {
-    if (!seen.has(required)) {
-      errors.push({ row: 1, column: required, message: `Missing required column "${required}"` })
-    }
-  }
-
-  return errors.length === 0 ? Result.succeed(columns) : Result.fail(errors)
+  return name === "" ? `column ${index + 1}` : name
 }
 
-const decodeField = (column: WordColumn, raw: string, row: number): Result.Result<string | null, CsvRowError> => {
+const knownFields = (header: ReadonlyArray<string>): ColumnMatch => {
+  const taken = new Set<ImportField>()
+
+  return header.map((raw) => {
+    const field = ALIASES.get(raw.trim().toLowerCase())
+
+    if (field === undefined || taken.has(field)) {
+      return null
+    }
+
+    taken.add(field)
+
+    return field
+  })
+}
+
+const missingRequired = (fields: ColumnMatch): ReadonlyArray<CsvRowError> => {
+  return REQUIRED.filter((field) => !fields.includes(field)).map((field) => ({
+    row: 1,
+    column: null,
+    message: `No column is matched to ${LABELS[field]}`
+  }))
+}
+
+const matchHeader = (
+  header: ReadonlyArray<string>,
+  columns: ColumnMatch | undefined
+): Result.Result<ReadonlyArray<MatchedColumn | null>, ReadonlyArray<CsvRowError>> => {
+  if (columns !== undefined && columns.length !== header.length) {
+    return Result.fail([
+      {
+        row: 1,
+        column: null,
+        message: `The file has ${header.length} columns, but ${columns.length} were matched`
+      }
+    ])
+  }
+
+  const fields = columns ?? knownFields(header)
+  const errors = missingRequired(fields)
+
+  if (errors.length > 0) {
+    return Result.fail(errors)
+  }
+
+  return Result.succeed(
+    fields.map((field, index) =>
+      field === null
+        ? null
+        : { field, label: `${LABELS[field]} (${columnName(header[index] ?? "", index)})` }
+    )
+  )
+}
+
+const decodeField = (column: MatchedColumn, raw: string, row: number): Result.Result<string | null, CsvRowError> => {
   const text = raw.trim()
 
   if (text === "") {
-    return REQUIRED.includes(column)
-      ? Result.fail({ row, column, message: `${column} is required` })
+    return REQUIRED.includes(column.field)
+      ? Result.fail({ row, column: column.label, message: "is required" })
       : Result.succeed(null)
   }
 
-  return Option.match(decoders[column](text), {
-    onNone: () => Result.fail({ row, column, message: `${column} must be 1 to ${LIMITS[column]} characters` }),
+  return Option.match(decoders[column.field](text), {
+    onNone: () => Result.fail({ row, column: column.label, message: `is longer than ${LIMITS[column.field]} characters` }),
     onSome: (value) => Result.succeed(value)
   })
 }
 
 const decodeRow = (
   record: ReadonlyArray<string>,
-  columns: ReadonlyArray<WordColumn>,
+  matched: ReadonlyArray<MatchedColumn | null>,
   row: number
 ): Result.Result<CsvWordRow, ReadonlyArray<CsvRowError>> => {
-  if (record.length !== columns.length) {
-    return Result.fail([{ row, column: null, message: `Expected ${columns.length} fields, found ${record.length}` }])
+  if (record.length !== matched.length) {
+    return Result.fail([{ row, column: null, message: `Expected ${matched.length} fields, found ${record.length}` }])
   }
 
   const errors: Array<CsvRowError> = []
-  const values: Partial<Record<WordColumn, string | null>> = {}
+  const values: Partial<Record<ImportField, string | null>> = {}
 
-  for (let index = 0; index < columns.length; index++) {
-    const column = columns[index]!
+  for (let index = 0; index < matched.length; index++) {
+    const column = matched[index]!
+
+    if (column === null) {
+      continue
+    }
+
     const field = decodeField(column, record[index] ?? "", row)
 
     if (Result.isFailure(field)) {
       errors.push(field.failure)
     } else {
-      values[column] = field.success
+      values[column.field] = field.success
     }
   }
 
@@ -127,12 +171,9 @@ const decodeRow = (
   })
 }
 
-/**
- * The words of an import's records, header first, and every problem found. Nothing is imported unless `errors` is
- * empty. A blank line is skipped, but it still counts in the row numbers, as a spreadsheet shows it.
- */
 export const readWords = (
-  records: ReadonlyArray<ReadonlyArray<string>>
+  records: ReadonlyArray<ReadonlyArray<string>>,
+  columns?: ColumnMatch
 ): { readonly rows: ReadonlyArray<CsvWordRow>; readonly errors: ReadonlyArray<CsvRowError> } => {
   const [header] = records
 
@@ -140,10 +181,10 @@ export const readWords = (
     return { rows: [], errors: [{ row: 1, column: null, message: "The file is empty" }] }
   }
 
-  const mapped = mapHeader(header)
+  const matched = matchHeader(header, columns)
 
-  if (Result.isFailure(mapped)) {
-    return { rows: [], errors: mapped.failure }
+  if (Result.isFailure(matched)) {
+    return { rows: [], errors: matched.failure }
   }
 
   const body = records.length - 1
@@ -165,7 +206,7 @@ export const readWords = (
       continue
     }
 
-    const decoded = decodeRow(record, mapped.success, row)
+    const decoded = decodeRow(record, matched.success, row)
 
     if (Result.isFailure(decoded)) {
       errors.push(...decoded.failure)

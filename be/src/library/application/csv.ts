@@ -53,11 +53,19 @@ export const readRows = (
   bytes: Uint8Array,
   columns?: ColumnMatch
 ): Effect.Effect<ReadonlyArray<CsvWordRow>, CsvRejected> => {
-  return Effect.fail(
-    rejected(`not implemented: LB (${bytes.length} bytes, ${columns?.length ?? 0} columns)`, [
-      { row: 1, column: null, message: "not implemented: LB" }
-    ])
-  )
+  return Effect.gen(function* () {
+    const text = yield* decodeText(bytes)
+    const records = yield* parseText(text)
+    const read = readWords(records, columns)
+
+    if (read.errors.length > 0) {
+      return yield* Effect.fail(
+        rejected(`Nothing was imported. The file has ${read.errors.length} problem(s).`, read.errors)
+      )
+    }
+
+    return read.rows
+  })
 }
 
 /** New words for the rows: a fresh slug each, all stamped with the same clock time. */
@@ -71,14 +79,15 @@ export const newWordDrafts = (rows: ReadonlyArray<CsvWordRow>, createdAt: number
  */
 export const importCsv = (
   deckSlug: string,
-  bytes: Uint8Array
+  bytes: Uint8Array,
+  columns?: ColumnMatch
 ): Effect.Effect<ImportResult, DeckNotFound | CsvRejected, ImportNeeds> =>
   Effect.gen(function* () {
     const { id } = yield* CurrentLearner
     const words = yield* WordRepo
     const transaction = yield* Transaction
     const deckId = yield* findOwnedDeckId(id, deckSlug)
-    const rows = yield* readRows(bytes)
+    const rows = yield* readRows(bytes, columns)
     const createdAt = yield* Clock.currentTimeMillis
     const drafts = yield* newWordDrafts(rows, createdAt)
     const written = yield* transaction.run(words.insertNew(deckId, drafts))
