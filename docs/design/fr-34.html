@@ -119,6 +119,29 @@ code { font: 12px var(--f-mono); background: #ecebea; padding: 1px 5px; border-r
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
 .mark .hw-ja, .mark .hw-zh { background: var(--lime-tint); box-shadow: inset 0 -2px 0 var(--lime); }
 
+/* phone study mock: the 390 × 664 viewport of an iPhone 14 in Safari with its toolbars */
+.phone-frame { position: relative; width: 390px; max-width: 100%; height: 664px; overflow: hidden; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 28px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.appbar { margin: -16px -16px 0; height: 52px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 16px; font: 600 15px var(--f-display); flex-shrink: 0; }
+.study-top { display: flex; align-items: center; gap: 12px; }
+.study-top .x { width: 34px; height: 34px; border-radius: 50%; background: #e7e5e4; display: grid; place-items: center; font-size: 14px; }
+.study-top .cnt { font-size: 13px; color: var(--muted); }
+.strip { flex: 1; display: flex; gap: 3px; }
+.strip i { flex: 1; height: 6px; border-radius: 999px; background: #e7e5e4; }
+.strip i.r { background: var(--lime); } .strip i.cur { background: var(--ink); }
+.phone-frame .prompt { padding: 28px 16px; gap: 24px; }
+.pterm { font-family: var(--f-term); font-weight: 600; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.phone-frame .options { grid-template-columns: 1fr; }
+.phone-frame .opt { gap: 12px; font-size: 16px; font-weight: 500; }
+.opt kbd { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line); display: grid; place-items: center; font: 600 11px var(--f-mono); color: var(--muted); background: var(--sunken); flex-shrink: 0; }
+.opt.right-o { border-color: #84cc16; background: var(--lime-tint); }
+.opt.wrong-o { border-color: var(--bad-line); background: var(--bad-bg); color: #991b1b; }
+.opt.dim { opacity: .45; }
+.verdict-inline, .verdict-pinned { display: flex; align-items: center; gap: 8px; padding: 12px 12px 12px 16px; border-radius: var(--r); font-size: 14px; background: var(--bad-bg); color: #991b1b; border: 1px solid var(--bad-line); }
+.verdict-pinned { position: absolute; left: 12px; right: 12px; bottom: 24px; box-shadow: 0 -8px 24px -12px rgba(28,25,23,.25); }
+.nextbtn { margin-left: auto; background: var(--lime); color: var(--ink); padding: 8px 14px; border-radius: var(--r-btn); font-size: 13px; white-space: nowrap; }
+.fold { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; background: repeating-linear-gradient(-45deg, #fecaca, #fecaca 6px, #fef2f2 6px, #fef2f2 12px); color: #991b1b; font: 600 11px var(--f-mono); display: grid; place-items: center; }
+.fold-note { color: var(--muted); font-size: 13px; text-align: center; }
+
 table.spec { border-collapse: collapse; font-size: 14px; background: #fff; border-radius: var(--r); overflow: hidden; max-width: 760px; }
 table.spec th, table.spec td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.spec th { font-size: var(--tiny); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--sunken); }
@@ -130,7 +153,7 @@ table.spec th { font-size: var(--tiny); text-transform: uppercase; letter-spacin
 
 <header class="doc-head">
   <span class="eyebrow">FR-34 · extends FR-30, FR-16, FR-17</span>
-  <h1 class="h1">Word font: CJK characters only, and “Kana”</h1>
+  <h1 class="h1">Word font: CJK characters only, “Kana”, and long prompts</h1>
   <p class="sub">The chosen word font changes only kanji, kana, hanzi and hangul, character by character. Latin letters (pinyin included), digits and punctuation keep the app font. The Japanese reading label becomes “Kana”.</p>
   <div class="legend mark" style="margin-top:8px"><span><i style="background:var(--lime)"></i>Highlighted on this page only: the characters that take the chosen style. The app shows no highlight.</span></div>
 </header>
@@ -318,6 +341,77 @@ table.spec th { font-size: var(--tiny); text-transform: uppercase; letter-spacin
     </div>
   </div>
   <p class="note"><b>Content is unchanged:</b> a Japanese reading is still written in hiragana (FR-16), and the CSV header still accepts <code>reading</code> and the <code>hiragana</code> alias. Form inputs keep the interface font, as today; only the label text changes.</p>
+</section>
+
+<!-- ============================================================ 4. LONG PROMPTS -->
+<section class="doc-sec">
+  <header>
+    <span class="eyebrow">Page · /app/study · question</span>
+    <h2>Long prompts fit; Next stays on screen (phone, 390 × 664)</h2>
+    <p>Before: a long word or meaning is drawn at 52 px, wraps over several lines, and pushes the answers and the Next bar below the fold. After: the prompt size follows its length, and once answered the Verdict bar with Next is pinned to the bottom of the screen.</p>
+  </header>
+
+  <div class="row">
+    <div class="phone-frame">
+      <span class="tag before" style="position:absolute;top:8px;right:8px;z-index:2">Before</span>
+      <div class="appbar">Voca</div>
+      <div class="study-top"><span class="x">✕</span><span class="strip"><i class="r"></i><i class="r"></i><i class="cur"></i><i></i><i></i><i></i><i></i></span><span class="cnt">3 / 7</span></div>
+      <section class="prompt">
+        <span class="drill">Meaning → Word</span>
+        <p class="pterm" style="font-size:52px">to be absent-minded, to be careless</p>
+        <div class="options">
+          <div class="opt wrong-o" lang="ja"><kbd>1</kbd>うっかりする</div>
+          <div class="opt right-o" lang="ja"><kbd>2</kbd>ぼんやりする</div>
+          <div class="opt dim" lang="ja"><kbd>3</kbd>しっかりする</div>
+          <div class="opt dim" lang="ja"><kbd>4</kbd>のんびりする</div>
+        </div>
+      </section>
+      <div class="verdict-inline">✕ Not quite: <span lang="ja">ぼんやりする</span> <b class="nextbtn">Next →</b></div>
+      <div class="fold">664 px · screen ends here, Next is below</div>
+    </div>
+
+    <div class="phone-frame">
+      <span class="tag after" style="position:absolute;top:8px;right:8px;z-index:2">After</span>
+      <div class="appbar">Voca</div>
+      <div class="study-top"><span class="x">✕</span><span class="strip"><i class="r"></i><i class="r"></i><i class="cur"></i><i></i><i></i><i></i><i></i></span><span class="cnt">3 / 7</span></div>
+      <section class="prompt">
+        <span class="drill">Meaning → Word</span>
+        <p class="pterm" style="font-size:24px">to be absent-minded, to be careless</p>
+        <div class="options">
+          <div class="opt wrong-o" lang="ja"><kbd>1</kbd>うっかりする</div>
+          <div class="opt right-o" lang="ja"><kbd>2</kbd>ぼんやりする</div>
+          <div class="opt dim" lang="ja"><kbd>3</kbd>しっかりする</div>
+          <div class="opt dim" lang="ja"><kbd>4</kbd>のんびりする</div>
+        </div>
+      </section>
+      <div class="verdict-pinned"><span class="kit" style="position:absolute;top:-22px;left:16px">Verdict · pinned</span>✕ Not quite: <span lang="ja">ぼんやりする</span><b class="nextbtn">Next →</b></div>
+    </div>
+
+    <div class="phone-frame">
+      <span class="tag after" style="position:absolute;top:8px;right:8px;z-index:2">After · 7–14 chars</span>
+      <div class="appbar">Voca</div>
+      <div class="study-top"><span class="x">✕</span><span class="strip"><i class="r"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i></span><span class="cnt">2 / 7</span></div>
+      <section class="prompt">
+        <span class="drill">Word → Meaning</span>
+        <p class="pterm" lang="ja" style="font-size:36px">お疲れ様でした</p>
+        <div class="options">
+          <div class="opt"><kbd>1</kbd>thank you for your hard work</div>
+          <div class="opt"><kbd>2</kbd>welcome back</div>
+          <div class="opt"><kbd>3</kbd>excuse me for leaving first</div>
+          <div class="opt"><kbd>4</kbd>good morning</div>
+        </div>
+      </section>
+      <p class="fold-note">Unanswered: no Verdict bar yet.</p>
+    </div>
+  </div>
+
+  <table class="spec">
+    <tr><th>Prompt length</th><th>Phone (&lt; 640 px)</th><th>Desktop</th><th>Example</th></tr>
+    <tr><td>1–6 characters</td><td>52 px (today)</td><td>up to 80 px (today)</td><td><span lang="ja">食べる</span> · eat</td></tr>
+    <tr><td>7–14 characters</td><td>36 px</td><td>48 px</td><td><span lang="ja">お疲れ様でした</span> · to forget</td></tr>
+    <tr><td>15 or more</td><td>24 px</td><td>32 px</td><td>to be absent-minded, to be careless</td></tr>
+  </table>
+  <p class="note"><b>Interactions.</b> Length counts characters as typed, spaces included. A prompt is never cut off or ellipsised; it wraps. On a phone the pinned Verdict bar sits above the browser’s bottom safe area and the page gets matching bottom padding, so it never covers the last option. Enter and the Next button work as today. On desktop (640 px and wider) the Verdict stays below the answers, as today. Flashcards are unchanged.</p>
 </section>
 
 </main>

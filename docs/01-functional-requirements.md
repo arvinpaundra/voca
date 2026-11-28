@@ -445,9 +445,9 @@ Extends FR-2 and FR-6. A long term or example makes the word page wider than a p
 - At 390 px width, a word whose term is 30 characters with a reading, and whose example is 300 characters, shows all of its text and the whole header. The page has no horizontal scroll.
 - The same word opened in the deck page's modal fits without horizontal scroll.
 
-## FR-34 Word font changes CJK characters only, and "Kana" (S)
+## FR-34 Word font changes CJK characters only, "Kana", and long prompts (S)
 
-Extends FR-30, FR-16 and FR-17. The word font changes every character of a Japanese or Chinese field, so the Latin letters and digits in an example such as 「Tシャツを3枚買った」 take the Handwriting face and read poorly. The Learner chose the font for kanji and kana, not for the Latin text around them. Separately, the Japanese reading is labelled "Hiragana", which Japanese learners don't use as a field name; "Kana" is the common word.
+Extends FR-30, FR-16 and FR-17. The word font changes every character of a Japanese or Chinese field, so the Latin letters and digits in an example such as 「Tシャツを3枚買った」 take the Handwriting face and read poorly. The Learner chose the font for kanji and kana, not for the Latin text around them. Separately, the Japanese reading is labelled "Hiragana", which Japanese learners don't use as a field name; "Kana" is the common word. And in a study session a long word or meaning is drawn as large as a short one, so on a phone it pushes the answers and the Next button below the screen.
 
 - The chosen style applies character by character, only to kanji, hiragana, katakana, hanzi, hangul and CJK punctuation (。、「」).
 - Latin letters, including pinyin and jyutping with tone marks, digits, Latin punctuation and spaces keep the app font, even inside a Japanese or Chinese field.
@@ -455,7 +455,12 @@ Extends FR-30, FR-16 and FR-17. The word font changes every character of a Japan
 - The surfaces are those of FR-30: the deck page, the word modal, the word page, study sessions and flashcards.
 - The settings row "Word font" says what it changes. Help: "Changes only kanji, kana, hanzi and hangul in your words. Latin letters (including pinyin), numbers and punctuation keep the app font." The preview becomes `勉強 · Tシャツを3枚 · belajar`.
 - In a Japanese deck, the reading's label is **Kana** instead of **Hiragana** wherever it appears: the word form, word list, word modal, word page, flashcard back and Hard words. The reading drills read **Word → Kana** and **Kana → Word** everywhere a drill is named. The reading is still written in hiragana (FR-16), and the CSV still accepts `reading` and the `hiragana` alias.
-- **Won't:** a style for Arabic, Hebrew, Thai, Cyrillic or other scripts (they keep the app font), a style for pinyin, a font change for form inputs, new styles.
+- In a study session, the prompt's size follows its length (characters as typed, spaces included), and it wraps rather than being cut off:
+  - 1–6 characters: as today (52 px on a phone, up to 80 px on desktop).
+  - 7–14 characters: 36 px on a phone, 48 px on desktop.
+  - 15 or more: 24 px on a phone, 32 px on desktop.
+- On a phone (narrower than 640 px), once a question is answered, the result bar with Next is pinned to the bottom of the screen, above the browser's safe area, and never covers the last option. On wider screens it stays below the answers, as today.
+- **Won't:** a style for Arabic, Hebrew, Thai, Cyrillic or other scripts (they keep the app font), a style for pinyin, a font change for form inputs, new styles, prompt sizing for flashcards.
 
 **UI:** `docs/design/fr-34.html`
 
@@ -467,6 +472,9 @@ Extends FR-30, FR-16 and FR-17. The word font changes every character of a Japan
 - The settings row "Word font" shows the help text above, word for word, and the preview `勉強 · Tシャツを3枚 · belajar`.
 - A Japanese deck shows "Word → Kana" and "Kana → Word" in the drill picker, as the question label and on the word page, and "Kana" as the reading label in the word form and word modal. No screen of a Japanese deck shows the word "Hiragana" as a label.
 - A Chinese deck still shows "Hanzi → Pinyin" and "Pinyin"; a deck in another language still shows "Reading".
+- In a study session, the prompt `食べる` is drawn at today's size, `お疲れ様でした` at 36 px on a phone and 48 px on desktop, and `to be absent-minded, to be careless` at 24 px on a phone and 32 px on desktop.
+- At 390 × 664 (an iPhone 14 in Safari, toolbars shown), a question whose prompt is `to be absent-minded, to be careless` shows the prompt and all four options without scrolling.
+- At 390 × 664, after answering a question whose prompt is 60 characters long, the Next button is on screen without scrolling, and tapping it moves to the next question.
 
 ## Extra ideas (not in your list)
 
