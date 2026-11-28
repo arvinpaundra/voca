@@ -7,7 +7,6 @@ import { StatStrip } from "../../components/StatStrip";
 import { wordStatsQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { WordText } from "../../components/WordText";
-import { WORD_FONT_CLASS, cjkRuns } from "../../lib/wordFont";
 import { wordHref } from "../word/wordHref";
 import { percent, stability } from "../word/wordFormat";
 
@@ -69,14 +68,10 @@ function WordDetailsDialog({ word, termLang, meaningLang, own, onClose }: WordDe
       </Button>
     );
 
-  // The title is a plain string in Modal, so only a wholly CJK term can take the word font there.
-  const titleIsCjk = cjkRuns(word.term).every((run) => run.cjk);
-
   return (
     <Modal
       open
-      title={word.term}
-      titleClassName={titleIsCjk ? WORD_FONT_CLASS : undefined}
+      title={<WordText text={word.term} faceLang={termLang} />}
       titleLang={termLang}
       onClose={onClose}
       footer={footer}
