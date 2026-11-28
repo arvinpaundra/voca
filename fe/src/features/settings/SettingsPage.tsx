@@ -158,10 +158,10 @@ function StudyPreferences({ settings }: { settings: LearnerSettings }) {
             </FitContent>
           </SettingsRow>
 
-          <SettingsRow label="New words per day" help="How many new words a study day introduces">
+          <SettingsRow label="not implemented: NF" help="not implemented: NF">
             <FitContent>
               <Input
-                aria-label="New words per day"
+                aria-label="not implemented: NF"
                 type="text"
                 inputMode="numeric"
                 value={draft.newPerDay}

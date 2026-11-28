@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { DeckDetail, DeckSlug, HardWord } from "@voca/contract";
-import { activeSessionQuery, deckDrillsQuery, deckQuery, hardWordsQuery, meQuery } from "../../lib/queries";
+import { activeSessionQuery, deckQuery, deckSetupQuery, hardWordsQuery, meQuery } from "../../lib/queries";
 import { queryClient } from "../../lib/queryClient";
 import { cacheSession } from "../../test/cacheSession";
 import { StudySetupPage } from "../study/SetupPage";
@@ -58,8 +58,8 @@ describe("cached pages", () => {
   test("the study setup renders the cached deck and drills without a request", async () => {
     queryClient.setQueryData(deckQuery(DECK).queryKey, deck);
     queryClient.setQueryData(meQuery().queryKey, me as never);
-    queryClient.setQueryData(deckDrillsQuery(DECK).queryKey, []);
-    const api = cacheSession("QS");
+    queryClient.setQueryData(deckSetupQuery(DECK).queryKey, { drills: [], newCards: { studied: 0, target: 20 } });
+    const api = cacheSession("NF");
     restore = api.restore;
 
     render(<StudySetupPage deckSlug={DECK} />);

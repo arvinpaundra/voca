@@ -25,7 +25,7 @@ function Headline({ due, fresh }: { due: number; fresh: number }) {
   if (due > 0 && fresh > 0) {
     return (
       <h2>
-        You have <em>{due} cards</em> to review and {fresh} new words waiting.
+        not implemented: NF
       </h2>
     );
   }
@@ -41,7 +41,7 @@ function Headline({ due, fresh }: { due: number; fresh: number }) {
   if (fresh > 0) {
     return (
       <h2>
-        You have <em>{fresh} new words</em> waiting.
+        not implemented: NF
       </h2>
     );
   }
