@@ -452,14 +452,17 @@ Extends FR-23. A Voca link pasted into X, WhatsApp, Slack, Telegram or iMessage 
 
 - A link to the landing page (`/`) shows a card titled "Voca · Remember every word", with the same one-line description as the page's own, and a preview image.
 - On X the card is a large image card, not a small thumbnail.
-- The image is 1200×630 px. It shows the Voca logo, the name "Voca" and the line "Remember every word" on the app's dark background (`#1c1917`), and its text stays legible at the small size a chat app shows it.
+- The image is 1200×630 px. It shows the Voca logo with its lowercase "voca" wordmark and the line "Remember every word." on the app's dark background (`#1c1917`), with small flashcards and dots scattered around the edges, and its text stays legible at the small size a chat app shows it.
 - A link to any other page (sign-in, Dashboard, a deck) shows the same card. The card never shows private content such as a deck's title or words.
-- **Won't:** a card per public deck or per word, per-language cards, or a card that changes with the Learner.
+- **Won't:** a card per public deck or per word, per-language cards, a card that changes with the Learner, or a Facebook app (`fb:app_id`).
+
+**UI:** `docs/design/fr-33.html`
 
 **Acceptance**
 - The HTML served for `/`, `/login` and a deck URL, fetched without running JavaScript, has `og:title`, `og:description`, `og:image`, `og:url`, `og:type`, `twitter:card` ("summary_large_image") and `twitter:image`.
 - `og:image` and `twitter:image` are absolute `https://` URLs. Opening one without signing in returns a 1200×630 PNG under 300 KB.
-- Pasting the landing URL into the X Card Validator and the Facebook Sharing Debugger shows the title, description and image, with no warnings.
+- Pasting the landing URL into a new X post shows the image as a large card (X shows no title or description).
+- Pasting the landing URL into the Facebook Sharing Debugger shows the title, description and image. The only warning allowed is the missing `fb:app_id`.
 
 ## Extra ideas (not in your list)
 
