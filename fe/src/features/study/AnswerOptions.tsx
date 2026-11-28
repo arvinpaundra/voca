@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { cx } from "../../components/cx";
-import { WORD_FONT_CLASS } from "../../lib/wordFont";
+import { WordText } from "../../components/WordText";
 
 export type AnswerOption = { wordSlug: string; text: string };
 
@@ -12,6 +12,7 @@ export function AnswerOptions({
   chosenSlug,
   disabled,
   lang,
+  faceLang,
   onChoose,
 }: {
   options: readonly AnswerOption[];
@@ -60,8 +61,8 @@ export function AnswerOptions({
           >
             <kbd>{index + 1}</kbd>
 
-            <span className={cx("grow", WORD_FONT_CLASS, lang !== undefined && "font-term")} lang={lang} dir="auto">
-              {option.text}
+            <span className={cx("grow", lang !== undefined && "font-term")} lang={lang} dir="auto">
+              <WordText text={option.text} faceLang={faceLang} />
             </span>
 
             {isWrong && <X className="i" aria-hidden="true" />}

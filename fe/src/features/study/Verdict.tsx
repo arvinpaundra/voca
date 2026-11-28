@@ -1,15 +1,11 @@
 import { useEffect } from "react";
 import { AlertCircle, ArrowRight, Check } from "lucide-react";
 import { Button } from "../../components/Button";
-import { WORD_FONT_CLASS } from "../../lib/wordFont";
+import { WordText } from "../../components/WordText";
 
-// The word's own text gets its own element, so the sentence around it keeps the interface font. The language goes on
-// the element too: a word the word font covers must resolve to its CJK language, and a meaning has none.
-const wordText = (text: string, lang: string | undefined) => (
-  <span className={WORD_FONT_CLASS} lang={lang}>
-    {text}
-  </span>
-);
+// A word's text takes the word font only when it has a language the word font covers; a meaning has none.
+const wordText = (text: string, lang: string | undefined, faceLang: string | undefined) =>
+  lang === undefined ? text : <WordText text={text} faceLang={faceLang} />;
 
 // The bar under the question once it is answered; it holds the Next button.
 export function Verdict({
@@ -20,6 +16,7 @@ export function Verdict({
   readingLang,
   termLang,
   answerLang,
+  faceLang,
   onNext,
 }: {
   correct: boolean;
@@ -32,6 +29,7 @@ export function Verdict({
   termLang?: string | undefined;
   // The language of the answer when it is a term; undefined for a meaning.
   answerLang?: string | undefined;
+  // The deck's term language: the face every CJK character of the term, the answer and the reading takes.
   faceLang?: string | undefined;
   onNext: () => void;
 }) {
@@ -54,20 +52,20 @@ export function Verdict({
       {correct ? <Check className="i" aria-hidden="true" /> : <AlertCircle className="i" aria-hidden="true" />}
 
       {reading !== null && (
-        <span className={`reading ${WORD_FONT_CLASS}`} lang={readingLang}>
-          {reading}
+        <span className="reading" lang={readingLang}>
+          <WordText text={reading} faceLang={faceLang} />
         </span>
       )}
 
       <span className="grow">
         {correct ? (
           <>
-            <b>Correct.</b> {wordText(term, termLang)} means “{wordText(answer, answerLang)}”.
+            <b>Correct.</b> {wordText(term, termLang, faceLang)} means “{wordText(answer, answerLang, faceLang)}”.
           </>
         ) : (
           <>
-            <b>Not quite.</b> {wordText(term, termLang)} means “{wordText(answer, answerLang)}”. It comes back later in
-            this session.
+            <b>Not quite.</b> {wordText(term, termLang, faceLang)} means “{wordText(answer, answerLang, faceLang)}”. It
+            comes back later in this session.
           </>
         )}
       </span>

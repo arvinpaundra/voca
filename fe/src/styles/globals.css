@@ -33,117 +33,59 @@ ruby rt {
   font-family: var(--f-term);
 }
 
-/* The word font. System default has no rules here, so the design's own fonts stay. Only CJK word content takes the
-   face: every rule is keyed on a CJK :lang(), so Latin, Arabic, Hebrew and pinyin keep the app font. The :root
-   attribute makes these outrank the component rules that set a face.
-
-   Each language has two selectors. The first matches a .word-font element that is itself in the language, the
-   second matches an element inside .word-font that is in it (a span with lang on a child, or an element with no
-   lang of its own under a parent that has one). The two together catch every shape the app renders. */
-:root[data-word-font="sans"] .word-font:lang(ja),
-:root[data-word-font="sans"] .word-font :lang(ja) {
+/* The word font. System default has no rules here, so the design's own fonts stay. Each CJK run is a .word-font span
+   tagged with its language (see WordText), so Latin, digits, punctuation and pinyin keep the app font. The :root
+   attribute makes these outrank the component rules that set a face. */
+:root[data-word-font="sans"] .word-font:lang(ja) {
   font-family: "Noto Sans JP", sans-serif;
 }
-:root[data-word-font="sans"] .word-font:lang(zh-Hans),
-:root[data-word-font="sans"] .word-font :lang(zh-Hans) {
+:root[data-word-font="sans"] .word-font:lang(zh-Hans) {
   font-family: "Noto Sans SC", sans-serif;
 }
-:root[data-word-font="sans"] .word-font:lang(zh-Hant),
-:root[data-word-font="sans"] .word-font :lang(zh-Hant) {
+:root[data-word-font="sans"] .word-font:lang(zh-Hant) {
   font-family: "Noto Sans TC", sans-serif;
 }
-:root[data-word-font="sans"] .word-font:lang(ko),
-:root[data-word-font="sans"] .word-font :lang(ko) {
+:root[data-word-font="sans"] .word-font:lang(ko) {
   font-family: "Noto Sans KR", sans-serif;
 }
 
-:root[data-word-font="serif"] .word-font:lang(ja),
-:root[data-word-font="serif"] .word-font :lang(ja) {
+:root[data-word-font="serif"] .word-font:lang(ja) {
   font-family: "Noto Serif JP", serif;
 }
-:root[data-word-font="serif"] .word-font:lang(zh-Hans),
-:root[data-word-font="serif"] .word-font :lang(zh-Hans) {
+:root[data-word-font="serif"] .word-font:lang(zh-Hans) {
   font-family: "Noto Serif SC", serif;
 }
-:root[data-word-font="serif"] .word-font:lang(zh-Hant),
-:root[data-word-font="serif"] .word-font :lang(zh-Hant) {
+:root[data-word-font="serif"] .word-font:lang(zh-Hant) {
   font-family: "Noto Serif TC", serif;
 }
-:root[data-word-font="serif"] .word-font:lang(ko),
-:root[data-word-font="serif"] .word-font :lang(ko) {
+:root[data-word-font="serif"] .word-font:lang(ko) {
   font-family: "Noto Serif KR", serif;
 }
 
-:root[data-word-font="rounded"] .word-font:lang(ja),
-:root[data-word-font="rounded"] .word-font :lang(ja) {
+:root[data-word-font="rounded"] .word-font:lang(ja) {
   font-family: "Zen Maru Gothic", sans-serif;
 }
-:root[data-word-font="rounded"] .word-font:lang(zh-Hans),
-:root[data-word-font="rounded"] .word-font :lang(zh-Hans) {
+:root[data-word-font="rounded"] .word-font:lang(zh-Hans) {
   font-family: "Noto Sans SC", sans-serif;
 }
-:root[data-word-font="rounded"] .word-font:lang(zh-Hant),
-:root[data-word-font="rounded"] .word-font :lang(zh-Hant) {
+:root[data-word-font="rounded"] .word-font:lang(zh-Hant) {
   font-family: "Noto Sans TC", sans-serif;
 }
-:root[data-word-font="rounded"] .word-font:lang(ko),
-:root[data-word-font="rounded"] .word-font :lang(ko) {
+:root[data-word-font="rounded"] .word-font:lang(ko) {
   font-family: "Gowun Dodum", sans-serif;
 }
 
-:root[data-word-font="handwriting"] .word-font:lang(ja),
-:root[data-word-font="handwriting"] .word-font :lang(ja) {
+:root[data-word-font="handwriting"] .word-font:lang(ja) {
   font-family: "Klee One", serif;
 }
-:root[data-word-font="handwriting"] .word-font:lang(zh-Hans),
-:root[data-word-font="handwriting"] .word-font :lang(zh-Hans) {
+:root[data-word-font="handwriting"] .word-font:lang(zh-Hans) {
   font-family: "Noto Serif SC", serif;
 }
-:root[data-word-font="handwriting"] .word-font:lang(zh-Hant),
-:root[data-word-font="handwriting"] .word-font :lang(zh-Hant) {
+:root[data-word-font="handwriting"] .word-font:lang(zh-Hant) {
   font-family: "LXGW WenKai TC", serif;
 }
-:root[data-word-font="handwriting"] .word-font:lang(ko),
-:root[data-word-font="handwriting"] .word-font :lang(ko) {
+:root[data-word-font="handwriting"] .word-font:lang(ko) {
   font-family: "Noto Serif KR", serif;
-}
-
-/* Readings keep their own size and colour but take the word font's face, not the interface's. Only CJK readings
-   are scoped in: a pinyin reading is tagged zh-Latn-pinyin and keeps the app font. A reading takes the same two
-   shapes as a word: the rt itself carries the language, or a parent inside .word-font does. */
-:root[data-word-font="sans"] .word-font rt:lang(ja),
-:root[data-word-font="sans"] .word-font :lang(ja) rt,
-:root[data-word-font="sans"] .word-font rt:lang(zh-Hans),
-:root[data-word-font="sans"] .word-font :lang(zh-Hans) rt,
-:root[data-word-font="sans"] .word-font rt:lang(zh-Hant),
-:root[data-word-font="sans"] .word-font :lang(zh-Hant) rt,
-:root[data-word-font="sans"] .word-font rt:lang(ko),
-:root[data-word-font="sans"] .word-font :lang(ko) rt,
-:root[data-word-font="serif"] .word-font rt:lang(ja),
-:root[data-word-font="serif"] .word-font :lang(ja) rt,
-:root[data-word-font="serif"] .word-font rt:lang(zh-Hans),
-:root[data-word-font="serif"] .word-font :lang(zh-Hans) rt,
-:root[data-word-font="serif"] .word-font rt:lang(zh-Hant),
-:root[data-word-font="serif"] .word-font :lang(zh-Hant) rt,
-:root[data-word-font="serif"] .word-font rt:lang(ko),
-:root[data-word-font="serif"] .word-font :lang(ko) rt,
-:root[data-word-font="rounded"] .word-font rt:lang(ja),
-:root[data-word-font="rounded"] .word-font :lang(ja) rt,
-:root[data-word-font="rounded"] .word-font rt:lang(zh-Hans),
-:root[data-word-font="rounded"] .word-font :lang(zh-Hans) rt,
-:root[data-word-font="rounded"] .word-font rt:lang(zh-Hant),
-:root[data-word-font="rounded"] .word-font :lang(zh-Hant) rt,
-:root[data-word-font="rounded"] .word-font rt:lang(ko),
-:root[data-word-font="rounded"] .word-font :lang(ko) rt,
-:root[data-word-font="handwriting"] .word-font rt:lang(ja),
-:root[data-word-font="handwriting"] .word-font :lang(ja) rt,
-:root[data-word-font="handwriting"] .word-font rt:lang(zh-Hans),
-:root[data-word-font="handwriting"] .word-font :lang(zh-Hans) rt,
-:root[data-word-font="handwriting"] .word-font rt:lang(zh-Hant),
-:root[data-word-font="handwriting"] .word-font :lang(zh-Hant) rt,
-:root[data-word-font="handwriting"] .word-font rt:lang(ko),
-:root[data-word-font="handwriting"] .word-font :lang(ko) rt {
-  font-family: inherit;
 }
 
 ::selection {
