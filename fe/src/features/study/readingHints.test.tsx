@@ -13,7 +13,7 @@ const question = (drill: Drill, text: string, ruby: string | null = null): Quest
     attempt: 1,
     wordSlug: "4HNCR8WYK2JD",
     drill,
-    drillLabel: { term_meaning: "Word → Meaning", meaning_term: "Meaning → Word", term_reading: "Word → Hiragana", reading_term: "Hiragana → Word" }[drill],
+    drillLabel: { term_meaning: "Word → Meaning", meaning_term: "Meaning → Word", term_reading: "Word → Kana", reading_term: "Kana → Word" }[drill],
     prompt: { text, ruby },
     options: [
       { wordSlug: "4HNCR8WYK2JD", text: "to eat" },
@@ -62,7 +62,7 @@ describe("QuestionPrompt", () => {
     const { container } = render(<QuestionPrompt question={question("term_reading", "食べる")} termLang="ja" />);
 
     const label = container.querySelector(".drill");
-    expect(label?.textContent).toBe("Word → Hiragana");
+    expect(label?.textContent).toBe("Word → Kana");
     expect(label?.getAttribute("dir")).toBe("auto");
   });
 });

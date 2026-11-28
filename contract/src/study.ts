@@ -25,7 +25,7 @@ export const Question = Schema.Struct({
   attempt: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)), // ≥ 2 ⇒ a retry of a wrong answer
   wordSlug: WordSlug,
   drill: Drill, // per question: sessions can mix drills
-  drillLabel: Schema.String, // e.g. "Word → Hiragana"
+  drillLabel: Schema.String,
   prompt: Schema.Struct({
     text: Schema.String,
     // Always null: a question never hints the reading (FR-17). Kept until the frontend stops reading it.

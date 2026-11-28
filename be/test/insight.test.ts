@@ -395,7 +395,7 @@ describe("GET /notifications", () => {
 
         expect(byDrill).toEqual([
           { drill: "term_meaning", label: "Word → Meaning", due: 2 },
-          { drill: "term_reading", label: "Word → Hiragana", due: 1 }
+          { drill: "term_reading", label: "Word → Kana", due: 1 }
         ])
       })
     ))

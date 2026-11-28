@@ -206,8 +206,8 @@ describe("GET /decks/:deckSlug/drills", () => {
         expect(drills).toEqual([
           { drill: "term_meaning", label: "Word → Meaning", due: 1, new: 3 },
           { drill: "meaning_term", label: "Meaning → Word", due: 0, new: 5 },
-          { drill: "term_reading", label: "Word → Hiragana", due: 0, new: 3 },
-          { drill: "reading_term", label: "Hiragana → Word", due: 1, new: 2 }
+          { drill: "term_reading", label: "Word → Kana", due: 0, new: 3 },
+          { drill: "reading_term", label: "Kana → Word", due: 1, new: 2 }
         ])
       })
     ))
@@ -359,7 +359,7 @@ describe("POST /sessions", () => {
         for (const question of session.questions.filter((question) => question.drill === "reading_term")) {
           const word = bySlug.get(String(question.wordSlug))!
 
-          expect(question.drillLabel).toBe("Hiragana → Word")
+          expect(question.drillLabel).toBe("Kana → Word")
           expect(question.prompt).toEqual({ text: word.reading!, ruby: null })
 
           for (const option of question.options) {
