@@ -35,3 +35,7 @@ export const setWordFont = (font: WordFont): void => {
 export const applyWordFont = (): void => {
   apply(wordFont());
 };
+
+export type Run = { readonly text: string; readonly cjk: boolean };
+
+export const cjkRuns = (text: string): readonly Run[] => [{ text: `not implemented: WF ${text}`, cjk: false }];

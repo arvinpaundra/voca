@@ -44,13 +44,34 @@ describe("WordFontSection", () => {
     expect((within(section()).getByLabelText("Word font") as HTMLSelectElement).value).toBe("serif");
   });
 
-  test("a preview in the word font; the picker keeps the interface's font", () => {
+  test("the help says what the word font changes, word for word", () => {
     render(<WordFontSection />);
 
-    const preview = section().querySelector(`.${WORD_FONT_CLASS}`);
+    const help = "Changes only kanji, kana, hanzi and hangul in your words. Latin letters (including pinyin), numbers and punctuation keep the app font.";
 
-    expect(preview?.textContent).toContain("勉強");
-    expect(preview?.textContent).toContain("belajar");
+    if (within(section()).queryByText(help) === null) throw new Error("not implemented: WF: the Word font row does not show the new help");
+  });
+
+  test("a preview that mixes scripts: only its CJK characters take the word font, in ja", () => {
+    render(<WordFontSection />);
+
+    const preview = [...section().querySelectorAll("*")].find((element) => element.textContent === "勉強 · Tシャツを3枚 · belajar");
+
+    if (preview === undefined) throw new Error("not implemented: WF: the preview does not read 勉強 · Tシャツを3枚 · belajar");
+
+    const runs = [...preview.querySelectorAll(`.${WORD_FONT_CLASS}`)];
+
+    expect(runs.map((run) => [run.textContent, run.getAttribute("lang")])).toEqual([
+      ["勉強", "ja"],
+      ["シャツを", "ja"],
+      ["枚", "ja"],
+    ]);
+    expect(preview.closest(`.${WORD_FONT_CLASS}`)).toBeNull();
+  });
+
+  test("the picker keeps the interface's font", () => {
+    render(<WordFontSection />);
+
     expect(within(section()).getByLabelText("Word font").closest(`.${WORD_FONT_CLASS}`)).toBeNull();
     expect(within(section()).getByRole("heading", { name: "Display" }).closest(`.${WORD_FONT_CLASS}`)).toBeNull();
   });
