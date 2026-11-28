@@ -22,6 +22,7 @@ Conventions:
 | POST | `/auth/logout` | `{refreshToken}` → `204` |
 | GET | `/me` | → `Learner` (profile + settings) |
 | PATCH | `/me/settings` | `{timezone?, dayStartHour?, desiredRetention?, newPerDay?, defaultSessionSize?, defaultMode?}` → `Learner` |
+| DELETE | `/me` | → `204`. Deletes the account (FR-37, ADR 73): its decks, its tokens, and the name, email, photo and Google link |
 
 On `/auth/google`, `timezone` is used only when the account is created.
 

@@ -72,5 +72,6 @@ export class AuthGroup extends HttpApiGroup.make("auth").add(
 
 export class MeGroup extends HttpApiGroup.make("me").add(
   HttpApiEndpoint.get("get", "/me", { success: Learner, error: NotFound }),
-  HttpApiEndpoint.patch("updateSettings", "/me/settings", { payload: UpdateSettings, success: Learner })
+  HttpApiEndpoint.patch("updateSettings", "/me/settings", { payload: UpdateSettings, success: Learner }),
+  HttpApiEndpoint.delete("delete", "/me", { success: HttpApiSchema.NoContent })
 ) {}
