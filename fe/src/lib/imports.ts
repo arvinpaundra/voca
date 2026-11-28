@@ -1,6 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query"
 import { Result } from "effect"
-import { IMPORT_MAX_FILES, type ImportBatch, type ImportBatchSlug, type ImportEvent, type ImportStreamEvent } from "@voca/contract"
+import type { ColumnMatch, DeckSlug, ImportBatch, ImportBatchSlug, ImportEvent, ImportResult, ImportStreamEvent } from "@voca/contract"
 import { session } from "./appSession.ts"
 import { orReject } from "./queryClient.ts"
 
@@ -38,24 +38,20 @@ export interface StartImport {
   readonly files: ReadonlyArray<File>
   readonly termLang: string
   readonly meaningLang: string
+  readonly columns: ReadonlyArray<ColumnMatch>
 }
 
-export const startImport = ({ files, termLang, meaningLang }: StartImport): Promise<ImportBatch> => {
-  if (files.length > IMPORT_MAX_FILES) {
-    return Promise.reject(new Error(`An import takes at most ${IMPORT_MAX_FILES} files`))
-  }
+export const startImport = (_start: StartImport): Promise<ImportBatch> =>
+  Promise.reject(new Error("not implemented: LF"))
 
-  const payload = new FormData()
-
-  payload.append("termLang", termLang)
-  payload.append("meaningLang", meaningLang)
-
-  for (const file of files) {
-    payload.append("files", file)
-  }
-
-  return orReject(session.call((client) => client.imports.importDecks({ payload })))
+export interface ImportCsvFile {
+  readonly deckSlug: DeckSlug
+  readonly file: File
+  readonly columns: ColumnMatch
 }
+
+export const importCsvFile = (_upload: ImportCsvFile): Promise<Result.Result<ImportResult, unknown>> =>
+  Promise.reject(new Error("not implemented: LF"))
 
 export const dismissImport = (batchSlug: ImportBatchSlug): Promise<void> =>
   orReject(session.call((client) => client.imports.dismissImport({ params: { batchSlug } }))).then(() => undefined)

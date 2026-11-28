@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { IMPORT_MAX_FILES, IMPORT_MAX_TOTAL_BYTES } from "@voca/contract";
 import { Button } from "../../components/Button";
+import { ColumnMatch } from "../../components/ColumnMatch";
 import { Modal } from "../../components/Modal";
 import { startImport } from "../../lib/imports";
 import { queryClient } from "../../lib/queryClient";
@@ -65,7 +66,7 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
     setError(null);
 
     try {
-      await startImport({ files, termLang: nextTermLang, meaningLang: nextMeaningLang });
+      await startImport({ files, termLang: nextTermLang, meaningLang: nextMeaningLang, columns: [] });
     } catch {
       setBusy(false);
       setError("Could not start the import. Try again.");
@@ -113,6 +114,8 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
         <p role="status">
           {files.length === 1 ? "1 file chosen" : `${files.length} files chosen`}
         </p>
+
+        <ColumnMatch />
 
         <LanguageField
           label="Term language"

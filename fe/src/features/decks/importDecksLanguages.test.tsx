@@ -59,6 +59,8 @@ describe("the Import decks language pickers", () => {
     render(<ImportDecksModal open onClose={() => {}} />);
 
     await user.upload(screen.getByLabelText("CSV files"), [csv("N5 verbs.csv")]);
+
+    await screen.findByText("Match columns");
     await user.selectOptions(screen.getByLabelText("Term language"), "ko");
     await user.selectOptions(screen.getByLabelText("Meaning language"), "id");
     await user.click(screen.getByRole("button", { name: "Import" }));
@@ -75,6 +77,8 @@ describe("the Import decks language pickers", () => {
     render(<ImportDecksModal open onClose={() => {}} />);
 
     await user.upload(screen.getByLabelText("CSV files"), [csv("Cantonese.csv")]);
+
+    await screen.findByText("Match columns");
     await user.selectOptions(screen.getByLabelText("Term language"), "other");
     await user.type(screen.getByLabelText("Term language code"), "yue");
     await user.selectOptions(screen.getByLabelText("Meaning language"), "other");
@@ -93,6 +97,8 @@ describe("the Import decks language pickers", () => {
     render(<ImportDecksModal open onClose={() => {}} />);
 
     await user.upload(screen.getByLabelText("CSV files"), [csv("N5 verbs.csv")]);
+
+    await screen.findByText("Match columns");
     await user.selectOptions(screen.getByLabelText("Term language"), "other");
     await user.type(screen.getByLabelText("Term language code"), "japanese");
     await user.selectOptions(screen.getByLabelText("Meaning language"), "en");

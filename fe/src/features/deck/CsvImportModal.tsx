@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Result } from "effect";
 import type { DeckDetail, ImportResult } from "@voca/contract";
 import { Button } from "../../components/Button";
+import { ColumnMatch } from "../../components/ColumnMatch";
 import { Modal } from "../../components/Modal";
 import { session } from "../../lib/appSession";
 import { csvTemplateHref, importFailure, importSummary, type ImportFailure } from "./csvModel";
@@ -93,6 +94,8 @@ function CsvImportDialog({ deckSlug, onClose, onImported }: CsvImportDialogProps
         aria-label="CSV file"
         onChange={(event) => chooseFile(event.currentTarget.files?.[0])}
       />
+
+      <ColumnMatch />
 
       {summary !== null && <p role="status">{summary}</p>}
 

@@ -27,6 +27,8 @@ describe("the Import decks limits", () => {
 
     await user.upload(screen.getByLabelText("CSV files"), files);
 
+    await screen.findByText("Match columns");
+
     expect(screen.getByText("50 files chosen")).not.toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(importButton().disabled).toBe(false);
@@ -55,6 +57,8 @@ describe("the Import decks limits", () => {
     );
 
     await user.upload(screen.getByLabelText("CSV files"), files);
+
+    await screen.findByText("Match columns");
 
     expect(screen.queryByRole("alert")).toBeNull();
     expect(importButton().disabled).toBe(false);
