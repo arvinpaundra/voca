@@ -33,7 +33,7 @@ export function DangerZoneSection({ email }: { email: string }) {
         </div>
 
         <Button variant="danger" onClick={() => setConfirming(true)}>
-          Delete account…
+          Delete account
         </Button>
       </div>
 

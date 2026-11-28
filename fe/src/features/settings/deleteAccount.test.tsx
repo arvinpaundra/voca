@@ -87,7 +87,7 @@ const confirmButton = () => within(dialog()).getByRole("button", { name: "Delete
 const emailInput = () => within(dialog()).getByLabelText(`Type ${EMAIL} to confirm`) as HTMLInputElement;
 
 const open = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.click(within(zone()).getByRole("button", { name: "Delete account…" }));
+  await user.click(within(zone()).getByRole("button", { name: "Delete account" }));
 
   return dialog();
 };
@@ -97,9 +97,9 @@ describe("Settings: Danger zone", () => {
     fakeApi();
     render(<DangerZoneSection email={EMAIL} />);
 
-    expect(within(zone()).getByText("Delete account")).toBeTruthy();
+    expect(within(zone()).getByText("Delete account", { selector: "b" })).toBeTruthy();
     expect(within(zone()).getByText(HELP)).toBeTruthy();
-    expect(within(zone()).getByRole("button", { name: "Delete account…" })).toBeTruthy();
+    expect(within(zone()).getByRole("button", { name: "Delete account" })).toBeTruthy();
   });
 
   test("the Settings page ends with the Danger zone once the settings have loaded", async () => {

@@ -566,7 +566,7 @@ Extends FR-1, FR-7 and FR-17. The setting "New words per day" counts cards, one 
 
 Extends FR-2, FR-5 and FR-10. A Learner who wants to leave Voca has no way to do it: their name, email and photo stay stored, and their public decks keep showing their name in Community. A Learner can delete their own account. What identifies them is removed, and what other Learners hold stays theirs.
 
-- Settings ends with a **Danger zone** card holding one row: "Delete account", help "Deletes your decks and signs you out everywhere. This can't be undone.", and a danger button "Delete account…".
+- Settings ends with a **Danger zone** card holding one row: "Delete account", help "Deletes your decks and signs you out everywhere. This can't be undone.", and a danger button "Delete account".
 - The button opens a confirmation, "Delete your account?", subtitle "This can't be undone." It lists what happens, word for word as in the design, and asks the Learner to type their email. "Delete account" stays disabled until the typed text matches the account's email, ignoring spaces around it and letter case. "Keep account", ✕, Escape or a click outside closes it and changes nothing.
 - Deleting is immediate and permanent. There is no grace period and no restore.
 - Every deck the Learner owns is deleted as a single deck delete does (FR-2): it leaves the library and Community, public decks included.
