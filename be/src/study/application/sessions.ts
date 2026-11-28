@@ -67,8 +67,7 @@ export const startSession = (
         const dueAt = dueIndexOf(yield* repo.deckCards(learnerId, deck.id))
         const dueBefore = DateTime.toEpochMillis(day.end)
         const due = pickDue({ words, dueAt, drills: request.drills, dueBefore, size: request.size })
-        const newToday = yield* repo.newReviewsBetween(learnerId, day.start, day.end)
-        const limit = Math.min(request.size - due.length, Math.max(0, settings.newPerDay - newToday))
+        const limit: number = yield* Effect.die("not implemented: NB")
         const fresh = pickNew({
           words,
           hasCard: (wordId, drill) => dueAt.has(cardKey(wordId, drill)),

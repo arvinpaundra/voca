@@ -81,6 +81,15 @@ const studyEveryPair = (learnerId: bigint, wordIds: ReadonlyArray<bigint>, due: 
     )
   )
 
+/** Every pair has a card, so nothing is new, and only the term_meaning cards are due today. */
+const onlyMeaningDueToday = (learnerId: bigint, wordIds: ReadonlyArray<bigint>) =>
+  Effect.gen(function* () {
+    yield* studyEveryPair(learnerId, wordIds, "2026-11-20T04:00:00Z")
+
+    const sql = yield* SqlClient.SqlClient
+    yield* sql`UPDATE cards SET due = ${new Date(TODAY_START)} WHERE learner_id = ${learnerId} AND drill = 'term_meaning'`
+  })
+
 /** A finished session whose first attempts run from `from`, one every `everySeconds`. */
 const seedFinishedSession = (
   learnerId: bigint,
@@ -147,7 +156,7 @@ describe("POST /sessions with nothing to study", () => {
       })
     ))
 
-  test("the daily new limit is spent and nothing is due: NothingToStudy", () =>
+  test("past the daily target, the deck's last new cards still make a session, short only because the deck ran out", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const { id, token } = yield* signedIn("ABCDEFGH")
@@ -160,9 +169,10 @@ describe("POST /sessions with nothing to study", () => {
         const sql = yield* SqlClient.SqlClient
         yield* sql`UPDATE reviews SET state_before = 'new' WHERE learner_id = ${id}`
 
-        const error = yield* start(token, deck.deckSlug).pipe(Effect.flip)
+        const session = yield* start(token, deck.deckSlug)
 
-        expect(error._tag).toBe("NothingToStudy")
+        expect(session.size).toBe(4)
+        expect(session.questions).toHaveLength(4)
       })
     ))
 
@@ -187,13 +197,13 @@ describe("POST /sessions with nothing to study", () => {
 })
 
 describe("GET /notifications", () => {
-  test("the new count is the allowance capped by the words that have no card yet", () =>
+  test("the new count is the pairs that have no card yet", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const { id, token } = yield* signedIn("ABCDEFGH")
         const deck = yield* seedDeck(id, 2)
 
-        // 2 words x 4 drills = 8 studyable pairs; 7 are studied, so 1 is really new while the allowance is 20.
+        // 2 words x 4 drills = 8 studyable pairs; 7 are studied, so 1 is new.
         yield* studyEveryPair(id, deck.wordIds, "2026-11-20T04:00:00Z")
 
         const sql = yield* SqlClient.SqlClient
@@ -205,18 +215,18 @@ describe("GET /notifications", () => {
       })
     ))
 
-  test("nothing studied yet: the allowance still caps the count", () =>
+  test("the daily target never caps the count", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const { id, token } = yield* signedIn("ABCDEFGH")
 
-        // 10 words x 4 drills = 40 studyable pairs, but only 3 new words a day.
+        // 10 words x 4 drills = 40 studyable pairs, with a target of 3 a day.
         yield* seedDeck(id, 10)
         yield* setNewPerDay(id, 3)
 
         const panel = yield* notifications(token)
 
-        expect(panel.newAvailable).toBe(3)
+        expect(panel.newAvailable).toBe(40)
       })
     ))
 
@@ -226,14 +236,12 @@ describe("GET /notifications", () => {
         const { id, token } = yield* signedIn("ABCDEFGH")
         const deck = yield* seedDeck(id, 4)
 
-        yield* setNewPerDay(id, 0)
-
         // Two finished sessions at 10 s and 20 s per card: the median pace is 15 s.
         yield* seedFinishedSession(id, deck.wordIds, "2026-11-10T09:00:00Z", 10)
         yield* seedFinishedSession(id, deck.wordIds, "2026-11-11T09:00:00Z", 20)
 
-        // 4 cards due today, no new words: 4 x 15 s = 1 minute.
-        yield* Effect.forEach(deck.wordIds, (wordId) => seedCard(id, wordId, "term_meaning", TODAY_START))
+        // 4 cards due today, no new cards: 4 x 15 s = 1 minute.
+        yield* onlyMeaningDueToday(id, deck.wordIds)
 
         const panel = yield* notifications(token)
 
@@ -247,11 +255,9 @@ describe("GET /notifications", () => {
         const { id, token } = yield* signedIn("ABCDEFGH")
         const deck = yield* seedDeck(id, 4)
 
-        yield* setNewPerDay(id, 0)
-
         // One session answered over 3 hours (2700 s per card) counts as 120 s.
         yield* seedFinishedSession(id, deck.wordIds, "2026-11-10T09:00:00Z", 2700)
-        yield* Effect.forEach(deck.wordIds, (wordId) => seedCard(id, wordId, "term_meaning", TODAY_START))
+        yield* onlyMeaningDueToday(id, deck.wordIds)
 
         const panel = yield* notifications(token)
 
@@ -265,8 +271,7 @@ describe("GET /notifications", () => {
         const { id, token } = yield* signedIn("ABCDEFGH")
         const deck = yield* seedDeck(id, 2)
 
-        yield* setNewPerDay(id, 0)
-        yield* Effect.forEach(deck.wordIds, (wordId) => seedCard(id, wordId, "term_meaning", TODAY_START))
+        yield* onlyMeaningDueToday(id, deck.wordIds)
 
         // Due cards but no pace to measure.
         expect((yield* notifications(token)).estimatedMinutes).toBeNull()

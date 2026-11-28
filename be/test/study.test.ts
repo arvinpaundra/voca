@@ -100,7 +100,7 @@ const seedCard = (learnerId: bigint, wordId: bigint, drill: Drill, card: CardSee
         ${card.reps ?? 3}, ${card.lapses ?? 0}, false)`
   })
 
-/** A first-ever review (state_before 'new') at `reviewedAt`: it counts against that study day's new-word limit. */
+/** A first-ever review (state_before 'new') at `reviewedAt`: it counts toward that study day's new-card target. */
 const seedNewReview = (learnerId: bigint, wordId: bigint, reviewedAt: string) =>
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient
@@ -227,20 +227,20 @@ describe("GET /decks/:deckSlug/drills", () => {
       })
     ))
 
-  test("new counts are capped by what is left of today's new-word limit", () =>
+  test("new counts are the words with no card in the drill, whatever the daily target", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const { id, token } = yield* signedIn("ABCDEFGH")
         const deck = yield* seedDeck(id, words(6, false))
         const other = yield* seedDeck(id, words(2, false))
 
-        yield* setNewPerDay(id, 3)
+        yield* setNewPerDay(id, 1)
         yield* seedNewReview(id, other.words[0]!.id, "2026-11-13T05:00:00Z")
         yield* seedNewReview(id, other.words[1]!.id, "2026-11-13T03:00:00Z") // yesterday's study day
 
         const drills = yield* deckDrills(token, deck.deckSlug)
 
-        expect(drills.map((drill) => drill.new)).toEqual([2, 2])
+        expect(drills.map((drill) => drill.new)).toEqual([6, 6])
       })
     ))
 
@@ -317,22 +317,21 @@ describe("POST /sessions", () => {
       })
     ))
 
-  test("new words stop at today's new-word limit, so the session is smaller than the size asked for", () =>
+  test("past the daily target, new words still fill the session up to its size", () =>
     rt.runPromise(
       Effect.gen(function* () {
         const { id, token } = yield* signedIn("ABCDEFGH")
         const deck = yield* seedDeck(id, words(10))
         const [dueWord] = deck.words
 
-        yield* setNewPerDay(id, 3)
+        yield* setNewPerDay(id, 1)
         yield* seedNewReview(id, deck.words[9]!.id, "2026-11-13T05:00:00Z")
         yield* seedCard(id, dueWord!.id, "term_meaning", { due: TODAY_START })
 
         const session = yield* start(token, deck.deckSlug)
 
-        // The size is what was found, not the 7 requested.
-        expect(session.size).toBe(3)
-        expect(session.questions).toHaveLength(3)
+        expect(session.size).toBe(7)
+        expect(session.questions).toHaveLength(7)
         expect(slugsOf(session.questions)).toContain(dueWord!.slug)
       })
     ))

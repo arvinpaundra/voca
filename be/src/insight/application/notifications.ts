@@ -17,7 +17,6 @@ export const notifications = Effect.gen(function* () {
   const now = yield* DateTime.now
 
   const rows = yield* repo.dueByDeck(learnerId, calendar.day.start, calendar.day.end, now)
-  const newToday = yield* repo.newReviewsBetween(learnerId, calendar.day.start, calendar.day.end)
 
   const decks = new Map<string, NotificationDeck>()
 
@@ -43,10 +42,7 @@ export const notifications = Effect.gen(function* () {
 
   const due = rows.reduce((sum, row) => sum + row.due, 0)
   const unstudied = yield* repo.unstudiedPairs({ learnerId, deckId: null }, now)
-  const settings = yield* repo.learnerSettings(learnerId)
-
-  // The allowance caps the count, and the words the decks no longer have cap the allowance.
-  const newAvailable = Math.max(0, Math.min(settings.newPerDay - newToday, unstudied))
+  const newAvailable: number = yield* Effect.die("not implemented: NB")
 
   const paces = yield* repo.sessionPaces(learnerId)
 
