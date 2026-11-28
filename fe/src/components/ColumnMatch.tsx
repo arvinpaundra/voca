@@ -44,7 +44,12 @@ export function ColumnMatch({ rows, lines, onChoose }: ColumnMatchProps) {
           <div key={index} className={cx("cm-row", row.match === null && "off")}>
             <span className={cx("cm-name", row.blank && "blank")}>{row.label}</span>
 
-            {row.files !== null && <span className="cm-in">{fileCount(row.files)}</span>}
+            {row.files !== null && (
+              <span className="cm-in">
+                <span className="cm-in-full">{fileCount(row.files)}</span>
+                <span className="cm-in-count">{row.files}</span>
+              </span>
+            )}
 
             <Select
               label={row.label}

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Result } from "effect";
+import { BookOpen, CircleAlert, Upload } from "lucide-react";
 import type { DeckDetail, ImportResult } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { ColumnMatch, useFileHeaders } from "../../components/ColumnMatch";
@@ -28,7 +29,11 @@ type CsvImportDialogProps = {
   onImported: (result: ImportResult) => void;
 };
 
+const sizeLabel = (bytes: number): string => `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
 function CsvImportDialog({ deckSlug, onClose, onImported }: CsvImportDialogProps) {
+  const inputId = useId();
+  const pickerRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<ReadonlyArray<File>>([]);
   const [choice, setChoice] = useState<ReadonlyArray<Match> | null>(null);
   const [busy, setBusy] = useState(false);
@@ -107,16 +112,39 @@ function CsvImportDialog({ deckSlug, onClose, onImported }: CsvImportDialogProps
       }
     >
       <input
+        id={inputId}
+        ref={pickerRef}
         type="file"
         accept=".csv,text/csv"
         aria-label="CSV file"
+        className="sr-only"
         onChange={(event) => chooseFile(event.currentTarget.files?.[0])}
       />
 
-      <p className="import-hint">CSV with a header row · UTF-8 · up to 5 MB</p>
+      {file === undefined ? (
+        <label htmlFor={inputId} className="file-drop">
+          <Upload className="i i-lg" aria-hidden="true" />
+          <span>
+            <b>Choose a file</b> or drop it here
+          </span>
+          <span className="hint">CSV with a header row · UTF-8 · up to 5 MB</span>
+        </label>
+      ) : (
+        <div className="chosen">
+          <BookOpen className="i" aria-hidden="true" />
+          <span className="grow">
+            <b>{file.name}</b> · {sizeLabel(file.size)}
+          </span>
+          <Button variant="ghost" size="sm" aria-label="Change file" disabled={busy} onClick={() => pickerRef.current?.click()}>
+            <span className="cf-full">Change file</span>
+            <span className="cf-short">Change</span>
+          </Button>
+        </div>
+      )}
 
       {header?.kind === "unreadable" && (
         <div role="alert" className="alert alert-bad">
+          <CircleAlert className="i" aria-hidden="true" />
           <span className="grow">{UNREADABLE}</span>
         </div>
       )}

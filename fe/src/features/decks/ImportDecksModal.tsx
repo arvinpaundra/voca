@@ -1,5 +1,5 @@
-import { useRef, useState, type FormEvent } from "react";
-import { CircleAlert } from "lucide-react";
+import { useId, useRef, useState, type FormEvent } from "react";
+import { CircleAlert, Upload } from "lucide-react";
 import { IMPORT_MAX_FILES, IMPORT_MAX_TOTAL_BYTES } from "@voca/contract";
 import { Button } from "../../components/Button";
 import { ColumnMatch, useFileHeaders, type ColumnRow } from "../../components/ColumnMatch";
@@ -42,6 +42,7 @@ type LanguageErrors = { termLang: string | null; meaningLang: string | null };
 function ImportDecksDialog({ onClose }: { onClose: () => void }) {
   // The actions live in the dialog footer, outside the form, so Import submits the form through its ref.
   const formRef = useRef<HTMLFormElement>(null);
+  const inputId = useId();
   const [files, setFiles] = useState<File[]>([]);
   const [choice, setChoice] = useState<BatchMatch | null>(null);
   const [termLang, setTermLang] = useState("");
@@ -156,36 +157,45 @@ function ImportDecksDialog({ onClose }: { onClose: () => void }) {
     >
       <form ref={formRef} className="grid gap-4" onSubmit={(event) => void submit(event)}>
         <input
+          id={inputId}
           type="file"
           multiple
           accept=".csv,text/csv"
           aria-label="CSV files"
+          className="sr-only"
           onChange={(event) => chooseFiles(Array.from(event.currentTarget.files ?? []))}
         />
 
-        <p className="import-hint">CSV with a header row · UTF-8 · 5 MB each</p>
+        <label htmlFor={inputId} className="file-drop">
+          <Upload className="i i-lg" aria-hidden="true" />
+          <span>
+            <b>Choose files</b> or drop them here
+          </span>
+          <span className="hint">CSV with a header row · UTF-8 · 5 MB each</span>
+        </label>
 
-        <p role="status">
+        <p role="status" className="hint">
           {files.length === 1 ? "1 file chosen" : `${files.length} files chosen`}
         </p>
 
-        {unreadable.length > 0 && (
-          <div role="alert" className="alert alert-bad">
-            <CircleAlert size={16} aria-hidden="true" />
-            <ul className="grow">
-              {unreadable.map((file, index) => (
-                <li key={index}>
-                  <b>{file.name}</b>: {BATCH_UNREADABLE}{" "}
-                  <button type="button" className="btn btn-ghost btn-sm" aria-label={`Remove ${file.name}`} onClick={() => removeFile(file)}>
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {loaded && rowViews.length > 0 && <ColumnMatch rows={rowViews} lines={problems} onChoose={choose} />}
+
+        {unreadable.map((file, index) => (
+          <div key={index} role="alert" className="alert alert-bad">
+            <CircleAlert className="i" aria-hidden="true" />
+            <span className="grow">
+              <b>{file.name}</b>: {BATCH_UNREADABLE}
+            </span>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              aria-label={`Remove ${file.name}`}
+              onClick={() => removeFile(file)}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
 
         <LanguageField
           label="Term language"

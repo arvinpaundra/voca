@@ -694,13 +694,30 @@ dl.kpis, dl.kpis dd, .deck-stats-strip dd, .deck-stats-strip dl { margin: 0; }
 .cm-head { background: var(--sunken); border-bottom: 1px solid var(--line); font-size: var(--tiny); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .cm-row { border-top: 1px solid var(--line); }
 .cm-head + .cm-row { border-top: 0; }
-.cm-name { min-width: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.cm-name { min-width: 0; font-size: 14px; font-weight: 600; overflow-wrap: normal; }
 .cm-name.blank { font-weight: 500; font-style: italic; }
 .cm-row .select { font-size: 13px; }
 .cm-row.off .cm-name { color: var(--muted); font-weight: 500; }
 .cm-row.off .select { color: var(--muted); }
 .cm.multi .cm-head, .cm.multi .cm-row { grid-template-columns: minmax(0, 1fr) 72px 156px; }
 .cm-in { font-size: var(--tiny); color: var(--muted); white-space: nowrap; }
+.cm-in-count { display: none; }
+.cf-short { display: none; }
+@media (max-width: 640px) {
+  .cm-head, .cm-row { grid-template-columns: minmax(0, 1fr) 132px; gap: 8px; }
+  .cm.multi .cm-head, .cm.multi .cm-row { grid-template-columns: minmax(0, 1fr) 36px 132px; }
+  .cm-in-full, .cf-full { display: none; }
+  .cm-in-count, .cf-short { display: inline; }
+}
+.file-drop { border: 1.5px dashed var(--line-2, var(--line)); border-radius: var(--r-sm); padding: 18px; display: grid; gap: 6px; justify-items: center; text-align: center; font-size: var(--small); color: var(--muted); cursor: pointer; }
+.file-drop:focus-within { border-color: var(--ink-2); }
+.file-drop .i { width: 20px; height: 20px; }
+.file-drop b { font-weight: 600; color: var(--ink); }
+.file-drop .hint { font-size: var(--tiny); }
+.chosen { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: var(--small); }
+.chosen .i { width: 16px; height: 16px; color: var(--muted); flex: none; }
+.chosen .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.chosen b { font-weight: 600; }
 .cm-note { font-size: var(--tiny); color: var(--muted); display: flex; gap: 6px; align-items: flex-start; }
 .cm-note.bad { color: var(--bad); }
 .cm-note svg { flex: none; margin-top: 2px; }
