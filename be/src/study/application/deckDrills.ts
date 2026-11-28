@@ -19,8 +19,6 @@ export const deckDrills = (
     const day = studyDay(yield* DateTime.now, settings.timezone, settings.dayStartHour)
     const words = yield* repo.deckWords(deck.id)
     const dueAt = dueIndexOf(yield* repo.deckCards(learnerId, deck.id))
-    const newToday = yield* repo.newReviewsBetween(learnerId, day.start, day.end)
-    const newLeft = Math.max(0, settings.newPerDay - newToday)
     const dueBefore = DateTime.toEpochMillis(day.end)
 
     return DRILL_ORDER.flatMap((drill) => {
@@ -42,7 +40,7 @@ export const deckDrills = (
           drill,
           label: drillLabel(deck.termLang, drill),
           due: due.length,
-          new: Math.min(withoutCard.length, newLeft)
+          new: withoutCard.length
         }
       ]
     })
