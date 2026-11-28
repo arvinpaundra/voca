@@ -167,7 +167,7 @@ export function DrillPanel({
           ))}
         </div>
 
-        {/* Six columns stay on one line; on a phone the table scrolls sideways inside its card. */}
+        {/* Six columns share the card's width; on a phone each cell wraps instead of the table scrolling sideways. */}
         <div className="hist-scroll">
           <ul className="hist">
             <li className="head">
