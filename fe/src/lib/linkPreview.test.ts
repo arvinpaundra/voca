@@ -7,10 +7,16 @@ import { resolve } from "node:path";
 
 const fe = resolve(import.meta.dir, "../..");
 
-const html = new DOMParser().parseFromString(readFileSync(`${fe}/index.html`, "utf8"), "text/html");
+const source = readFileSync(`${fe}/index.html`, "utf8");
+
+const metaTags = [...source.matchAll(/<meta\s[^>]*>/g)].map((tag) =>
+  Object.fromEntries([...tag[0].matchAll(/([\w:-]+)="([^"]*)"/g)].map(([, key, value]) => [key, value])),
+);
 
 const meta = (attribute: "property" | "name", key: string) =>
-  html.querySelector(`meta[${attribute}="${key}"]`)?.getAttribute("content");
+  metaTags.find((tag) => tag[attribute] === key)?.content;
+
+const title = source.match(/<title>([^<]*)<\/title>/)?.[1];
 
 const IMAGE = "https://voca.arvinpaundra.xyz/og.png";
 
@@ -28,7 +34,7 @@ describe("the link preview card", () => {
 
   test("the card's title and description are the page's own", () => {
     expect(meta("property", "og:title")).toBe("Voca · Remember every word");
-    expect(html.title).toBe("Voca · Remember every word");
+    expect(title).toBe("Voca · Remember every word");
 
     expect(meta("property", "og:description")).toBe(
       "Voca is a web app for learning vocabulary with spaced repetition, in any language.",
