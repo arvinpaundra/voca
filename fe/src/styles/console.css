@@ -507,8 +507,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .strip i.cur { background: var(--ink); }
 .prompt { background: #fff; border: var(--card-bd); box-shadow: var(--card-sh); border-radius: var(--r-lg); padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 40px); display: grid; justify-items: center; gap: 32px; }
 .prompt .drill { font-size: var(--tiny); color: var(--muted); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-.prompt .term { font: 600 clamp(52px, 8vw, 80px)/1.15 var(--f-term); text-align: center; }
+.prompt .term { font: 600 clamp(52px, 8vw, 80px)/1.15 var(--f-term); text-align: center; overflow-wrap: anywhere; }
 .prompt .term rt { font: 500 .22em var(--f-body); color: var(--muted); letter-spacing: .06em; }
+.prompt[data-size="medium"] .term { font-size: 48px; }
+.prompt[data-size="long"] .term { font-size: 32px; }
+@media (max-width: 639px) {
+  .prompt[data-size="medium"] .term { font-size: 36px; }
+  .prompt[data-size="long"] .term { font-size: 24px; }
+  .study:has(.verdict) { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .verdict { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 10; box-shadow: 0 -8px 24px -12px rgba(28,25,23,.25); }
+}
 .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 560px; }
 @media (max-width: 520px) {
   .options { grid-template-columns: 1fr; }
