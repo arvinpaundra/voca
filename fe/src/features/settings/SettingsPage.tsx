@@ -18,6 +18,7 @@ import { queryClient } from "../../lib/queryClient";
 import { changedSettings, draftFrom, parseDraft, type DraftErrors, type SettingsDraft } from "./settingsModel";
 import { SettingsRow } from "./SettingsRow";
 import { SettingsSection } from "./SettingsSection";
+import { DangerZoneSection } from "./DangerZoneSection";
 import { WordFontSection } from "./WordFontSection";
 
 type Notice = { readonly kind: "saved" } | { readonly kind: "failed" } | null;
@@ -250,6 +251,8 @@ export function SettingsPage() {
           <StudyPreferences settings={learner.data.settings} />
 
           <WordFontSection />
+
+          <DangerZoneSection email={learner.data.email} />
         </div>
       )}
     </>
