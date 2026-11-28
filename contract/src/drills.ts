@@ -16,7 +16,7 @@ interface Profile extends WordLabels {
 }
 
 const profiles = new Map<string, Profile>([
-  ["ja", { term: "Word", reading: "Hiragana", readingLang: null }],
+  ["ja", { term: "Word", reading: "Kana", readingLang: null }],
   ["zh", { term: "Hanzi", reading: "Pinyin", readingLang: "zh-Latn-pinyin" }],
   ["yue", { term: "Hanzi", reading: "Jyutping", readingLang: "yue-Latn-jyutping" }]
 ])
@@ -49,6 +49,5 @@ export const DRILLS: Readonly<Record<Drill, { readonly prompt: Field; readonly a
 const fieldLabel = (termLang: string, field: Field): string =>
   field === "meaning" ? "Meaning" : wordLabels(termLang)[field]
 
-/** The direction label shown above a question and in the drill picker, e.g. "Word → Hiragana" for ja. */
 export const drillLabel = (termLang: string, drill: Drill): string =>
   `${fieldLabel(termLang, DRILLS[drill].prompt)} → ${fieldLabel(termLang, DRILLS[drill].answer)}`

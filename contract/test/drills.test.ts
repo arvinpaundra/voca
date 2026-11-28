@@ -4,8 +4,8 @@ import { drillLabel, readingLang, wordLabels } from "../src/drills.ts"
 // The Language Profile: field labels follow the primary subtag of the deck's term language. Data, not logic.
 
 test.each([
-  ["ja", { term: "Word", reading: "Hiragana" }],
-  ["ja-JP", { term: "Word", reading: "Hiragana" }],
+  ["ja", { term: "Word", reading: "Kana" }],
+  ["ja-JP", { term: "Word", reading: "Kana" }],
   ["zh", { term: "Hanzi", reading: "Pinyin" }],
   ["zh-Hans", { term: "Hanzi", reading: "Pinyin" }],
   ["ZH-hant", { term: "Hanzi", reading: "Pinyin" }],
@@ -30,7 +30,8 @@ test.each([
 test.each([
   ["ja", "term_meaning", "Word → Meaning"],
   ["ja", "meaning_term", "Meaning → Word"],
-  ["ja", "term_reading", "Word → Hiragana"],
+  ["ja", "term_reading", "Word → Kana"],
+  ["ja", "reading_term", "Kana → Word"],
   ["zh-Hans", "reading_term", "Pinyin → Hanzi"],
   ["en", "term_reading", "Word → Reading"]
 ] as const)("%s %s is labelled %s", (termLang, drill, label) => {
