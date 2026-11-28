@@ -13,7 +13,15 @@ export class LearnerRepo extends Context.Service<LearnerRepo, {
   /** Creates the Learner for this Google account with the new-Learner defaults, or refreshes the profile of the existing one. */
   upsertGoogle(profile: GoogleProfile, timezone: LearnerSettings["timezone"]): Effect.Effect<LearnerRecord>
   saveSettings(id: bigint, settings: LearnerSettings): Effect.Effect<void>
+  /** Soft-deletes the Learner at `at` (epoch millis) and blanks the identifying columns: name, email, photo and Google ID. */
+  erase(id: bigint, at: number): Effect.Effect<void>
 }>()("voca/identity/LearnerRepo") {}
+
+/** What a Learner owns in the library, erased with the account. Its implementation lives in the library context. */
+export class LearnerLibrary extends Context.Service<LearnerLibrary, {
+  /** Soft-deletes every live deck the Learner owns as `deleteDeck` does, and fails their pending imports. `at` is epoch millis. */
+  eraseAllOf(learnerId: bigint, at: number): Effect.Effect<void>
+}>()("voca/identity/LearnerLibrary") {}
 
 export class InvalidToken extends Data.TaggedError("InvalidToken")<{}> {}
 
@@ -55,4 +63,6 @@ export class RefreshTokens extends Context.Service<RefreshTokens, {
   markUsed(id: bigint): Effect.Effect<void>
   /** Revokes every token of the family that isn't revoked yet. */
   revokeFamily(familyId: string): Effect.Effect<void>
+  /** Revokes every token of the Learner that isn't revoked yet, whatever its family. */
+  revokeAllOf(learnerId: bigint): Effect.Effect<void>
 }>()("voca/identity/RefreshTokens") {}

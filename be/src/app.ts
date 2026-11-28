@@ -17,6 +17,7 @@ import { StudyLive } from "./study/infrastructure/index.ts"
 import { SystemHandlers } from "./shared/http/system.ts"
 import { TransactionLive } from "./shared/transaction.ts"
 import { DeckRepoLive } from "./library/infrastructure/deckRepo.ts"
+import { LearnerLibraryLive } from "./library/infrastructure/learnerLibrary.ts"
 import { ImportsLive, type ImportsOptions } from "./library/infrastructure/imports.ts"
 import { WordRepoLive } from "./library/infrastructure/wordRepo.ts"
 
@@ -48,6 +49,7 @@ export const makeApiLayer = (options: {
     TokenSignerLive(options.jwtSecret),
     DeckRepoLive,
     WordRepoLive,
+    LearnerLibraryLive.pipe(Layer.provide(Layer.mergeAll(DeckRepoLive, WordRepoLive))),
     StudyLive,
     InsightLive
   )

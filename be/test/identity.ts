@@ -16,6 +16,7 @@ import { TransactionLive } from "../src/shared/transaction.ts"
 import { CommunityHandlers } from "../src/library/http/community.ts"
 import { LibraryHandlers } from "../src/library/http/library.ts"
 import { DeckRepoLive } from "../src/library/infrastructure/deckRepo.ts"
+import { LearnerLibraryLive } from "../src/library/infrastructure/learnerLibrary.ts"
 import { WordRepoLive } from "../src/library/infrastructure/wordRepo.ts"
 import { ImportEventsHandlers, ImportsHandlers } from "../src/library/http/imports.ts"
 import { ImportsLive, type ImportsOptions } from "../src/library/infrastructure/imports.ts"
@@ -58,6 +59,7 @@ export const makeIdentityRuntime = (google = googleStub({}), options: { readonly
     TokenSignerLive(TEST_SECRET),
     DeckRepoLive,
     WordRepoLive,
+    LearnerLibraryLive.pipe(Layer.provide(Layer.mergeAll(DeckRepoLive, WordRepoLive))),
     StudyLive,
     InsightLive,
     google

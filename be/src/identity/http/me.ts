@@ -1,17 +1,19 @@
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { NotFound, VocaApi } from "@voca/contract"
+import { deleteAccount } from "../application/deleteAccount.ts"
 import { getMe } from "../application/getMe.ts"
-import type { LearnerRepo } from "../application/ports.ts"
+import type { LearnerLibrary, LearnerRepo, RefreshTokens } from "../application/ports.ts"
 import { updateSettings } from "../application/updateSettings.ts"
 import { toLearner } from "../domain/learner.ts"
+import type { Transaction } from "../../shared/transaction.ts"
 
 export const MeHandlers = HttpApiBuilder.group(
   VocaApi,
   "me",
   Effect.fn(function* (handlers) {
     // Handlers run per request: capture the ports once here (not inside each handler) and provide them to the use case.
-    const ports = yield* Effect.context<LearnerRepo>()
+    const ports = yield* Effect.context<LearnerRepo | LearnerLibrary | RefreshTokens | Transaction>()
     return handlers.handleAll({
       get: () =>
         getMe.pipe(
@@ -27,7 +29,7 @@ export const MeHandlers = HttpApiBuilder.group(
           Effect.orDie
         ),
 
-      delete: () => Effect.die("not implemented: AB")
+      delete: () => deleteAccount.pipe(Effect.provideContext(ports), Effect.orDie)
     })
   })
 )

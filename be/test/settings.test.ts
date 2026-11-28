@@ -9,7 +9,12 @@ import { TokenSigner } from "../src/identity/application/ports.ts"
 import { AuthorizationLive } from "../src/identity/http/authorization.ts"
 import { MeHandlers } from "../src/identity/http/me.ts"
 import { LearnerRepoLive } from "../src/identity/infrastructure/learnerRepo.ts"
+import { RefreshTokensLive } from "../src/identity/infrastructure/refreshTokens.ts"
 import { TokenSignerLive } from "../src/identity/infrastructure/tokenSigner.ts"
+import { TransactionLive } from "../src/shared/transaction.ts"
+import { DeckRepoLive } from "../src/library/infrastructure/deckRepo.ts"
+import { LearnerLibraryLive } from "../src/library/infrastructure/learnerLibrary.ts"
+import { WordRepoLive } from "../src/library/infrastructure/wordRepo.ts"
 import { TestLayer } from "./layers.ts"
 import { resetDb } from "./setup.ts"
 
@@ -17,9 +22,15 @@ import { resetDb } from "./setup.ts"
 // the response is the whole Learner. Invariants live in the contract's Schemas, so the database has no CHECKs.
 // Same harness as me.test.ts, the reference slice.
 
-const Infra = Layer.mergeAll(LearnerRepoLive, TokenSignerLive(Redacted.make("test-secret-test-secret-test-secret!"))).pipe(
-  Layer.provideMerge(TestLayer)
-)
+const Infra = Layer.mergeAll(
+  LearnerRepoLive,
+  RefreshTokensLive,
+  TransactionLive,
+  TokenSignerLive(Redacted.make("test-secret-test-secret-test-secret!")),
+  DeckRepoLive,
+  WordRepoLive,
+  LearnerLibraryLive.pipe(Layer.provide(Layer.mergeAll(DeckRepoLive, WordRepoLive)))
+).pipe(Layer.provideMerge(TestLayer))
 const Api = MeHandlers.pipe(Layer.provideMerge(AuthorizationLive), Layer.provideMerge(Infra))
 const rt = ManagedRuntime.make(Layer.mergeAll(Api, HttpServer.layerServices))
 afterAll(() => rt.dispose())
