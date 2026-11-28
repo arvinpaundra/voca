@@ -391,6 +391,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .card .deck {
     grid-template-areas:
       "title title title menu"
+      "tags tags tags tags"
       "due words . cta";
   }
   .deck .deck-top > .deck-title,
