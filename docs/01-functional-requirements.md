@@ -433,17 +433,18 @@ Extends FR-2, FR-5 and FR-8. A Learner with hundreds of decks or hard words wait
 - With 40 hard words, 3 of which contain "spa" in the term or meaning, searching "spa" shows exactly those 3.
 - On Hard words, searching "spa" while a drill filter is set lists only that drill's hard words that match.
 
-## FR-32 Word page fits the screen (M)
+## FR-32 Screens fit the phone width (M)
 
-Extends FR-2 and FR-6. A long term or example makes the word page wider than a phone, so the header and text are cut off and the page scrolls sideways.
+Extends FR-2, FR-6, FR-19 and FR-31. A long term, example, note or drill label makes a screen wider than a phone. The header and text are cut off, and the page scrolls sideways (word page) or its content runs past the edge and can't be reached (dashboard).
 
-- On the word page and in the word modal, long content (term with its reading, meaning, example, notes) wraps inside the screen width. The page never scrolls horizontally.
-- The header and the rest of the page stay fully visible.
-- **Won't:** truncating or hiding any of the content.
+- On every screen, content wraps inside the screen width, at every width. The page never scrolls horizontally, and nothing is clipped at the edge.
+- This includes the word page and the word modal (term with its reading, meaning, example, notes, and each drill's section, also one that shows "Not studied yet"), and the dashboard (the Today counts, and each deck's drill label in the Today and My decks lists).
+- The header stays fully visible and inside the screen.
+- **Won't:** truncating content with "…", hiding it, or scrolling a row sideways as a workaround.
 
 **Acceptance**
-- At 390 px width, a word whose term is 30 characters with a reading, and whose example is 300 characters, shows all of its text and the whole header. The page has no horizontal scroll.
-- The same word opened in the deck page's modal fits without horizontal scroll.
+- At the phone breakpoint (640 px, FR-31) and at every narrower width down to 320 px, and also just above it at 641 px, a word whose term is 30 characters with a reading, and whose example and notes are 300 characters each, shows all of its text and the whole header. The page has no horizontal scroll. This holds on the word page, in the deck page's modal, and in a drill that has no card yet.
+- At the same widths, the dashboard of a Learner with a deck whose drill label reads "Pinyin → Hanzi 1 · Meaning → Hanzi 2 · Hanzi → Meaning 1" shows all four Today counts (due, new, hard, overdue) and each full label. The page has no horizontal scroll.
 
 ## Extra ideas (not in your list)
 
